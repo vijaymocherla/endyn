@@ -1,5 +1,6 @@
 import numpy as np
 from itertools import product
+from multiprocessing import Pool, Process
 
 
 def comp_cis_hamiltonian(eps, mo_erints, orbinfo):
@@ -24,6 +25,37 @@ def comp_cis_hamiltonian(eps, mo_erints, orbinfo):
             HCIS[P+1, Q+1] = (((eps[r] - eps[a]) * (a == b) * (r == s))
                               - mo_erints[r, s, b, a]
                               + (2 * mo_erints[r, a, b, s]))
+    return HCIS
+
+
+def multp_comp_cis_hamiltonian(eps, mo_erints, orbinfo, ncore):
+    nocc, nvir, nmo = orbinfo
+    excitation_singles = list(product(range(nocc), range(nocc, nmo)))
+    nDets = (nocc * nvir) + 1
+    HCIS = np.zeros((nDets, nDets))
+
+    def multp_cis_mat_row(P):
+        try:
+            row = []
+            a, r = excitation_singles[P]
+            for Q, R_ex in enumerate(excitation_singles):
+                b, s = R_ex
+                HCIS[P+1, Q+1] = (((eps[r] - eps[a]) * (a == b) * (r == s))
+                                  - mo_erints[r, s, b, a]
+                                  + (2 * mo_erints[r, a, b, s]))
+            return 1
+        except RuntimeError("Something went wrong while computing row %i" % (P+1)):
+            return 0
+
+    with Pool(processes=ncore) as pool:
+        row_log = pool.map(multp_cis_mat_row, range(len(excitation_singles)))
+    # checking if all process finished succesfully
+    if sum(row_log) != int(len(excitation_singles)-1):
+        for idx, val in enumerate(row_log):
+            if val != 0:
+                print('Something went wrong while computing row %i' % (idx+1))
+    else:
+        print("All rows were computed successfully! \n")
     return HCIS
 
 

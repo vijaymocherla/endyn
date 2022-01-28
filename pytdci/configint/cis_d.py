@@ -2,7 +2,7 @@
 
 import numpy as np
 from itertools import product
-from multiprocessing import Pool
+from multiprocessing import Process, Pool
 
 class cis_d:
     """ A class to compute perturbative corrections from doubles(D) for enegies from configuration interation singles(CIS).
@@ -92,16 +92,16 @@ class cis_d:
         print('%3.4f \t %3.4f \t %3.4f' % (Ei_d_corr, Ei_t_corr, Ei_corr))
         return Ei_corr
 
-    def comp_cis_d(self, nvals, ncore=2):
+    def comp_cis_d(self, nevals, ncores=2):
         """Computes of doubles substitution correction to CIS eigen energies.
         The calculation is parallelised with multiprocessing.Pool
         -----------------------------------------------------------------------------
         nvals: no. of first few eigen values for which corrections are to be computed.
-        ncore: no. of cores to be used for computations(default = 2). 
+        ncore: no. of cores to be used for computations(default = 2).
         """
-        if nvals > len(self.ecis):
+        if nevals > len(self.ecis):
             raise Exception('nvals can not be greater than no. of CIS eigen values')
-        # print('Ui.shape, self_energy.shape, Vi.shape, Ci.shape')    
-        with Pool(ncore) as p:
-            E_CIS_D = p.map(self.comp_dcorr, range(nvals))
+        # print('Ui.shape, self_energy.shape, Vi.shape, Ci.shape')
+        with Pool(processes=ncores) as pool:
+            E_CIS_D = pool.map(self.comp_dcorr, range(nevals))
         return E_CIS_D
