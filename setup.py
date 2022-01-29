@@ -6,8 +6,8 @@ import sys
 import io
 
 from setuptools import setup, Extension, find_packages
-from Cython.Build import cythonize
-from Cython.Distutils import build_ext
+# from Cython.Build import cythonize
+# from Cython.Distutils import build_ext
 
 # TODO :
 #   - Figure out cythonise some packages and add them to setup file
@@ -17,7 +17,7 @@ from Cython.Distutils import build_ext
 __version__ = ''
 exec(open('pytdci/_version.py').read())
 
-ext_modules = []
+# ext_modules = []
 
 # Package setup commands 
 setup(name = 'pytdci',
@@ -28,12 +28,12 @@ setup(name = 'pytdci',
                   'psi4 (>=1.4)', 
                   'cython (>=0.21)'],  
       packages = find_packages(where='pytdci'),
+      package_dir={'': 'pytdci'},
       include_package_data = True,
-      ext_modules = cythonize(EXT_MODULES),
-      cmdclass = {'build_ext': build_ext},
+      # ext_modules = cythonize(EXT_MODULES),
+      # cmdclass = {'build_ext': build_ext},
       author = 'Sai Vijay Mocherla',
       author_email = 'vijaysai.mocherla@gmail.com',
-      credits = ['Dr. Raghunathan Ramakrishnan'],
       license = 'MIT',
       description = 'an open-source TDCI package written in python',
       long_description  = '',
