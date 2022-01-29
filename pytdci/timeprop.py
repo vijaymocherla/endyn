@@ -1,6 +1,6 @@
 import numpy as np 
 from time import perf_counter
-
+from opt_einsum import contract
 
 class RK4(object):
     """Fixed step-size implementation of fourth order runge-kutta 
@@ -16,10 +16,10 @@ class RK4(object):
 
 
     def _rk4_step(self, yi, ti):
-        k1 = np.einsum('ij,i', self.func, yi, optimize=True)
-        k2 = np.einsum('ij,i', self.func, yi+(self.dt/2 * k1), optimize=True) 
-        k3 = np.einsum('ij,i', self.func, yi+(self.dt/2 * k2), optimize=True) 
-        k4 = np.einsum('ij,i', self.func, yi+(self.dt * k3), optimize=True) 
+        k1 = contract('ij,i', self.func, yi, optimize=True)
+        k2 = contract('ij,i', self.func, yi+(self.dt/2 * k1), optimize=True) 
+        k3 = contract('ij,i', self.func, yi+(self.dt/2 * k2), optimize=True) 
+        k4 = contract('ij,i', self.func, yi+(self.dt * k3), optimize=True) 
         yn = yi + (self.dt/6 * (k1 + 2*k2 + 2*k3 + k4))
         tn = ti + self.dt
         return(yn, tn)
@@ -58,14 +58,14 @@ class exact_prop(object):
     def project_eigbasis(self, y):
         """Projects y from CSF basis => EIGEN basis 
         """
-        y_eig = np.einsum('ij,j', np.conjugate(self.eigvecs).T, y, optimize=True)
+        y_eig = contract('ij,j', np.conjugate(self.eigvecs).T, y, optimize=True)
         return y_eig
     
 
     def project_csfbasis(self, y):
         """Projects y from EIGEN basis => CSF basis 
         """
-        y_csf = np.einsum('ij,j', self.eigvecs, y, optimize=True)
+        y_csf = contract('ij,j', self.eigvecs, y, optimize=True)
         return y_csf
     
 

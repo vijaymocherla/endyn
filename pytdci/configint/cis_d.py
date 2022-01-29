@@ -1,8 +1,9 @@
 # spin MO version of cis_d 
 
-import numpy as np
-from itertools import product
 from multiprocessing import Process, Pool
+from itertools import product
+from opt_einsum import contract 
+import numpy as np
 
 class cis_d:
     """ A class to compute perturbative corrections from doubles(D) for enegies from configuration interation singles(CIS).
@@ -44,24 +45,24 @@ class cis_d:
     def comp_e0mp2(self):
         """Computes MP2 correction for ground-state energy
         """
-        E0_mp2 = 0.25*np.einsum('abij,ijab', self.w_tensor, self.g_tensor[:self.nel, :self.nel, self.nel:, self.nel:], optimize=True)
+        E0_mp2 = 0.25*contract('abij,ijab', self.w_tensor, self.g_tensor[:self.nel, :self.nel, self.nel:, self.nel:], optimize=True)
         return E0_mp2
 
     def comp_utensor(self, Ci):
         """Computes U_{ab}^{rs} tensor for each SA-CIS state
         """
-        utensor = (  np.einsum('abcj,ic->abij', self.g_tensor[self.nel:, self.nel:, self.nel:, :self.nel], Ci, optimize=True)
-                   - np.einsum('abci,jc->abij', self.g_tensor[self.nel:, self.nel:, self.nel:, :self.nel], Ci, optimize=True)
-                   + np.einsum('kaij,kb->abij', self.g_tensor[:self.nel, self.nel:, :self.nel, :self.nel], Ci, optimize=True)
-                   - np.einsum('kbij,ka->abij', self.g_tensor[:self.nel, self.nel:, :self.nel, :self.nel], Ci, optimize=True))
+        utensor = (  contract('abcj,ic->abij', self.g_tensor[self.nel:, self.nel:, self.nel:, :self.nel], Ci, optimize=True)
+                   - contract('abci,jc->abij', self.g_tensor[self.nel:, self.nel:, self.nel:, :self.nel], Ci, optimize=True)
+                   + contract('kaij,kb->abij', self.g_tensor[:self.nel, self.nel:, :self.nel, :self.nel], Ci, optimize=True)
+                   - contract('kbij,ka->abij', self.g_tensor[:self.nel, self.nel:, :self.nel, :self.nel], Ci, optimize=True))
         return utensor
 
     def comp_varray(self, Ci):
         """Computes V_{a}^{r} array for each SA-CIS state
         """
-        term1 = np.einsum('jkbc,ib,cajk->ia', self.g_tensor[:self.nel, :self.nel, self.nel:, self.nel:], Ci, self.w_tensor, optimize=True)
-        term2 = np.einsum('jkbc,ja,cbik->ia', self.g_tensor[:self.nel, :self.nel, self.nel:, self.nel:], Ci, self.w_tensor, optimize=True)
-        term3 = np.einsum('jkbc,jb,acik->ia', self.g_tensor[:self.nel, :self.nel, self.nel:, self.nel:], Ci, self.w_tensor, optimize=True)
+        term1 = contract('jkbc,ib,cajk->ia', self.g_tensor[:self.nel, :self.nel, self.nel:, self.nel:], Ci, self.w_tensor, optimize=True)
+        term2 = contract('jkbc,ja,cbik->ia', self.g_tensor[:self.nel, :self.nel, self.nel:, self.nel:], Ci, self.w_tensor, optimize=True)
+        term3 = contract('jkbc,jb,acik->ia', self.g_tensor[:self.nel, :self.nel, self.nel:, self.nel:], Ci, self.w_tensor, optimize=True)
         varray = 0.5*(term1 + term2 + (2*term3))
         return varray
 
@@ -86,7 +87,7 @@ class cis_d:
         Ci = self.spin_block_ci(1/np.sqrt(2) * self.ccis[:, i])
         Ui = self.comp_utensor(Ci)
         Vi = self.comp_varray(Ci)
-        Ei_d_corr = -0.25*np.einsum('ijab,abij', Ui.transpose(2,3,0,1), Ui/(self.delta-Ei), optimize=True)
+        Ei_d_corr = -0.25*contract('ijab,abij', Ui.transpose(2,3,0,1), Ui/(self.delta-Ei), optimize=True)
         Ei_t_corr = np.sum(Ci*Vi)
         Ei_corr = Ei_d_corr + Ei_t_corr
         print('%3.4f \t %3.4f \t %3.4f' % (Ei_d_corr, Ei_t_corr, Ei_corr))
