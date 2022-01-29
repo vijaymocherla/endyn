@@ -29,6 +29,8 @@ def comp_cis_hamiltonian(eps, mo_erints, orbinfo):
 
 
 def multp_comp_cis_hamiltonian(eps, mo_erints, orbinfo, ncore):
+    """Parallelised implementation to get the HCIS Matrix
+    """
     nocc, nvir, nmo = orbinfo
     excitation_singles = list(product(range(nocc), range(nocc, nmo)))
     nDets = (nocc * nvir) + 1
