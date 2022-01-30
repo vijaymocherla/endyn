@@ -5,7 +5,7 @@ from itertools import product
 from opt_einsum import contract 
 import numpy as np
 
-class cis_d:
+class CIS_D:
     """ A class to compute perturbative corrections from doubles(D) for enegies from configuration interation singles(CIS).
     """
     def __init__(self, cis_eigvals, cis_eigvecs, eps, mo_so_erints, orbinfo):
