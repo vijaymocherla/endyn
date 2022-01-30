@@ -3,7 +3,7 @@ import numpy as np
 import gc
 
 
-class aoint:
+class psi4utils:
     """Helper class to get AO integrals and other abinitio data from PSI4 
        for time-dependent configuration interaction(TDCI) calculations.
     """
@@ -25,7 +25,6 @@ class aoint:
             self.wfn = psi4.core.Wavefunction.build(mol, psi4.core.get_global_option('basis'))   
         self.mints = psi4.core.MintsHelper(self.wfn.basisset())
 
-
     @staticmethod    
     def get_mol_str(molfile):
         """Reads input geometry provided in .xyz file into a string.
@@ -34,8 +33,66 @@ class aoint:
             mol_str = input_file.read()
         return mol_str
 
+    @staticmethod    
+    def check_mem_eri(nbf, numpy_memory):
+        """Checks memory requirements to store an ERI tensor
+        """
+        eri_tensor_size = (nbf**4) * 8.e-9
+        print("Size of the ERI tensor will be %4.2f Gb" % (eri_tensor_size))
+        memory_footprint = eri_tensor_size * 1.5
+        if eri_tensor_size > numpy_memory:
+            psi4.core.clean()
+            raise Exception("Estimated memory utlisation (%4.2f Gb) exceeds \
+                            alloted memory limit (%4.2f Gb)" % (memory_footprint, numpy_memory))
+        else:
+            return 1                     
 
-    def get_ao_oeints(self):
+    @staticmethod
+    def get_orb_info(wfn):    
+        # Print basis and orbital information
+        nbf = wfn.basisset().nbf()
+        nalpha = wfn.nalpha()
+        nbeta = wfn.nbeta()
+        nso = 2 * nbf
+        nocc = nalpha 
+        nvir = nbf - nocc
+        print(' ORBITAL INFORMATION  \n'
+               '-----------------------\n'
+               'Basis functions   : %i  \n' % nbf    + 
+               'Spin Orbitals     : %i  \n' % nso    +
+               'Alpha Orbitals    : %i  \n' % nalpha + 
+               'Beta Orbitals     : %i  \n' % nbeta  + 
+               'Occupied Orbitals : %i  \n' % nocc   +
+               'Virtual Orbitals  : %i  \n' % nvir)
+        return(nbf, nalpha, nbeta, nso, nocc, nvir)
+
+    @staticmethod
+    def eri_ao2mo(Ca, ao_erints, greedy=False):
+        if greedy:
+            # TODO Check precision issues involved if greedy=True
+            size = Ca.shape[0]
+            mo_erints = np.dot(Ca.T, ao_erints.reshape(size, -1))
+            mo_erints = np.dot(mo_erints.reshape(-1, size), Ca)
+            mo_erints = mo_erints.reshape(size, size, size, size).transpose(1, 0, 3, 2)
+            mo_erints = np.dot(Ca.T, mo_erints.reshape(size, -1))
+            mo_erints = np.dot(mo_erints.reshape(-1, size), Ca)
+            mo_erints = mo_erints.reshape(size, size, size, size).transpose(1, 0, 3, 2)
+        else:
+            mo_erints = np.einsum('pqrs,pI,qJ,rK,sL->IJKL', ao_erints, Ca, Ca, Ca, Ca, optimize=True)
+        return mo_erints
+
+    @staticmethod
+    def matrix_ao2mo(Ca, matrix):
+        mo_matrix = np.einsum('pq,pI,qJ->IJ', matrix, Ca)
+        return mo_matrix
+
+class AOint(psi4utils):
+    """A module to get AO integrals using psi4
+    """
+    def __init__(self, basis, molfile):
+        psi4utils.__init__(self, basis, molfile)
+        
+    def save_ao_oeints(self):
         """Saves S, T and V integrals in AO basis as a .npz file.
            For example, you can load the saved integrals as follows:
            ```py
@@ -55,8 +112,7 @@ class aoint:
                 potential_aoints=potential_aoints)
         return 1
     
-    
-    def get_ao_erints(self): 
+    def save_ao_erints(self): 
         """Saves 2-electron repulsion integrals in AO basis as a .npz file.
            For example, you can load the saved integrals as follows:
            ```py
@@ -70,23 +126,7 @@ class aoint:
             np.savez('ao_erints.npz', electron_repulsion_aoints=electron_repulsion_aoints)
         return 1    
 
-
-    @staticmethod    
-    def check_mem_eri(nbf, numpy_memory):
-        """Checks memory requirements to store an ERI tensor
-        """
-        eri_tensor_size = (nbf**4) * 8.e-9
-        print("Size of the ERI tensor will be %4.2f Gb" % (eri_tensor_size))
-        memory_footprint = eri_tensor_size * 1.5
-        if eri_tensor_size > numpy_memory:
-            psi4.core.clean()
-            raise Exception("Estimated memory utlisation (%4.2f Gb) exceeds \
-                            alloted memory limit (%4.2f Gb)" % (memory_footprint, numpy_memory))
-        else:
-            return 1                     
-
-
-    def get_ao_dpints(self):
+    def save_ao_dpints(self):
         """Saves dipole integrals in AO basis as a .npz file.
            For example, you can load the saved integrals as follows:
            ```py
@@ -104,7 +144,7 @@ class aoint:
         return 1
     
     
-    def get_mo_info(self):
+    def save_mo_info(self):
         """Runs an SCF calculation and saves info about molecular orbitals.  
            Saved MO energies and coefficients can be accessed as follows:
            ```py
@@ -125,22 +165,4 @@ class aoint:
         np.savez('mo_scf_info.npz', eps_a=eps_a, Ca=Ca)
         return 1
 
-
-    def get_orb_info(self):    
-        # Print basis and orbital information
-        nbf = self.wfn.basisset().nbf()
-        nalpha = self.wfn.nalpha()
-        nbeta = self.wfn.nbeta()
-        nso = 2 * nbf
-        nocc = nalpha 
-        nvir = nbf - nocc
-        print(' ORBITAL INFORMATION  \n'
-               '-----------------------\n'
-               'Basis functions   : %i  \n' % nbf    + 
-               'Spin Orbitals     : %i  \n' % nso    +
-               'Alpha Orbitals    : %i  \n' % nalpha + 
-               'Beta Orbitals     : %i  \n' % nbeta  + 
-               'Occupied Orbitals : %i  \n' % nocc   +
-               'Virtual Orbitals  : %i  \n' % nvir)
-        return(nbf, nalpha, nbeta, nso, nocc, nvir)
    

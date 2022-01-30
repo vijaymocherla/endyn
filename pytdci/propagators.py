@@ -39,7 +39,7 @@ class RK4(object):
         return self.y_list, self.t_list   
 
 
-class exact_prop(object):
+class ExactProp(object):
     """Given eigenvalues and eigen-vectors(in a certain basis), the methods of 
     exact_prop() aids in exact time-propagation.  
     """
