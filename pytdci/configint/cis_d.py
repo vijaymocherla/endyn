@@ -104,5 +104,6 @@ class CIS_D:
             raise Exception('nvals can not be greater than no. of CIS eigen values')
         # print('Ui.shape, self_energy.shape, Vi.shape, Ci.shape')
         with Pool(processes=ncores) as pool:
-            E_CIS_D = pool.map(self.comp_dcorr, range(nevals))
-        return E_CIS_D
+            ecis_d = self.ecis[:nevals] + np.array(pool.map(self.comp_dcorr, range(nevals)))
+        return ecis_d
+
