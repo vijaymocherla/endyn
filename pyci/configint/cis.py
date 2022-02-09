@@ -3,7 +3,7 @@ from itertools import product
 from multiprocessing import Pool, Process
 
 
-def comp_cis_hamiltonian(eps, mo_erints, orbinfo):
+def comp_cis_hamiltonian(eps, mo_erints, orbinfo, parallelised=False, ncore=1):
     """Computes the configuration-interaction singles(CIS) hamiltonian in the
     spin-adapted singlet determinant basis.
     ! Note: The Hamiltonian needs scaled to SCF ground state energy, therefore 
@@ -14,51 +14,65 @@ def comp_cis_hamiltonian(eps, mo_erints, orbinfo):
     orbinfo : (nocc, nvir, nmo) tuple to pass orbital information.
     ---------------------------------------------------------------------------
     """
-    nocc, nvir, nmo = orbinfo
-    excitation_singles = list(product(range(nocc), range(nocc, nmo)))
-    nDets = (nocc * nvir) + 1
-    HCIS = np.zeros((nDets, nDets))
-    for P, L_ex in enumerate(excitation_singles):
-        a, r = L_ex
-        for Q, R_ex in enumerate(excitation_singles):
-            b, s = R_ex
-            HCIS[P+1, Q+1] = (((eps[r] - eps[a]) * (a == b) * (r == s))
-                              - mo_erints[r, s, b, a]
-                              + (2 * mo_erints[r, a, b, s]))
-    return HCIS
-
-
-def multp_comp_cis_hamiltonian(eps, mo_erints, orbinfo, ncore):
-    """Parallelised implementation to get the HCIS Matrix
-    """
-    nocc, nvir, nmo = orbinfo
-    excitation_singles = list(product(range(nocc), range(nocc, nmo)))
-    nDets = (nocc * nvir) + 1
-    HCIS = np.zeros((nDets, nDets))
-
-    def multp_cis_mat_row(P):
-        try:
-            row = []
-            a, r = excitation_singles[P]
+    if parallelised:
+        multp_obj = multp_cis(eps, mo_erints, orbinfo)
+        HCIS = multp_obj.comp_hcis(ncore)
+    else:    
+        nocc, nvir, nmo = orbinfo
+        excitation_singles = list(product(range(nocc), range(nocc, nmo)))
+        nDets = (nocc * nvir) + 1
+        HCIS = np.zeros((nDets, nDets))
+        for P, L_ex in enumerate(excitation_singles):
+            a, r = L_ex
             for Q, R_ex in enumerate(excitation_singles):
                 b, s = R_ex
                 HCIS[P+1, Q+1] = (((eps[r] - eps[a]) * (a == b) * (r == s))
-                                  - mo_erints[r, s, b, a]
-                                  + (2 * mo_erints[r, a, b, s]))
-            return 1
-        except RuntimeError("Something went wrong while computing row %i" % (P+1)):
-            return 0
-
-    with Pool(processes=ncore) as pool:
-        row_log = pool.map(multp_cis_mat_row, range(len(excitation_singles)))
-    # checking if all process finished succesfully
-    if sum(row_log) != int(len(excitation_singles)-1):
-        for idx, val in enumerate(row_log):
-            if val != 0:
-                print('Something went wrong while computing row %i' % (idx+1))
-    else:
-        print("All rows were computed successfully! \n")
+                                - mo_erints[r, s, b, a]
+                                + (2 * mo_erints[r, a, b, s]))
     return HCIS
+
+
+
+class multp_cis:
+    def __init__(self, eps, mo_erints, orbinfo):
+        """Parallelised implementation to get the HCIS Matrix
+        """
+        nocc, nvir, nmo = orbinfo
+        self.excitation_singles = list(product(range(nocc), range(nocc, nmo)))
+        self.nDets = (nocc * nvir) + 1
+        self.mo_erints = mo_erints
+        self.eps = eps
+
+    def comp_cis_mat_row(self, P):
+        row = np.zeros(self.nDets)
+        try:
+            a, r = self.excitation_singles[P]
+            for Q, R_ex in enumerate(self.excitation_singles):
+                b, s = R_ex
+                row[Q+1] = (((self.eps[r] - self.eps[a]) * (a == b) * (r == s))
+                                  - self.mo_erints[r, s, b, a]
+                                  + (2*self.mo_erints[r, a, b, s]))
+                #print(self.HCIS[P+1, Q+1])                                  
+            return row, 1
+        except :
+            raise Exception("Something went wrong while computing row %i" % (P+1))
+            return row, 0
+
+    def comp_hcis(self, ncore):
+        HCIS = np.zeros((self.nDets, self.nDets))
+        with Pool(processes=ncore) as pool:
+            rows_data = pool.map(self.comp_cis_mat_row, range(self.nDets-1))
+        for i in range(HCIS.shape[0]-1):
+            HCIS[i+1] = rows_data[i][0]     
+        # checking if all process finished succesfully
+        row_log = [rows_data[i][1] for i in range(len(rows_data))]
+        if sum(row_log) != int(len(self.excitation_singles)):
+            for idx, val in enumerate(row_log):
+                if val != 1:
+                    print('Something went wrong while computing row %i' % (idx+1))
+        else:
+            print("All rows were computed successfully! \n")
+        return HCIS
 
 
 def comp_cis_edipole_r(mo_edipole_r, nocc, nvir):

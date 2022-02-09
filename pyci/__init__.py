@@ -4,16 +4,22 @@ from pyci.utils import (
 )
 from pyci.propagators import (
     RK4,
-    ExactProp
+    ExactProp,
 )    
 
 from pyci.configint import (
     CIS_D,
     comp_cis_hamiltonian,
-    multp_comp_cis_hamiltonian,
     comp_cis_edipole_r,
-    comp_cis_edipoles
-
+    comp_cis_edipoles,
+    multp_cis,
 )
+
+from pytdci.utils import (
+    psi4utils,
+    AOint,
+)
+
+
 
 from ._version import __version__
