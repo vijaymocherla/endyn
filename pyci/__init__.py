@@ -1,13 +1,13 @@
-from pytdci.utils import (
+from pyci.utils import (
     psi4utils,
     AOint
 )
-from pytdci.propagators import (
+from pyci.propagators import (
     RK4,
     ExactProp
 )    
 
-from pytdci.configint import (
+from pyci.configint import (
     CIS_D,
     comp_cis_hamiltonian,
     multp_comp_cis_hamiltonian,

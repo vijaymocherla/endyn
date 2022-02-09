@@ -15,12 +15,12 @@ from setuptools import setup, Extension, find_packages
 # 
 
 __version__ = ''
-exec(open('pytdci/_version.py').read())
+exec(open('pyci/_version.py').read())
 
 # ext_modules = []
 
 # Package setup commands 
-setup(name = 'pytdci',
+setup(name = 'pyci',
       version = __version__,
       python_requires = '>=3.7',
       requires = ['numpy (>=1.22)',  # need to check other requirements like matplotlib, itertools
@@ -28,16 +28,16 @@ setup(name = 'pytdci',
                   'psi4 (>=1.4)', 
                   'cython (>=0.21)'],  
       packages = find_packages(where='pytdci'),
-      package_dir={'': 'pytdci'},
+      package_dir={'': 'pyci'},
       include_package_data = True,
       # ext_modules = cythonize(EXT_MODULES),
       # cmdclass = {'build_ext': build_ext},
       author = 'Sai Vijay Mocherla',
       author_email = 'vijaysai.mocherla@gmail.com',
       license = 'MIT',
-      description = 'an open-source TDCI package written in python',
+      description = 'A python module that demonstrates Configuration interaction Calculations',
       long_description  = '',
       keywords = 'configuration-interaction, electron dynamics, electronic-structure',
-      url = 'https://github.com/vijaymocherla/pytdci'
+      url = 'https://github.com/vijaymocherla/pyci'
       # classifiers = CLASSIFIERS, 
 )
