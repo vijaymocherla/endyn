@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-"""pytdci setup
+"""pyci setup
 """
 import os
 import sys
@@ -26,8 +26,9 @@ setup(name = 'pyci',
       requires = ['numpy (>=1.22)',  # need to check other requirements like matplotlib, itertools
                   'scipy (>=1.0)',
                   'psi4 (>=1.4)', 
-                  'cython (>=0.21)'],  
-      packages = find_packages(where='pytdci'),
+                  'cython (>=0.21)',
+                  'opt_einsum (>=3.3.0)'],  
+      packages = find_packages(where='pyci'),
       package_dir={'': 'pyci'},
       include_package_data = True,
       # ext_modules = cythonize(EXT_MODULES),

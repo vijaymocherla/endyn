@@ -2,7 +2,7 @@ from pyci.utils import (
     psi4utils,
     AOint
 )
-from pyci.propagators import (
+from pyci.integrators import (
     RK4,
     ExactProp,
 )    
@@ -15,11 +15,9 @@ from pyci.configint import (
     multp_cis,
 )
 
-from pytdci.utils import (
+from pyci.utils import (
     psi4utils,
     AOint,
 )
 
-
-
-from ._version import __version__
+from ._version import __version__   
