@@ -4,6 +4,7 @@ from multiprocessing import Process, Pool
 from itertools import product
 from opt_einsum import contract 
 import numpy as np
+import signal
 
 class CIS_D:
     """ A class to compute perturbative corrections from doubles(D) for enegies from configuration interation singles(CIS).
@@ -90,7 +91,7 @@ class CIS_D:
         Ei_d_corr = -0.25*contract('ijab,abij', Ui.transpose(2,3,0,1), Ui/(self.delta-Ei), optimize=True)
         Ei_t_corr = np.sum(Ci*Vi)
         Ei_corr = Ei_d_corr + Ei_t_corr
-        print('%3.4f \t %3.4f \t %3.4f' % (Ei_d_corr, Ei_t_corr, Ei_corr))
+        print('%3.4f \t %3.4f \t %3.4f \t %3.4f' % (Ei_d_corr, Ei_t_corr, Ei_corr, Ei+Ei_corr))
         return Ei_corr
 
     def comp_cis_d(self, nevals, ncores=2):
@@ -103,7 +104,11 @@ class CIS_D:
         if nevals > len(self.ecis):
             raise Exception('nvals can not be greater than no. of CIS eigen values')
         # print('Ui.shape, self_energy.shape, Vi.shape, Ci.shape')
+        print('Ei_d_corr \t Ei_t_corr \t Ei_corr \t Ei_cis(d)')
         with Pool(processes=ncores) as pool:
-            ecis_d = self.ecis[:nevals] + np.array(pool.map(self.comp_dcorr, range(nevals)))
+            async_object = pool.map_async(self.comp_dcorr, range(nevals))
+            ecis_d = self.ecis[:nevals] + np.array(async_object.get())
+            pool.close()
+            pool.join()
         return ecis_d
 

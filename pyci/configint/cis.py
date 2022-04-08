@@ -61,7 +61,10 @@ class multp_cis:
     def comp_hcis(self, ncore):
         HCIS = np.zeros((self.nDets, self.nDets))
         with Pool(processes=ncore) as pool:
-            rows_data = pool.map(self.comp_cis_mat_row, range(self.nDets-1))
+            async_object = pool.map_async(self.comp_cis_mat_row, range(self.nDets-1))
+            rows_data = async_object.get()
+            pool.close()
+            pool.join() 
         for i in range(HCIS.shape[0]-1):
             HCIS[i+1] = rows_data[i][0]     
         # checking if all process finished succesfully

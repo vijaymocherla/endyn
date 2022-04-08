@@ -25,6 +25,15 @@ class psi4utils:
             self.wfn = psi4.core.Wavefunction.build(mol, psi4.core.get_global_option('basis'))   
         self.mints = psi4.core.MintsHelper(self.wfn.basisset())
 
+    def eri_mo2so(self, Ca, Cb):
+        """Returns MO spin eri tensor in physicist's notation
+        """
+        Ca_psi4_matrix = psi4.core.Matrix.from_array(Ca)
+        Cb_psi4_matrix = psi4.core.Matrix.from_array(Cb)
+        mo_spin_eri_tensor = np.asarray(self.mints.mo_spin_eri(Ca_psi4_matrix, Cb_psi4_matrix))
+        mo_spin_eri_tensor = mo_spin_eri_tensor.transpose(0, 2, 1, 3)
+        return mo_spin_eri_tensor
+
     @staticmethod    
     def get_mol_str(molfile):
         """Reads input geometry provided in .xyz file into a string.
@@ -38,7 +47,7 @@ class psi4utils:
         """Checks memory requirements to store an ERI tensor
         """
         eri_tensor_size = (nbf**4) * 8.e-9
-        print("Size of the ERI tensor will be %4.2f Gb" % (eri_tensor_size))
+        print("Size of the ERI tensor will be %4.2f Gb\n" % (eri_tensor_size))
         memory_footprint = eri_tensor_size * 1.5
         if eri_tensor_size > numpy_memory:
             psi4.core.clean()
@@ -85,6 +94,7 @@ class psi4utils:
     def matrix_ao2mo(Ca, matrix):
         mo_matrix = np.einsum('pq,pI,qJ->IJ', matrix, Ca)
         return mo_matrix
+    
 
 
 
@@ -172,4 +182,3 @@ class AOint(psi4utils):
         # eps_b = np.array(scf_wfn.epsilon_b_subset('AO', 'ALL'))
         np.savez('mo_scf_info.npz', eps_a=eps_a, Ca=Ca)
         return 1
-   
