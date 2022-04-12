@@ -101,8 +101,9 @@ class CIS_D:
         nvals: no. of first few eigen values for which corrections are to be computed.
         ncore: no. of cores to be used for computations(default = 2).
         """
-        if nevals > len(self.ecis):
-            raise Exception('nvals can not be greater than no. of CIS eigen values')
+        if type(nevals) is str:
+            if nevals > len(self.ecis):
+                raise Exception('nvals can not be greater than no. of CIS eigen values')
         # print('Ui.shape, self_energy.shape, Vi.shape, Ci.shape')
         print('Ei_d_corr \t Ei_t_corr \t Ei_corr \t Ei_cis(d)')
         with Pool(processes=ncores) as pool:
@@ -111,4 +112,3 @@ class CIS_D:
             pool.close()
             pool.join()
         return ecis_d
-

@@ -1,19 +1,21 @@
 import psi4
 import numpy as np
 import gc
+import os
 
 
 class psi4utils:
     """Helper class to get AO integrals and other abinitio data from PSI4 
        for time-dependent configuration interaction(TDCI) calculations.
     """
-    def __init__(self, basis, molfile, psi4mem='2 Gb'):
+    def __init__(self, basis, molfile, psi4mem='2 Gb', scratch='./'):
+        self.scratch = scratch
         psi4.core.set_output_file('psi4_output.dat', False) # psi4 output
         psi4.set_memory(psi4mem) # psi4 memory 
         self.numpy_memory = 2 # numpy memory
         self.options_dict = { 'basis': basis,
                             'reference' : 'rhf',
-                            'scf_type' : 'df',
+                            'scf_type' : 'pk',
                             'e_convergence' : 1e-12,
                             'd_convergence' : 1e-10}            
         psi4.set_options(self.options_dict)               
@@ -22,7 +24,7 @@ class psi4utils:
         if self.wfn.basisset().has_puream():
             self.options_dict['puream'] = 'true'
             psi4.set_options(self.options_dict)
-            self.wfn = psi4.core.Wavefunction.build(mol, psi4.core.get_global_option('basis'))   
+            self.wfn = psi4.core.Wavefunction.build(self.mol, psi4.core.get_global_option('basis'))   
         self.mints = psi4.core.MintsHelper(self.wfn.basisset())
 
     def eri_mo2so(self, Ca, Cb):
@@ -60,20 +62,22 @@ class psi4utils:
     def get_orb_info(wfn):    
         # Print basis and orbital information
         nbf = wfn.basisset().nbf()
+        nmo = wfn.nmo()
         nalpha = wfn.nalpha()
         nbeta = wfn.nbeta()
-        nso = 2 * nbf
+        nso = 2 * nmo
         nocc = nalpha 
-        nvir = nbf - nocc
+        nvir = nmo - nocc
         print(' ORBITAL INFORMATION  \n'
                '-----------------------\n'
                'Basis functions   : %i  \n' % nbf    + 
+               'Molecular orbitals: %i  \n' % nmo    +
                'Spin Orbitals     : %i  \n' % nso    +
                'Alpha Orbitals    : %i  \n' % nalpha + 
                'Beta Orbitals     : %i  \n' % nbeta  + 
                'Occupied Orbitals : %i  \n' % nocc   +
                'Virtual Orbitals  : %i  \n' % nvir)
-        return(nbf, nalpha, nbeta, nso, nocc, nvir)
+        return(nbf, nmo, nso, nalpha, nbeta, nocc, nvir)
 
     @staticmethod
     def eri_ao2mo(Ca, ao_erints, greedy=False):
@@ -101,8 +105,8 @@ class psi4utils:
 class AOint(psi4utils):
     """A module to get AO integrals using psi4
     """
-    def __init__(self, basis, molfile):
-        psi4utils.__init__(self, basis, molfile, psi4mem='2 Gb')
+    def __init__(self, basis, molfile, psi4mem='2 Gb', scratch='./'):
+        psi4utils.__init__(self, basis, molfile, psi4mem, scratch)
         
     def save_ao_oeints(self):
         """Saves S, T and V integrals in AO basis as a .npz file.
@@ -118,7 +122,7 @@ class AOint(psi4utils):
         overlap_aoints = np.asarray(self.mints.ao_overlap())
         kinetic_aoints = np.asarray(self.mints.ao_kinetic())
         potential_aoints = np.asarray(self.mints.ao_potential())
-        np.savez('ao_oeints.npz', 
+        np.savez(self.scratch+'ao_oeints.npz', 
                 overlap_aoints=overlap_aoints,
                 kinetic_aoints=kinetic_aoints,
                 potential_aoints=potential_aoints)
@@ -135,7 +139,7 @@ class AOint(psi4utils):
         nbf = self.wfn.basisset().nbf() 
         if psi4utils.check_mem_eri(nbf, self.numpy_memory): 
             electron_repulsion_aoints = np.asarray(self.mints.ao_eri())
-            np.savez('ao_erints.npz', electron_repulsion_aoints=electron_repulsion_aoints)
+            np.savez(self.scratch+'ao_erints.npz', electron_repulsion_aoints=electron_repulsion_aoints)
         return 1    
 
     def save_ao_dpints(self):
@@ -149,7 +153,7 @@ class AOint(psi4utils):
            ```
         """
         dpx_aoints, dpy_aoints, dpz_aoints =  np.asarray(self.mints.ao_dipole())
-        np.savez('ao_dpints.npz',
+        np.savez(self.scratch+'ao_dpints.npz',
                 dpx_aoints=dpx_aoints,
                 dpy_aoints=dpy_aoints,
                 dpz_aoints=dpz_aoints)
@@ -171,14 +175,14 @@ class AOint(psi4utils):
            >>> Ca = mo_info_data['Ca'] 
            ```
         """
-        scf_energy, scf_wfn = psi4.energy('scf', return_wfn=True)
-        print('Ground state SCF Energy : %3.8f \n' % scf_energy)        # MO coefficients and energies
+        self.scf_energy, self.scf_wfn = psi4.energy('scf', return_wfn=True)
+        print('Ground state SCF Energy : %3.8f \n' % self.scf_energy)        # MO coefficients and energies
         print('Nuclear repulsion energy : %3.8f \n' % self.mol.nuclear_repulsion_energy())
-        print('Total electronic energy : %3.8f \n' % (scf_energy - self.mol.nuclear_repulsion_energy()))
-        eps_a = np.array(scf_wfn.epsilon_a_subset('AO', 'ALL'))
-        Ca = np.array(scf_wfn.Ca_subset('AO','ALL'))
+        print('Total electronic energy : %3.8f \n' % (self.scf_energy - self.mol.nuclear_repulsion_energy()))
+        eps_a = np.array(self.scf_wfn.epsilon_a_subset('AO', 'ALL'))
+        Ca = np.array(self.scf_wfn.Ca_subset('AO','ALL'))
         # beta orbitals
         # Cb = np.array(scf_wfn.Cb_subset('AO','ALL'))
         # eps_b = np.array(scf_wfn.epsilon_b_subset('AO', 'ALL'))
-        np.savez('mo_scf_info.npz', eps_a=eps_a, Ca=Ca)
+        np.savez(self.scratch+'mo_scf_info.npz', eps_a=eps_a, Ca=Ca)
         return 1

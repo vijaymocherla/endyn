@@ -52,7 +52,8 @@ class bitDet(object):
         while bitstr != 0:
             if bitstr & 1 == 1:  # bitwise AND
                 orblist.append(i)
-                bitstr >>= 1  # RIGHT-SHIFT by 1 bit
+            bitstr >>= 1  # RIGHT-SHIFT by 1 bit
+            i += 1
         return orblist
 
 
@@ -71,6 +72,15 @@ class bitDet(object):
     @staticmethod
     def countorbitals(orblist):
         return len(orblist)
+
+
+    @staticmethod
+    def get_num_common_orbs(det1, det2):
+        """Returns number of common orbitals between 2 determinant bitstrings
+        """
+        num_common_orbs = bitDet.countbits((det1 ^ det2))
+        return num_common_orbs      
+
 
     # Creation and Annhilation operators for Alpha and Beta electrons
     def add_alpha(self, orbidx):
@@ -95,3 +105,4 @@ class bitDet(object):
         """Removes an beta electron from an MO with index=orbidx
         """
         self.beta_bitstr &= ~(1 << orbidx)
+
