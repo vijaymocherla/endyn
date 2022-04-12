@@ -1,6 +1,6 @@
 import numpy as np
 from itertools import product
-from multiprocessing import Pool, Process
+from multiprocessing import Pool
 
 
 def comp_cis_hamiltonian(eps, mo_erints, orbinfo, parallelised=False, ncore=1):
@@ -103,7 +103,7 @@ def comp_cis_edipole_r(mo_edipole_r, nocc, nvir):
 
 def comp_cis_edipoles(mo_edipoles, nocc, nvir):
     """Compute electric dipole operators for cartesian coordinates i,e.
-    -<x>, -<y>, -<z> in spin adapted CSF basis for CIS states.
+        -<x>, -<y>, -<z> in spin adapted CSF basis for CIS states.
     """
     cis_edipoles = [gen_cis_edipoles(mo_edipole, nocc, nvir)
                     for mo_edipole in mo_edipoles]

@@ -1,10 +1,9 @@
 # spin MO version of cis_d 
 
-from multiprocessing import Process, Pool
+from multiprocessing import Pool
 from itertools import product
 from opt_einsum import contract 
 import numpy as np
-import signal
 
 class CIS_D:
     """ A class to compute perturbative corrections from doubles(D) for enegies from configuration interation singles(CIS).
