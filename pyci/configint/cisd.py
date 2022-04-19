@@ -2,9 +2,12 @@
 #
 # Author : Sai Vijay Mocherla <vijaysai.mocherla@gmail.com>
 #
-""" CISD bitstring implementation
+"""CISD bitstring implementation
 """
 
+import numpy as np
+import gc
+from multiprocessing import Pool
 from configint.bitstrings import bitDet, SlaterCondon
 from configint.csf import CSF
 from configint.csf import gen_singlet_doubles, gen_singlet_doubles
@@ -45,15 +48,17 @@ class CISD:
     def comp_cisd_hmatrix_elem(csf1, csf2):
         """Evaluates H-matrix elements using Slater-Condon rule
         """
-        matrix_elem = sum[ci*cj*self.SlaterCondonRule(I,J) 
+        matrix_elem = sum([ci*cj*self.SlaterCondonRule(I,J) 
                             for ci, I in list(zip(csf1.coeff, csf1.Dets))
-                            for cj, J in list(zip(csf2.coeff, csf2.Dets))]
+                            for cj, J in list(zip(csf2.coeff, csf2.Dets))])
         return matrix_elem
     
     def comp_cisd_hmatrix_row(self, P):
+        """Computes only elements of upper triangular matrix in each row
+        """
         row = np.zeros(self.nCSFs)
         try:
-            for Q in range(self.nCSFs):
+            for Q in range(P, self.nCSFs):
                 csf1, csf2 = self.csf_list[P], self.csf_list[Q]
                 row[Q] = CISD.comp_hcisd_matrix_elem(csf1, csf2)
             return row, 1
@@ -62,6 +67,8 @@ class CISD:
             return row, 0
 
     def comp_hcisd(self, ncore):
+        """ Parallel computation HCISD
+        """
         with Pool(processes=ncore) as pool:
             async_object = pool.map_async(self.comp_cisd_matrix_row, range(self.nCSFs))
             rows_data = async_object.get()
@@ -75,5 +82,18 @@ class CISD:
                     print('Something went wrong while computing row %i' % (idx+1))
         else:
             print("All rows were computed successfully! \n")
-        #HCISD = np.array(rows_data[:,0])
-        return np.array(rows_data[:,0])
+        HCISD = np.array(rows_data[:,0])
+        del rows_data
+        gc.collect()
+        for P in range(nCSFs):
+            for Q in range(P, nCSFs):
+                HCISD[Q,P] = HCISD[P,Q]
+        return HCISD
+    
+    def make_rdm1(self):
+        nel, nbf, nmo = orbinfo
+        nocc, nvir = int(nel/2), int((nmo-nel)/2)
+        act_occ, act_vir = active_space
+        rdm1 = np.zeros((nmo, nmo))
+
+        return rdm1  
