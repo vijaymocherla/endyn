@@ -2,26 +2,26 @@
 #
 # Author : Sai Vijay Mocherla <vijaysai.mocherla@gmail.com>
 #
-"""CIS
+"""Simple RCIS - restricted configuration interaction singles
 """
 import numpy as np
 from itertools import product
 from multiprocessing import Pool
 
 
-def comp_cis_hamiltonian(eps, mo_erints, orbinfo, parallelised=False, ncore=1):
+def comp_cis_hamiltonian(orbinfo, mo_eps, mo_eris, parallelised=False, ncore=1):
     """Computes the configuration-interaction singles(CIS) hamiltonian in the
     spin-adapted singlet determinant basis.
     ! Note: The Hamiltonian needs scaled to SCF ground state energy, therefore 
     the eigen values need to be scaled back.
     --------------------------------------------------------------------------
-    eps : array of molecular orbtial(MO) energies from SCF calculations.
-    mo_erints : 4-d array of 2e- integrals using chemists notation in MO basis.
+    mo_eps : array of molecular orbtial(MO) energies from SCF calculations.
+    mo_eris : 4-d array of 2e- integrals using chemists notation in MO basis.
     orbinfo : (nocc, nvir, nmo) tuple to pass orbital information.
     ---------------------------------------------------------------------------
     """
     if parallelised:
-        multp_obj = multp_cis(eps, mo_erints, orbinfo)
+        multp_obj = multp_cis(orbinfo, mo_eps, mo_eris)
         HCIS = multp_obj.comp_hcis(ncore)
     else:    
         nocc, nvir, nmo = orbinfo
@@ -32,22 +32,23 @@ def comp_cis_hamiltonian(eps, mo_erints, orbinfo, parallelised=False, ncore=1):
             a, r = L_ex
             for Q, R_ex in enumerate(excitation_singles):
                 b, s = R_ex
-                HCIS[P+1, Q+1] = (((eps[r] - eps[a]) * (a == b) * (r == s))
-                                - mo_erints[r, s, b, a]
-                                + (2 * mo_erints[r, a, b, s]))
+                HCIS[P+1, Q+1] = (((mo_eps[r] - mo_eps[a]) * (a == b) * (r == s))
+                                - mo_eris[r, s, b, a]
+                                + (2 * mo_eris[r, a, b, s]))
     return HCIS
 
 
 
 class multp_cis:
-    def __init__(self, eps, mo_erints, orbinfo):
+    def __init__(self, orbinfo, mo_eps, mo_eris):
         """Parallelised implementation to get the HCIS Matrix
         """
-        nocc, nvir, nmo = orbinfo
+        nel, nbf, nmo = orbinfo
+        nocc, nvir = int(nel/2), int((nmo-nel)/2)
         self.excitation_singles = list(product(range(nocc), range(nocc, nmo)))
         self.nDets = (nocc * nvir) + 1
-        self.mo_erints = mo_erints
-        self.eps = eps
+        self.mo_eris = mo_eris
+        self.mo_eps = mo_eps
 
     def comp_cis_mat_row(self, P):
         row = np.zeros(self.nDets)
@@ -55,10 +56,8 @@ class multp_cis:
             a, r = self.excitation_singles[P]
             for Q, R_ex in enumerate(self.excitation_singles):
                 b, s = R_ex
-                row[Q+1] = (((self.eps[r] - self.eps[a]) * (a == b) * (r == s))
-                                  - self.mo_erints[r, s, b, a]
-                                  + (2*self.mo_erints[r, a, b, s]))
-                #print(self.HCIS[P+1, Q+1])                                  
+                row[Q+1] = (((self.mo_eps[r] - self.mo_eps[a]) * (a == b) * (r == s))
+                            + 2*self.mo_eris[r, a, b, s] - self.mo_eris[r, s, b, a])
             return row, 1
         except :
             raise Exception("Something went wrong while computing row %i" % (P+1))
@@ -84,10 +83,11 @@ class multp_cis:
         return HCIS
 
 
-def comp_cis_edipole_r(mo_edipole_r, nocc, nvir):
+def comp_cis_edipole_r(orbinfo, mo_edipole_r):
     """Computes electric dipole operator for a particular cartesian 
     coordinate(say < -r >), in spin adapted CSF basis for CIS states.
     """
+    nocc, nvir, nmo = orbinfo
     nDets = (nocc * nvir) + 1
     excitation_singles = list(product(range(nocc), range(nocc, nocc+nvir)))
     cis_edipole_r = np.zeros((nDets, nDets))
@@ -107,10 +107,10 @@ def comp_cis_edipole_r(mo_edipole_r, nocc, nvir):
     return cis_edipole_r
 
 
-def comp_cis_edipoles(mo_edipoles, nocc, nvir):
+def comp_cis_edipoles(orbinfo, mo_edipoles):
     """Compute electric dipole operators for cartesian coordinates i,e.
         -<x>, -<y>, -<z> in spin adapted CSF basis for CIS states.
     """
-    cis_edipoles = [comp_cis_edipole_r(mo_edipole, nocc, nvir)
+    cis_edipoles = [comp_cis_edipole_r(orbinfo, mo_edipole)
                     for mo_edipole in mo_edipoles]
     return cis_edipoles

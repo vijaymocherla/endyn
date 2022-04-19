@@ -12,37 +12,38 @@ import numpy as np
 class CIS_D:
     """ A class to compute perturbative corrections from doubles(D) for enegies from configuration interation singles(CIS).
     """
-    def __init__(self, cis_eigvals, cis_eigvecs, eps, mo_so_erints, orbinfo):
+    def __init__(self, orbinfo, cis_eigvals, cis_eigvecs, mo_eps, mo_so_eris):
         """input args :
             cis_eigvals: eigenvalues of the CIS hamiltonian,
             cis_eigvecs: eigenvectors of the CIS hamiltonian,
-            eps: energies of the Molecular Orbitals(MOs) used for CI calculation
-            mo_so_erints: electron repulsion integrals tensor in SO basis using chemists notation.
+            mo_eps: energies of the Molecular Orbitals(MOs) used for CI calculation
+            mo_so_eris: electron repulsion integrals tensor in SO basis using chemists notation.
             orbinfo: a tuple of the form (nocc, nvir, nmo)
             nocc: no. of occupied orbitals
             nvir: no. of virtual orbitals
             nmo: no. of molecular orbitals
         """
-        self.nocc, self.nvir, self.nmo = orbinfo
+        self.nel, self.nbf, self.nmo = orbinfo
+        self.nocc, self.nvir, self.nmo = int(self.nel/2), int((self.nmo-self.nel)/2), self.nmo
+        self.nso = 2*self.nmo
         self.cis_iterlist = list(product(range(self.nocc), range(self.nocc,self.nmo)))
-        self.nel, self.nso = 2*self.nocc, 2*self.nmo
         self.occ_list = range(self.nel)
         self.vir_list = range(self.nel, self.nso)
         self.ecis = cis_eigvals
         self.ccis = cis_eigvecs[1:, :]
-        self.delta = self.comp_delta(eps)
-        self.g_tensor = mo_so_erints - mo_so_erints.transpose(0, 1, 3, 2)
+        self.delta = self.comp_delta(mo_eps)
+        self.g_tensor = mo_so_eris - mo_so_eris.transpose(0, 1, 3, 2)
         self.w_tensor = -self.g_tensor[self.nel:, self.nel:, :self.nel, :self.nel]/self.delta  # g_vvoo / delta[vvoo]
         
-    def comp_delta(self, eps):
+    def comp_delta(self, mo_eps):
         """Computes the tensor delta_{ab}^{rs} with orbital energy differences
         """
-        so_eps = np.kron(eps, np.array([1.0, 1.0]))
+        so_mo_eps = np.kron(mo_eps, np.array([1.0, 1.0]))
         delta = np.full(([self.nso]*4), 1.0)
         iterlist = list(product(self.vir_list, self.vir_list, self.occ_list, self.occ_list))
         for conf in iterlist:
             a, b, i, j = conf
-            delta[conf] = so_eps[a] + so_eps[b] - so_eps[i] - so_eps[j]
+            delta[conf] = so_mo_eps[a] + so_mo_eps[b] - so_mo_eps[i] - so_mo_eps[j]
         delta = delta[self.nel:, self.nel:, :self.nel, :self.nel]  # reshaping delta to vvoo
         return delta
 
