@@ -17,10 +17,10 @@ Reference:
 
 
 class bitDet(object):
-    """A class for Slater bitDets represented as Bit-strings 
+    """A class for Slater Determinants represented as Bit-strings 
     """
-    
-    def __init__(self, alpha_orblist=None, beta_orblist=None, alpha_bitstr=0, beta_bitstr=0):
+    def __init__(self, alpha_orblist=None, beta_orblist=None, alpha_bitstr=0, 
+                beta_bitstr=0):
         """ Creates a Slater bitDets from lists of alpha and beta indices
         """
         if alpha_orblist != None and alpha_bitstr == 0:
@@ -30,7 +30,6 @@ class bitDet(object):
         # Setting alpha, beta string attributes
         self.alpha_bitstr = alpha_bitstr
         self.beta_bitstr = beta_bitstr
-
 
     @staticmethod
     def orblist2bitstr(orblist):
@@ -48,7 +47,6 @@ class bitDet(object):
         bitstr <<= iPre  # LEFT-SHFIT by iPre bits
         return bitstr
 
-
     @staticmethod
     def bitstr2orblist(bitstr):
         """Converts a bitstring to a list of corresponding MO indices
@@ -62,7 +60,6 @@ class bitDet(object):
             i += 1
         return orblist
 
-
     @staticmethod
     def countbits(bitstr):
         """Counts number of orbitals in a bitstring
@@ -75,7 +72,7 @@ class bitDet(object):
         return count
     
     @staticmethod
-    def orbpositions(bitstr, orblist):
+    def orbpositions(bitstr, orblist): # redundant function
         """Returns positions of orbitals in a bit-determinant
         """
         count = 0 
@@ -95,31 +92,52 @@ class bitDet(object):
     def countorbitals(orblist):
         return len(orblist)
 
+    def __orbstr__(self):
+        alist = bitDet.bitstr2orblist(self.alpha_bitstr)
+        blist = bitDet.bitstr2orblist(self.beta_bitstr)
+        return "|"+str(alist)+","+str(blist)+">"
+
+    def __bitstr__(self):
+        astr = bin(self.alpha_bitstr)
+        bstr = bin(self.beta_bitstr)
+        return "|"+astr+","+bstr+">"
+
+    def copy(self):
+        """ Deep copy of determinant object
+        """
+        return bitDet(alpha_bitstr=self.alpha_bitstr, beta_bitstr=self.beta_bitstr)
+
     # Creation and Annhilation operators for Alpha and Beta electrons
     def add_alpha(self, orbidx):
         """Adds an alpha electron(up-spin) into an MO with index=orbidx 
         """
         self.alpha_bitstr |= 1 << orbidx
 
-
     def add_beta(self, orbidx):
         """Adds an beta electron(down-spin) into an MO with index=orbidx
         """
         self.beta_bitstr |= 1 << orbidx
-
 
     def remove_alpha(self, orbidx):
         """Removes an alpha electron from an MO with index=orbidx
         """
         self.alpha_bitstr &= ~(1 << orbidx)
 
-
     def remove_beta(self, orbidx):
         """Removes an beta electron from an MO with index=orbidx
         """
         self.beta_bitstr &= ~(1 << orbidx)
 
-class SlaterCondon:    
+
+
+class SlaterCondon:
+    """ A sub-module implementing Slater-Condon rules.
+    """
+    def __init__(self, mo_energies, mo_coeff, mo_erints):
+        self.eps = mo_energies
+        self.Ca = mo_coeff
+        self.mo_erints = mo_erints
+
     @staticmethod
     def common_orblist(det1, det2):
         """Return a list of common orbitals
@@ -181,7 +199,7 @@ class SlaterCondon:
 
     @staticmethod
     def three_elec_overlap(det1, det2, three_eprop):
-        """Returns < det1 | 0_{3} | det2 >
+        """Returns < det1 | O_{3} | det2 >
         """
         three_elec_overlap = 0 
         diff_alpha, diff_beta = SlaterCondon.num_diff_orb(det1, det2)
@@ -193,9 +211,6 @@ class SlaterCondon:
         elif num_difforb == 2: # differ 2 orbs
             three_elec_overlap += 0 
         return three_elec_overlap
-
-
-
 
 class CSF(object):
     def __init__(self, csf_dict, spin=0):
