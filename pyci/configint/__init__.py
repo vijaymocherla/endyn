@@ -6,4 +6,15 @@ from .cis import (
 )
 from .cis_d import (
     CIS_D
-) 
+)
+
+from .bitstrings import (
+    bitDet,
+    SlaterCondon
+)
+
+from .csf import (
+    CSF,
+    gen_singlet_singles,
+    gen_singlet_doubles
+)

@@ -133,8 +133,9 @@ class bitDet(object):
 class SlaterCondon:
     """ A sub-module implementing Slater-Condon rules.
     """
-    def __init__(self, mo_energies, mo_coeff, mo_erints):
-        self.eps = mo_energies
+    def __init__(self, mo_eps, mo_coeff, mo_erints):
+        # currently only implemented for closed shell system
+        self.eps = mo_eps
         self.Ca = mo_coeff
         self.mo_erints = mo_erints
 
@@ -169,7 +170,7 @@ class SlaterCondon:
 
     @staticmethod
     def one_elec_overlap(det1, det2, one_eprop):
-        """ Returns <det1 | O_{1} | det2 >
+        """Returns <det1 | O_{1} | det2 >
         """
         one_elec_overlap = 0 
         diff_alpha, diff_beta = SlaterCondon.num_diff_orb(det1, det2)
@@ -202,26 +203,17 @@ class SlaterCondon:
         """Returns < det1 | O_{3} | det2 >
         """
         three_elec_overlap = 0 
-        diff_alpha, diff_beta = SlaterCondon.num_diff_orb(det1, det2)
-        num_difforb = diff_alpha + diff_beta
-        if num_difforb == 0:   # differ 0 orbs
-            three_elec_overlap += 0
-        elif num_difforb == 1: # differ 1 orbs
-            three_elec_overlap += 0 
-        elif num_difforb == 2: # differ 2 orbs
-            three_elec_overlap += 0 
+        # diff_alpha, diff_beta = SlaterCondon.num_diff_orb(det1, det2)
+        # num_difforb = diff_alpha + diff_beta
+        # if num_difforb == 0:   # differ 0 orbs
+        #     three_elec_overlap += 0
+        # elif num_difforb == 1: # differ 1 orbs
+        #     three_elec_overlap += 0 
+        # elif num_difforb == 2: # differ 2 orbs
+        #     three_elec_overlap += 0 
         return three_elec_overlap
 
-class CSF(object):
-    def __init__(self, csf_dict, spin=0):
-        self.dets = csf_dict.keys()
-        self.coeff = csf_dict.values()
-        self.Ns = 2*spin + 1
 
-    def overlap(self, another):
-        overlap = 0         
-        return overlap
-        
 
 
 
