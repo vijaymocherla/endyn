@@ -4,110 +4,76 @@
 #
 """ CISD bitstring implementation
 """
-def gen_singles_csf_list(refDet: type(bitDet()), occ_list, vir_list, csf_list=[], exc_list=[]):
-    """Generates single excited spin-singlet CSFs
-    """
-    D_ar = [(a,r) for a in occ_list for r in vir_list]
-    # ^{1}\Psi_{a}^{r}
-    for exc in D_ar:
-        a,r = exc
-        det1 = refDet.copy()
-        det1.remove_alpha(a), det1.add_alpha(r)
-        det2 = refDet.copy()
-        det2.remove_beta(a), det2.add_beta(r)
-        csf_list.append(CSF({det1: 0.7071067811865475, 
-                            det2: 0.7071067811865475}))
-        exc_list.append(exc)
-    return csf_list, exc_list
 
+from configint.bitstrings import bitDet, SlaterCondon
+from configint.csf import CSF
+from configint.csf import gen_singlet_doubles, gen_singlet_doubles
 
-def gen_doubles_csf_list(refDet: type(bitDet()), occ_list, vir_list, csf_list=[], exc_list=[]):
-    """Generates double excited spin-singlet CSFs
-    """
-    D_aarr = [(a,a,r,r) for a in occ_list for r in vir_list]
-    D_abrr = [(a,b,r,r) for a in occ_list for b in occ_list for r in vir_list if a!=b]
-    D_aars = [(a,a,r,s) for a in occ_list for r in vir_list for s in vir_list if r!=s]
-    D_abrs = [(a,b,r,s) for a in occ_list for b in occ_list 
-                        for r in vir_list for s in vir_list if a!=b and r!=s]
-    # ^{1}\Psi_{a,a}^{r,r}
-    for exc in D_aarr:
-        a,ax,r,rx = exc
-        det1 = refDet.copy()
-        det1.remove_alpha(a), det1.add_alpha(r)
-        det1.remove_beta(a), det1.add_beta(r)
-        csf_list.append(CSF({det1 : 1.0}))
-        exc_list.append(exc)
-    # ^{1}\Psi_{a,a}^{r,s}
-    for exc in D_aars:
-        a,ax,r,s = exc
-        det1 = refDet.copy()
-        det1.remove_alpha(a), det1.add_alpha(r)
-        det1.remove_beta(a), det1.add_beta(s)
-        det2 = refDet.copy()
-        det2.remove_alpha(a), det1.add_alpha(s)
-        det2.remove_beta(a), det1.add_beta(r)
-        csf_list.append(CSF({det1: 0.7071067811865475, 
-                            det2: 0.7071067811865475}))
-        exc_list.append(exc)
-    # ^{1}\Psi_{a,b}^{r,r}
-    for exc in D_abrr:
-        a,b,r,rx = exc
-        det1 = refDet.copy()
-        det1.remove_alpha(a), det1.add_alpha(r)
-        det1.remove_beta(b), det1.add_beta(r)
-        det2 = refDet.copy()
-        det2.remove_alpha(b), det1.add_alpha(r)
-        det2.remove_beta(a), det1.add_beta(r)
-        csf_list.append(CSF({det1: 0.7071067811865475, 
-                            det2: 0.7071067811865475}))
-        exc_list.append(exc)
-    # ^{A}\Psi_{a,b}^{r,s}
-    for exc in D_abrs:
-        a,b,r,s = exc
-        det1 = refDet.copy()
-        det1.remove_alpha(a), det1.add_alpha(r)
-        det1.remove_alpha(b), det1.add_alpha(s)
-        det2 = refDet.copy()
-        det2.remove_beta(a), det1.add_beta(r)
-        det2.remove_beta(b), det1.add_beta(s)
-        det3 = refDet.copy()
-        det3.remove_alpha(a), det1.add_alpha(r)
-        det3.remove_beta(b), det1.add_beta(s)
-        det4 = refDet.copy()
-        det4.remove_alpha(b), det1.add_alpha(s)
-        det4.remove_beta(a), det1.add_beta(r)
-        det5 = refDet.copy()
-        det5.remove_alpha(a), det1.add_alpha(s)
-        det5.remove_beta(b), det1.add_beta(r)
-        det6 = refDet.copy()
-        det6.remove_alpha(b), det1.add_alpha(s)
-        det6.remove_beta(a), det1.add_beta(r)
-        csf_list.append(CSF({det1: +0.5773502691896258, 
-                            det2: +0.5773502691896258,
-                            det3: +0.2886751345948129, 
-                            det4: +0.2886751345948129,
-                            det5: -0.2886751345948129, 
-                            det6: -0.2886751345948129}))
-        exc_list.append(exc)
-    # ^{B}\Psi_{a,b}^{r,s}
-    for exc in D_abrs:
-        a,b,r,s = exc
-        det1 = refDet.copy()
-        det1.remove_alpha(a), det1.add_alpha(r)
-        det1.remove_beta(b), det1.add_beta(s)
-        det2 = refDet.copy()
-        det2.remove_alpha(a), det1.add_alpha(s)
-        det2.remove_beta(b), det1.add_beta(r)
-        det3 = refDet.copy()
-        det3.remove_alpha(b), det1.add_alpha(r)
-        det3.remove_beta(a), det1.add_beta(s)
-        det4 = refDet.copy()
-        det4.remove_alpha(b), det1.add_alpha(s)
-        det4.remove_beta(a), det1.add_beta(r)
-        csf_list.append(CSF({det1: 0.50, 
-                            det2: 0.50,
-                            det3: 0.50, 
-                            det4: 0.50}))
-        exc_list.append(exc)
-    return csf_list, exc_list
+class CISD:
+    def __init__(orbinfo, mo_eps, mo_coeff, mo_erints, mo_edipoles):
+        self.mo_eps = mo_eps
+        self.mo_coeff = mo_coeff
+        self.mo_erints = mo_erints
+        self.mo_edipoles = mo_edipoles
+        self.csf_list, self.exc_list = gen_csfs(orbinfo)
+        self.nCSFs = len(csf_list)
+        self.SlaterCondonRule = SlaterCondon(mo_eps, mo_coeff, mo_erints).comp_hmatrix_elem
 
+    
+    @staticmethod
+    def gen_csfs(orbinfo, active_space=(1,1), full_cis=True):
+        """Generates list of CSFs for given active space options
+        """
+        nel, nbf, nmo = orbinfo
+        nocc, nvir = int(nel/2), int((nmo-nel)/2)
+        act_occ, act_vir = active_space
+        occ_list = range(nocc-act_occ, nocc)
+        vir_list = range(nocc, nocc+act_vir)
+        refDet = bitDet(alpha_orblist=list(range(nocc)), beta_orblist=list(range(nocc)))
+        csf_list = [refDet]
+        exc_list = [(0)]
+        # Singles
+        if full_cis:
+            csf_list, exc_list = gen_singles_csf_list(refDet, range(nocc), range(nocc,nmo), csf_list, exc_list)
+        else:
+            csf_list, exc_list = gen_singles_csf_list(refDet, occ_list, vir_list, csf_list, exc_list)
+        # Doubles
+        csf_list, exc_list = gen_doubles_csf_list(refDet, occ_list, vir_list, csf_list, exc_list)
+        return csf_list, exc_list
+    
+    @staticmethod
+    def comp_cisd_hmatrix_elem(csf1, csf2):
+        """Evaluates H-matrix elements using Slater-Condon rule
+        """
+        matrix_elem = sum[ci*cj*self.SlaterCondonRule(I,J) 
+                            for ci, I in list(zip(csf1.coeff, csf1.Dets))
+                            for cj, J in list(zip(csf2.coeff, csf2.Dets))]
+        return matrix_elem
+    
+    def comp_cisd_hmatrix_row(self, P):
+        row = np.zeros(self.nCSFs)
+        try:
+            for Q in range(self.nCSFs):
+                csf1, csf2 = self.csf_list[P], self.csf_list[Q]
+                row[Q] = CISD.comp_hcisd_matrix_elem(csf1, csf2)
+            return row, 1
+        except :
+            raise Exception("Something went wrong while computing row %i" % (P+1))
+            return row, 0
+
+    def comp_hcisd(self, ncore):
+        with Pool(processes=ncore) as pool:
+            async_object = pool.map_async(self.comp_cisd_matrix_row, range(self.nCSFs))
+            rows_data = async_object.get()
+            pool.close()
+            pool.join() 
+        # checking if all process finished succesfully
+        row_log = [rows_data[i][1] for i in range(len(rows_data))]
+        if sum(row_log) != int(len(self.nCSFs)):
+            for idx, val in enumerate(row_log):
+                if val != 1:
+                    print('Something went wrong while computing row %i' % (idx+1))
+        else:
+            print("All rows were computed successfully! \n")
+        #HCISD = np.array(rows_data[:,0])
+        return np.array(rows_data[:,0])
