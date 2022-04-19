@@ -1,6 +1,12 @@
+#!/usr/bin/env python
+#
+# Author : Sai Vijay Mocherla <vijaysai.mocherla@gmail.com>
+#
 """
-Modules for implementing Configuration Interaction calculations
-in terms of bitstrings operations.
+bitstrings.py 
+
+Helper modules for configuration interaction calculations
+using bitstrings operations to implement slater-condon rules.
 
 Reference: 
 - Smith, D. G., Burns, L. A., Sherrill, C. D. & et al. Psi4NumPy. 
@@ -11,11 +17,11 @@ Reference:
 
 
 class bitDet(object):
-    """A class for Slater determinants represented as Bit-strings 
+    """A class for Slater bitDets represented as Bit-strings 
     """
     
     def __init__(self, alpha_orblist=None, beta_orblist=None, alpha_bitstr=0, beta_bitstr=0):
-        """ Creates a Slater Determinants from lists of alpha and beta indices
+        """ Creates a Slater bitDets from lists of alpha and beta indices
         """
         if alpha_orblist != None and alpha_bitstr == 0:
             alpha_bitstr = bitDet.orblist2bitstr(alpha_orblist)
@@ -62,25 +68,32 @@ class bitDet(object):
         """Counts number of orbitals in a bitstring
         """
         count = 0 
-        while bits != 0:
-            if bits & 1 == 1:
+        while bitstr != 0:
+            if bitstr & 1 == 1:
                 count += 1
-            bits >>= 1
+            bitstr >>= 1
         return count
     
+    @staticmethod
+    def orbpositions(bitstr, orblist):
+        """Returns positions of orbitals in a bit-determinant
+        """
+        count = 0 
+        idx = 0
+        positions = []
+        for i in orblist:
+            while idx < i:
+                if bitstr & 1 == 1:
+                    count += 1
+                bitstr >>= 1
+                idx += 1
+            positions.append(count)
+            continue
+        return positions
     
     @staticmethod
     def countorbitals(orblist):
         return len(orblist)
-
-
-    @staticmethod
-    def get_num_common_orbs(det1, det2):
-        """Returns number of common orbitals between 2 determinant bitstrings
-        """
-        num_common_orbs = bitDet.countbits((det1 ^ det2))
-        return num_common_orbs      
-
 
     # Creation and Annhilation operators for Alpha and Beta electrons
     def add_alpha(self, orbidx):
@@ -105,4 +118,107 @@ class bitDet(object):
         """Removes an beta electron from an MO with index=orbidx
         """
         self.beta_bitstr &= ~(1 << orbidx)
+
+class SlaterCondon:    
+    @staticmethod
+    def common_orblist(det1, det2):
+        """Return a list of common orbitals
+        """    
+        alpha_orbs = bitDet.bitstr2orblist(det1.alpha_bitstr & det2.alpha_bitstr)
+        beta_orbs = bitDet.bitstr2orblist(det1.beta_bitstr & det2.alpha_bitstr)
+        return alpha_orbs, beta_orbs
+    
+    @staticmethod
+    def num_diff_orb(det1, det2):
+        diff_alpha = bitDet.countbits(det1.alpha_bitstr ^ det2.alpha_bitstr)
+        diff_beta = bitDet.countbits(det1.beta_bitstr ^ det2.beta_bitstr)        
+        return diff_alpha/2 , diff_beta/2
+    
+    @staticmethod
+    def overlap(det1, det2):
+        """Returns inner product < det1 | det2 >
+        """
+        overlap = 0 
+        diff_alpha, diff_beta = SlaterCondon.num_diff_orb(det1, det2)
+        num_difforb = diff_alpha + diff_beta
+        if num_difforb == 0:   # differ 0 orbs
+            overlap += 0
+        elif num_difforb == 1: # differ 1 orbs
+            overlap += 0 
+        elif num_difforb == 2: # differ 2 orbs
+            overlap += 0 
+        return overlap
+
+    @staticmethod
+    def one_elec_overlap(det1, det2, one_eprop):
+        """ Returns <det1 | O_{1} | det2 >
+        """
+        one_elec_overlap = 0 
+        diff_alpha, diff_beta = SlaterCondon.num_diff_orb(det1, det2)
+        num_difforb = diff_alpha + diff_beta
+        if num_difforb == 0:   # differ 0 orbs
+            one_elec_overlap += 0
+        elif num_difforb == 1: # differ 1 orbs
+            one_elec_overlap += 0 
+        elif num_difforb == 2: # differ 2 orbs
+            one_elec_overlap += 0 
+        return one_elec_overlap
+
+    @staticmethod
+    def two_elec_overlap(det1, det2, two_eprop):
+        """Returns < det1 | O_{2} | det2 >
+        """
+        two_elec_overlap = 0 
+        diff_alpha, diff_beta = SlaterCondon.num_diff_orb(det1, det2)
+        num_difforb = diff_alpha + diff_beta
+        if num_difforb == 0:   # differ 0 orbs
+            two_elec_overlap += 0
+        elif num_difforb == 1: # differ 1 orbs
+            two_elec_overlap += 0 
+        elif num_difforb == 2: # differ 2 orbs
+            two_elec_overlap += 0 
+        return two_elec_overlap
+
+    @staticmethod
+    def three_elec_overlap(det1, det2, three_eprop):
+        """Returns < det1 | 0_{3} | det2 >
+        """
+        three_elec_overlap = 0 
+        diff_alpha, diff_beta = SlaterCondon.num_diff_orb(det1, det2)
+        num_difforb = diff_alpha + diff_beta
+        if num_difforb == 0:   # differ 0 orbs
+            three_elec_overlap += 0
+        elif num_difforb == 1: # differ 1 orbs
+            three_elec_overlap += 0 
+        elif num_difforb == 2: # differ 2 orbs
+            three_elec_overlap += 0 
+        return three_elec_overlap
+
+
+
+
+class CSF(object):
+    def __init__(self, csf_dict, spin=0):
+        self.dets = csf_dict.keys()
+        self.coeff = csf_dict.values()
+        self.Ns = 2*spin + 1
+
+    def overlap(self, another):
+        overlap = 0         
+        return overlap
+        
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 

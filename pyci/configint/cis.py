@@ -1,3 +1,9 @@
+#!/usr/bin/env python
+#
+# Author : Sai Vijay Mocherla <vijaysai.mocherla@gmail.com>
+#
+"""CIS
+"""
 import numpy as np
 from itertools import product
 from multiprocessing import Pool
@@ -95,7 +101,7 @@ def comp_cis_edipole_r(mo_edipole_r, nocc, nvir):
         cis_edipole_r[P + 1][0] = np.sqrt(2)*mo_edipole_r[r, a]
         for Q, R_ex in enumerate(excitation_singles):
             b, s = R_ex  # right excited slater-determinant
-            cis_edipole_r[P + 1, Q + s1] = (((a == b)*(r == s)*diag_sum)
+            cis_edipole_r[P + 1, Q + 1] = (((a == b)*(r == s)*diag_sum)
                                             - (r == s)*mo_edipole_r[a, b]
                                             + (a == b)*mo_edipole_r[r, s])
     return cis_edipole_r
@@ -105,6 +111,6 @@ def comp_cis_edipoles(mo_edipoles, nocc, nvir):
     """Compute electric dipole operators for cartesian coordinates i,e.
         -<x>, -<y>, -<z> in spin adapted CSF basis for CIS states.
     """
-    cis_edipoles = [gen_cis_edipoles(mo_edipole, nocc, nvir)
+    cis_edipoles = [comp_cis_edipole_r(mo_edipole, nocc, nvir)
                     for mo_edipole in mo_edipoles]
     return cis_edipoles

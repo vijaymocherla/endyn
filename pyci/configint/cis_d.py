@@ -1,5 +1,9 @@
-# spin MO version of cis_d 
-
+#!/usr/bin/env python
+#
+# Author : Sai Vijay Mocherla <vijaysai.mocherla@gmail.com>
+#
+""" CIS(D) Spin MO version
+"""
 from multiprocessing import Pool
 from itertools import product
 from opt_einsum import contract 
