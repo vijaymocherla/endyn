@@ -8,20 +8,20 @@
 import numpy as np
 import gc
 from multiprocessing import Pool
-from configint.bitstrings import bitDet, SlaterCondon
-from configint.csf import CSF
-from configint.csf import gen_singlet_singles, gen_singlet_doubles
+from pyci.configint.bitstrings import bitDet, SlaterCondon
+from pyci.configint.csf import CSF
+from pyci.configint.csf import gen_singlet_singles, gen_singlet_doubles
 
 class CISD:
-    def __init__(self, orbinfo, mo_eps, mo_coeff, mo_erints, mo_edipoles):
+    def __init__(self, orbinfo, mo_eps, mo_coeff, mo_erints, mo_edipoles, active_space):
         self.orbinfo = orbinfo
         self.mo_eps = mo_eps
         self.mo_coeff = mo_coeff
         self.mo_erints = mo_erints
         self.mo_edipoles = mo_edipoles
-        self.csf_list, self.exc_list = CISD.gen_csfs(self.orbinfo)
+        self.csf_list, self.exc_list = CISD.gen_csfs(self.orbinfo, active_space )
         self.nCSFs = len(self.csf_list)
-        self.SlaterCondonRule = SlaterCondon(mo_eps, mo_coeff, mo_erints).comp_hmatrix_elem
+        self.SlaterCondonRule = SlaterCondon(orbinfo, mo_eps, mo_coeff, mo_erints).comp_hmatrix_elem
 
     
     @staticmethod
@@ -70,7 +70,7 @@ class CISD:
         """ Parallel computation HCISD
         """
         with Pool(processes=ncore) as pool:
-            async_object = pool.map_async(self.comp_cisd_hmatrix_row, range(self.nCSFs))
+            async_object = pool.map_async(self.comp_cisd_hmatrix_row, list(range(self.nCSFs)))
             rows_data = async_object.get()
             pool.close()
             pool.join() 
@@ -81,8 +81,10 @@ class CISD:
                 if val != 1:
                     print('Something went wrong while computing row %i' % (idx+1))
         else:
-            print("All rows were computed successfully! \n")
-        HCISD = np.array(rows_data[:][0])
+            print("All rows were computed successfully! \n")    
+        HCISD = np.empty((self.nCSFs,self.nCSFs))
+        for i in range(self.nCSFs):
+            HCISD[i] = rows_data[i][0]
         del rows_data
         gc.collect()
         for P in range(self.nCSFs):

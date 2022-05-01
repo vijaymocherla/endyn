@@ -7,7 +7,9 @@ from .cis import (
 from .cis_d import (
     CIS_D
 )
-
+from .cisd import (
+    CISD
+)
 from .bitstrings import (
     bitDet,
     SlaterCondon

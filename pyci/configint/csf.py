@@ -11,8 +11,8 @@ class CSF(object):
     """A class construct for configuration state functions
     """
     def __init__(self, csf_dict, spin=0):
-        self.Dets = csf_dict.keys()
-        self.coeff = csf_dict.values()
+        self.Dets = list(csf_dict.keys())
+        self.coeff = list(csf_dict.values())
         self.Ns = 2*spin + 1
 
 def gen_singlet_singles(refDet: type(bitDet()), occ_list, vir_list, csf_list=[], exc_list=[]):

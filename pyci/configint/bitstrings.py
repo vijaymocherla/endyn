@@ -149,97 +149,104 @@ class SlaterCondon:
         
 
     @staticmethod
-    def common_orblist(det1, det2):
+    def get_common_orblist(det1, det2):
         """Return a list of common orbitals
         """    
-        alpha_orbs = bitDet.bitstr2orblist(det1.alpha_bitstr & det2.alpha_bitstr)
-        beta_orbs = bitDet.bitstr2orblist(det1.beta_bitstr & det2.alpha_bitstr)
-        return alpha_orbs, beta_orbs
+        alpha_common = bitDet.bitstr2orblist(det1.alpha_bitstr & det2.alpha_bitstr)
+        beta_common = bitDet.bitstr2orblist(det1.beta_bitstr & det2.alpha_bitstr)
+        return (alpha_common, beta_common)
     
     @staticmethod
-    def diff_orblist(det1, det2):
+    def get_diff_orblist(det1, det2):
         """Returns lists of unique [alpha, beta] orbitals in det1 and det2  
         """
         alpha_common = det1.alpha_bitstr & det2.alpha_bitstr
-        beta_common = det1.beta_bitstr & det2.beta_bitstr
-        det1_orbs = [(det1.alpha_bitstr ^ alpha_common), (det1.beta_bitstr ^ beta_common)]
-        det2_orbs = [(det2.alpha_bitstr ^ alpha_common), (det2.beta_bitstr ^ beta_common)]
-        det1_diff_orblist = [bitDet.bitstr2orblist(bitstr) for bitstr in det1_orbs]
-        det2_diff_orblist = [bitDet.bitstr2orblist(bitstr) for bitstr in det2_orbs]
-        return det1_diff_orblist, det2_diff_orblist
+        beta_common = det1.beta_bitstr & det2.alpha_bitstr
+        alpha_diff1 = bitDet.bitstr2orblist(det1.alpha_bitstr ^ alpha_common)
+        alpha_diff2 = bitDet.bitstr2orblist(det2.alpha_bitstr ^ alpha_common)
+        beta_diff1 = bitDet.bitstr2orblist(det1.beta_bitstr ^ beta_common)
+        beta_diff2 = bitDet.bitstr2orblist(det2.beta_bitstr ^ beta_common)
+        return (alpha_diff1, beta_diff1, alpha_diff2, beta_diff2)
     
     @staticmethod
-    def num_diff_orb(det1, det2):
+    def num_diff_orbs(det1, det2):
         """Returns number of different alpha, beta orbitals b/w det1 & det2
         """
         num_diff_alpha = bitDet.countbits(det1.alpha_bitstr ^ det2.alpha_bitstr)
         num_diff_beta = bitDet.countbits(det1.beta_bitstr ^ det2.beta_bitstr)
-        return int(num_diff_alpha/2) , int(num_diff_beta/2)
+        return (int(num_diff_alpha/2), int(num_diff_beta/2))
     
     @staticmethod
-    def overlap(det1, det2):
-        """Returns inner product < det1 | det2 >
+    def comp_hmatrix_elem(self, det1, det2):
+        """ Calculates a Hamiltonian matrix elements 
         """
-        overlap = 0 
-        num_diff_alpha, num_diff_beta = SlaterCondon.num_diff_orb(det1, det2)
-        num_difforb = num_diff_alpha + num_diff_beta
-        if num_difforb == 0:   # differ 0 orbs
-            overlap += 0
-        elif num_difforb == 1: # differ 1 orbs
-            overlap += 0 
-        elif num_difforb == 2: # differ 2 orbs
-            overlap += 0 
-        return overlap
+        num_diff = None
+        if SlaterCondon
+        return matrix_elem
+    
 
-    def one_elec_overlap(self, num_diff, det1_orbs, det2_orbs, one_eprop):
+    def one_elec_overlap(self, num_diff, common_orbs, diff_orbs, one_eprop):
         """Returns <det1 | O_{1} | det2 >
         """
-        alpha1, beta1 = det1_orbs
-        alpha2, beta2 = det2_orbs
         one_elec_overlap = 0 # if it differs by 2 or more 
-        if num_diff == 0:   # differ 0 orbs
-            one_elec_overlap = 2*sum(np.diag(one_eprop))
-        elif num_diff == 1: # differ 1 orbs
-            if alpha1 != [] and alpha2 != []:
-                m, p = alpha1[0], alpha2[0]
+        alpha_common, beta_common = common_orbs
+        alpha_diff1, beta_diff1, alpha_diff2, beta_diff2 = diff_orbs
+        if sum(num_diff) == 0:   # differ 0 orbs
+            one_elec_overlap = 2*sum([self.mo_eps[i] for i in alpha_common])
+        elif sum(num_diff) == 1: # differ 1 orbs
+            if alpha_diff1 != [] and alpha_diff2 != []:
+                m, p = alpha_diff1[0],However alpha_diff2[0]
                 one_elec_overlap = one_eprop[m,p]
-            elif beta1 != [] and beta2 != []:
-                one_elec_overlap = one_eprop[beta1[0], beta2[0]]  
+            elif beta_diff1 != [] and beta_diff2 != []:
+                one_elec_overlap = one_eprop[beta_diff1[0], beta_diff2[0]]  
         return one_elec_overlap
 
-    def two_elec_overlap(self, num_diff, det1_orbs, det2_orbs, two_eprop):
+    def two_elec_overlap(self, num_diff, common_orbs, diff_orbs, two_eprop):
         """Returns < det1 | O_{2} | det2 >
         """
         two_elec_overlap = 0 
-        alpha1, beta1 = det1_orbs
-        alpha2, beta2 = det2_orbs
-        if num_diff == 0:   # differ 0 orbs
-            two_elec_overlap = sum([2*two_eprop(a,b,a,b) - two_eprop(a,b,b,a) 
-                                for a in self.occ_list for b in self.occ_list])
-        elif num_diff == 1: # differ 1 orbs 
-            if alpha1 != [] and alpha2 != []:
-                m,p = alpha1[0], alpha2[0]
-                two_elec_overlap = sum([2*two_eprop(m,a,p,a) - two_eprop(m,a,a,p)
-                                        for a in self.occ_list])                    
-            elif beta1 != [] and beta2 != []:
-                m,p = beta1[0], beta2[0]
-                two_elec_overlap = sum([2*two_eprop(m,a,p,a) - two_eprop(m,a,a,p)
-                                        for a in self.occ_list])                    
-        elif num_diff == 2: # differ 2 orbs
+        alpha_common, beta_common = common_orbs
+        alpha_diff1, beta_diff1, alpha_diff2, beta_diff2 = diff_orbs
+        if sum(num_diff) == 0:   # differ 0 orbs
+            two_elec_overlap = sum([2*two_eprop[a,b,a,b] - two_eprop[a,b,b,a] 
+                                for a in alpha_common for b in alpha_common])
+        elif sum(num_diff) == 1: # differ 1 orbs 
+            if alpha_diff1 != [] and alpha_diff2 != []:
+                m,p = alpha_diff1[0], alpha_diff2[0]
+                two_elec_overlap = sum([2*two_eprop[m,a,p,a] - two_eprop[m,a,a,p]
+                                        for a in alpha_common])                    
+            elif beta_diff1 != [] and beta_diff2 != []:
+                m,p = beta_diff1[0], beta_diff2[0]
+                two_elec_overlap = sum([2*two_eprop[m,a,p,a] - two_eprop[m,a,a,p]
+                                        for a in beta_common])                    
+        elif sum(num_diff) == 2: # differ 2 orbs
+            pass
             # needs a loop to sort spins to get matrix elements
-            # if alpha1==[] and alpha2==[]:
-            #     m,n = beta1
-            #     p,q = beta2
+            # if alpha_diff1==[] and alpha_diff2==[]:
+            #     m,n = beta_diff1
+            #     p,q = beta_diff2
             #     two_elec_overlap = two_eprop[m,n,p,q] - two_eprop[m,n,q,p]  
-            # elif beta1==[] and beta2==[]:
-            #     m,n = alpha1
-            #     p,q = alpha2  
+            # elif beta_diff1==[] and beta_diff2==[]:
+            #     m,n = alpha_diff1
+            #     p,q = alpha_diff2  
             #     two_elec_overlap = two_eprop[m,n,p,q] - two_eprop[m,n,q,p]  
-            # elif alpha1==[] and alpha2!=[] or beta1==[] and beta2!=[]:
+            # elif alpha_diff1==[] and alpha_diff2!=[] or beta_diff1==[] and beta_diff2!=[]:
             #     two_elec_overlap = 0
             # else:
             #     two_elec_overlap = 0
         return two_elec_overlap
+
+    def comp_hmatrix_elem(self, det1, det2):
+        """Returns matrix element < det1 | H | det2 >
+        """
+        h_elem = 0 
+        num_diff = SlaterCondon.num_diff_orbs(det1, det2)
+        if int(sum(num_diff)) in [0,1,2]:
+            common_orbs = SlaterCondon.get_common_orblist(det1, det2)
+            diff_orbs = SlaterCondon.get_diff_orblist(det1,det2)
+            h_elem += self.one_elec_overlap(num_diff, common_orbs, diff_orbs, self.mo_fock_matrix) 
+            h_elem += self.two_elec_overlap(num_diff, common_orbs, diff_orbs, self.mo_erints) 
+        return h_elem
 
     # def three_elec_overlap(self, num_diff, det1_orbs, det2_orbs, three_eprop):
     #     """Returns < det1 | O_{3} | det2 >
@@ -254,14 +261,18 @@ class SlaterCondon:
     #     #elif num_difforb == 2: # differ 2 orbs
     #     #     three_elec_overlap += 0 
     #     return three_elec_overlap
-
-    def comp_hmatrix_elem(self, det1, det2):
-        """Returns matrix element < det1 | H | det2 >
-        """
-        hmatrix_elem = 0 
-        diff_alpha, diff_beta = SlaterCondon.num_diff_orb(det1, det2)
-        num_diff = diff_alpha + diff_beta
-        det1_orbs, det2_orbs = SlaterCondon.diff_orblist(det1,det2)
-        hmatrix_elem += self.one_elec_overlap(num_diff, det1_orbs, det2_orbs, self.mo_fock_matrix) 
-        hmatrix_elem += self.two_elec_overlap(num_diff, det1_orbs, det2_orbs, self.mo_erints) 
-        return hmatrix_elem
+    # 
+    # @staticmethod
+    # def overlap(det1, det2):
+    #     """Returns inner product < det1 | det2 >
+    #     """
+    #     overlap = 0 
+    #     num_diff_alpha, num_diff_beta = SlaterCondon.num_diff_orb(det1, det2)
+    #     num_difforb = num_diff_alpha + num_diff_beta
+    #     if num_difforb == 0:   # differ 0 orbs
+    #         overlap += 0
+    #     elif num_difforb == 1: # differ 1 orbs
+    #         overlap += 0 
+    #     elif num_difforb == 2: # differ 2 orbs
+    #         overlap += 0 
+    #     return overlap
