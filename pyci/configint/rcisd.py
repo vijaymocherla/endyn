@@ -74,7 +74,7 @@ def comp_hrow_hf(mo_eps, mo_eris, csfs, num_csfs, options, params):
     singles, full_cis, doubles = options
     N, E0 = params
     row = np.zeros(N)
-    i,j,a,b = csfs[P]
+    i,j,a,b = csfs[0]
     try:
         row[0] = E0
         Q = 1
@@ -110,8 +110,6 @@ def comp_hrow_hf(mo_eps, mo_eris, csfs, num_csfs, options, params):
                 k,l,c,d = right_ex
                 row[Q] = mo_eris[c,k,d,l] + mo_eris[c,l,d,k]
                 Q += 1
-        if Q != N:
-            raise Exception("ERROR: posval not equal nCSFs")
         return row, 1
     except :
         raise Exception("Something went wrong while computing row %i"%(0))
@@ -172,8 +170,6 @@ def comp_hrow_ia(mo_eps, mo_eris, csfs, num_csfs, options, params, P):
                                     -(a==c)*(mo_eris[d,k,l,i] - mo_eris[d,l,k,i])
                                     -(a==d)*(mo_eris[c,k,l,i] - mo_eris[c,l,k,i]))
                 Q += 1
-        if Q != N:
-            raise Exception("ERROR: posval not equal nCSFs")
         return row, 1
     except:
         raise Exception("Something went wrong while computing row %i" % (P))
@@ -234,8 +230,6 @@ def comp_hrow_iiaa(mo_eps, mo_eris, csfs, num_csfs, options, params, P):
                                 + (i==l)*(a==c)*(mo_eris[a,i,d,k] - 2*mo_eris[a,d,k,i])
                                 + (i==l)*(a==d)*(mo_eris[a,i,c,k] - 2*mo_eris[a,c,k,i]))
             Q += 1
-        if Q != N:
-            raise Exception("ERROR: posval not equal nCSFs")
         return row, 1
     except:
         raise Exception("Something went wrong while computing row %i" % (P))
@@ -310,8 +304,6 @@ def comp_hrow_iiab(mo_eps, mo_eris, csfs, num_csfs, options, params, P):
                                     +(i==l)*(b==d)*(mo_eris[a,i,c,k]- 2*mo_eris[a,c,k,i])
                                     +(a==c)*(b==d)*2*mo_eris[k,i,l,i])
             Q += 1
-        if Q != N:
-            raise Exception("ERROR: posval not equal nCSFs")
         return row, 1
     except:
         raise Exception("Something went wrong while computing row %i" % (P))
@@ -386,8 +378,6 @@ def comp_hrow_ijaa(mo_eps, mo_eris, csfs, num_csfs, options, params, P):
                                 + (j==l)*(a==d)*(mo_eris[a,i,c,k] -2*mo_eris[a,c,i,k])
                                 + (i==k)*(j==l)*2*mo_eris[c,a,d,a])
             Q += 1
-        if Q != N:
-            raise Exception("ERROR: posval not equal nCSFs")
         return row, 1
     except:
         raise Exception("Something went wrong while computing row %i" % (P))
@@ -488,8 +478,6 @@ def comp_hrow_ijab_A(mo_eps, mo_eris, csfs, num_csfs, options, params, P):
                                     +(j==l)*(b==c)*(mo_eris[a,i,d,k])
                                     +(j==l)*(b==d)*(mo_eris[a,i,c,k]))
             Q += 1
-        if Q != N:
-            raise Exception("ERROR: posval not equal nCSFs")
         return row, 1
     except:
         raise Exception("Something went wrong while computing row %i" % (P))
@@ -593,8 +581,6 @@ def comp_hrow_ijab_B(mo_eps, mo_eris, csfs, num_csfs, options, params, P):
                     +(a==c)*(b==d)*(mo_eris[i,k,j,l] + mo_eris[i,l,k,j]))
 
             Q += 1
-        if Q != N:
-            raise Exception("ERROR: posval not equal nCSFs")
         return row, 1
     except:
         raise Exception("Something went wrong while computing row %i" % (P))
@@ -607,8 +593,8 @@ def multp_comp_rows(pfunc, Plist, ncore=4, run_checks=False):
         data = async_object.get()
         pool.close()
         pool.join() 
-    rows = [row_data[i][0] for i in range(n)]
-    log = [rows_data[i][1] for i in range(n)]
+    rows = [data[i][0] for i in range(n)]
+    log = [data[i][1] for i in range(n)]
     if run_checks:
         print('Checking if all process finished succesfully...\n')
         if sum(log) != n:
@@ -624,10 +610,11 @@ def comp_hcisd(mo_eps, mo_eris, scf_energy, orbinfo, active_space, options, ncor
     csfs, num_csfs = generate_csfs(orbinfo, active_space, options)
     N = len(csfs)
     E0 = scf_energy
+    params = (N, E0)
     hcisd = []
     P = 0
-    row_hf = comp_hrow_hf(mo_eps, mo_eris, csfs, num_csfs, options)
-    hcisd += row_hf
+    row_hf, log_hf = comp_hrow_hf(mo_eps, mo_eris, csfs, num_csfs, options, params)
+    hcisd += [row_hf]
     P += 1
     if singles:
         n_ia = num_csfs[1]
@@ -641,38 +628,38 @@ def comp_hcisd(mo_eps, mo_eris, scf_energy, orbinfo, active_space, options, ncor
         n_iiaa = num_csfs[2]
         pfunc_hrow_iiaa = partial(comp_hrow_iiaa, mo_eps, mo_eris, csfs, num_csfs, options, params)
         Plist_iiaa = list(range(P,P+n_iiaa))
-        rows_iiaa, log_iiaa = multp_comp_rows(pfunc_hrow_, Plist_iiaa, ncore=ncore)
+        rows_iiaa, log_iiaa = multp_comp_rows(pfunc_hrow_iiaa, Plist_iiaa, ncore=ncore)
         hcisd += rows_iiaa
         P += n_iiaa
         #
         n_iiab = num_csfs[3]
         pfunc_hrow_iiab = partial(comp_hrow_iiab, mo_eps, mo_eris, csfs, num_csfs, options, params)
         Plist_iiab = list(range(P,P+n_iiab))
-        rows_iiab, log_iiab = multp_comp_rows(pfunc_hrow_, Plist_iiab, ncore=ncore)
+        rows_iiab, log_iiab = multp_comp_rows(pfunc_hrow_iiab, Plist_iiab, ncore=ncore)
         hcisd += rows_iiab
         P += n_iiab
         #
         n_ijaa = num_csfs[4]
         pfunc_hrow_ijaa = partial(comp_hrow_ijaa, mo_eps, mo_eris, csfs, num_csfs, options, params)
         Plist_ijaa = list(range(P,P+n_ijaa))
-        rows_ijaa, log_ijaa = multp_comp_rows(pfunc_hrow_, Plist_ijaa, ncore=ncore)
+        rows_ijaa, log_ijaa = multp_comp_rows(pfunc_hrow_ijaa, Plist_ijaa, ncore=ncore)
         hcisd += rows_ijaa
         P += n_ijaa
         #
         n_ijab_A = num_csfs[5]
         pfunc_hrow_ijab_A = partial(comp_hrow_ijab_A, mo_eps, mo_eris, csfs, num_csfs, options, params)
         Plist_ijab_A = list(range(P,P+n_ijab_A))
-        rows_ijab_A, log_ijab_A = multp_comp_rows(pfunc_hrow_, Plist_ijab_A, ncore=ncore)
+        rows_ijab_A, log_ijab_A = multp_comp_rows(pfunc_hrow_ijab_A, Plist_ijab_A, ncore=ncore)
         hcisd += rows_ijab_A
         P += n_ijab_A
         #
         n_ijab_B = num_csfs[6]
         pfunc_hrow_ijab_B = partial(comp_hrow_ijab_B, mo_eps, mo_eris, csfs, num_csfs, options, params)
         Plist_ijab_B = list(range(P,P+n_ijab_B))
-        rows_ijab_B, log_ijab_B = multp_comp_rows(pfunc_hrow_, Plist_ijab_B, ncore=ncore)
+        rows_ijab_B, log_ijab_B = multp_comp_rows(pfunc_hrow_ijab_B, Plist_ijab_B, ncore=ncore)
         hcisd += rows_ijab_B
         P += n_ijab_B
-    if Q != N:
+    if P != N:
         raise Exception("ERROR: posval not equal nCSFs")
     hcisd = np.array(hcisd)
     return hcisd
