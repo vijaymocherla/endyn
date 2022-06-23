@@ -20,3 +20,15 @@ from .csf import (
     gen_singlet_singles,
     gen_singlet_doubles
 )
+
+from .rcisd import(
+    generate_csfs,
+    comp_hrow_hf,
+    comp_hrow_ia,
+    comp_hrow_iiaa,
+    comp_hrow_iiab,
+    comp_hrow_ijaa,
+    comp_hrow_ijab_A,
+    comp_hrow_ijab_B,
+    comp_hcisd
+)

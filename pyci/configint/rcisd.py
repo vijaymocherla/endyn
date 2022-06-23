@@ -18,7 +18,7 @@ import numpy as np
 from functools import partial
 from multiprocessing import Pool
 
-# input : eps, Ca, ao_oeints, ao_erints
+# input : eps, Ca, ao_oeints, ao_eris
 # methods : 
 #   1. Transform AO to MO basis
 #   2. Options: singles, doubles, full_cis and active space.
@@ -37,7 +37,7 @@ from multiprocessing import Pool
 
 def generate_csfs(orbinfo, active_space, options):
     singles, full_cis, doubles = options
-    nel, nbf, nmo = orbinfo
+    nel, nmo = orbinfo
     nocc, nvir = int(nel/2), int((nmo-nel)/2)
     act_occ, act_vir = active_space
     occ_list = range(nocc-act_occ, nocc)
@@ -600,7 +600,7 @@ def comp_hrow_ijab_B(mo_eps, mo_eris, csfs, num_csfs, options, params, P):
         raise Exception("Something went wrong while computing row %i" % (P))
         return row, 0
 
-def multp_comp_rows(pfunc, Plist, run_checks=False):
+def multp_comp_rows(pfunc, Plist, ncore=4, run_checks=False):
     n = len(Plist)
     with Pool(processes=ncore) as pool:
         async_object = pool.map_async(pfunc, Plist)
@@ -619,9 +619,11 @@ def multp_comp_rows(pfunc, Plist, run_checks=False):
             print("All rows were computed successfully! \n")
     return rows, log
 
-def comp_hcisd(mo_eps, mo_eris, csfs, num_csfs, options, params):
+def comp_hcisd(mo_eps, mo_eris, scf_energy, orbinfo, active_space, options, ncore=4):
     singles, full_cis, doubles = options
-    N, E0 = params
+    csfs, num_csfs = generate_csfs(orbinfo, active_space, options)
+    N = len(csfs)
+    E0 = scf_energy
     hcisd = []
     P = 0
     row_hf = comp_hrow_hf(mo_eps, mo_eris, csfs, num_csfs, options)
@@ -631,7 +633,7 @@ def comp_hcisd(mo_eps, mo_eris, csfs, num_csfs, options, params):
         n_ia = num_csfs[1]
         pfunc_hrow_ia = partial(comp_hrow_ia, mo_eps, mo_eris, csfs, num_csfs, options, params)
         Plist_ia = list(range(P,P+n_ia))
-        rows_ia, log_ia = multp_comp_rows(pfunc_hrow_ia, Plist_ia)
+        rows_ia, log_ia = multp_comp_rows(pfunc_hrow_ia, Plist_ia, ncore=ncore)
         hcisd += rows_ia
         P += n_ia
     if doubles:
@@ -639,38 +641,39 @@ def comp_hcisd(mo_eps, mo_eris, csfs, num_csfs, options, params):
         n_iiaa = num_csfs[2]
         pfunc_hrow_iiaa = partial(comp_hrow_iiaa, mo_eps, mo_eris, csfs, num_csfs, options, params)
         Plist_iiaa = list(range(P,P+n_iiaa))
-        rows_iiaa, log_iiaa = multp_comp_rows(pfunc_hrow_, Plist_iiaa)
+        rows_iiaa, log_iiaa = multp_comp_rows(pfunc_hrow_, Plist_iiaa, ncore=ncore)
         hcisd += rows_iiaa
         P += n_iiaa
         #
         n_iiab = num_csfs[3]
         pfunc_hrow_iiab = partial(comp_hrow_iiab, mo_eps, mo_eris, csfs, num_csfs, options, params)
         Plist_iiab = list(range(P,P+n_iiab))
-        rows_iiab, log_iiab = multp_comp_rows(pfunc_hrow_, Plist_iiab)
+        rows_iiab, log_iiab = multp_comp_rows(pfunc_hrow_, Plist_iiab, ncore=ncore)
         hcisd += rows_iiab
         P += n_iiab
         #
         n_ijaa = num_csfs[4]
         pfunc_hrow_ijaa = partial(comp_hrow_ijaa, mo_eps, mo_eris, csfs, num_csfs, options, params)
         Plist_ijaa = list(range(P,P+n_ijaa))
-        rows_ijaa, log_ijaa = multp_comp_rows(pfunc_hrow_, Plist_ijaa)
+        rows_ijaa, log_ijaa = multp_comp_rows(pfunc_hrow_, Plist_ijaa, ncore=ncore)
         hcisd += rows_ijaa
         P += n_ijaa
         #
         n_ijab_A = num_csfs[5]
         pfunc_hrow_ijab_A = partial(comp_hrow_ijab_A, mo_eps, mo_eris, csfs, num_csfs, options, params)
         Plist_ijab_A = list(range(P,P+n_ijab_A))
-        rows_ijab_A, log_ijab_A = multp_comp_rows(pfunc_hrow_, Plist_ijab_A)
+        rows_ijab_A, log_ijab_A = multp_comp_rows(pfunc_hrow_, Plist_ijab_A, ncore=ncore)
         hcisd += rows_ijab_A
         P += n_ijab_A
         #
         n_ijab_B = num_csfs[6]
         pfunc_hrow_ijab_B = partial(comp_hrow_ijab_B, mo_eps, mo_eris, csfs, num_csfs, options, params)
         Plist_ijab_B = list(range(P,P+n_ijab_B))
-        rows_ijab_B, log_ijab_B = multp_comp_rows(pfunc_hrow_, Plist_ijab_B)
+        rows_ijab_B, log_ijab_B = multp_comp_rows(pfunc_hrow_, Plist_ijab_B, ncore=ncore)
         hcisd += rows_ijab_B
         P += n_ijab_B
     if Q != N:
         raise Exception("ERROR: posval not equal nCSFs")
     hcisd = np.array(hcisd)
     return hcisd
+

@@ -13,6 +13,8 @@ from pyci.configint import (
     comp_cis_edipole_r,
     comp_cis_edipoles,
     multp_cis,
+    generate_csfs,
+    comp_hcisd
 )
 
 from pyci.utils import (
