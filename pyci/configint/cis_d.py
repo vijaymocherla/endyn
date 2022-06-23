@@ -105,7 +105,7 @@ class CIS_D:
         nvals: no. of first few eigen values for which corrections are to be computed.
         ncore: no. of cores to be used for computations(default = 2).
         """
-        if type(nevals) is str:
+        if type(nevals) is int:
             if nevals > len(self.ecis):
                 raise Exception('nvals can not be greater than no. of CIS eigen values')
         # print('Ui.shape, self_energy.shape, Vi.shape, Ci.shape')

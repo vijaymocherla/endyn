@@ -181,7 +181,8 @@ class SlaterCondon:
         """ Calculates a Hamiltonian matrix elements 
         """
         num_diff = None
-        if SlaterCondon
+        # if SlaterCondon
+        matrix_elem = 0.0
         return matrix_elem
     
 
@@ -195,7 +196,7 @@ class SlaterCondon:
             one_elec_overlap = 2*sum([self.mo_eps[i] for i in alpha_common])
         elif sum(num_diff) == 1: # differ 1 orbs
             if alpha_diff1 != [] and alpha_diff2 != []:
-                m, p = alpha_diff1[0],However alpha_diff2[0]
+                m, p = alpha_diff1[0],alpha_diff2[0]
                 one_elec_overlap = one_eprop[m,p]
             elif beta_diff1 != [] and beta_diff2 != []:
                 one_elec_overlap = one_eprop[beta_diff1[0], beta_diff2[0]]  
