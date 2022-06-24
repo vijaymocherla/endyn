@@ -14,7 +14,6 @@ References:
     J.Chem.Phys., 156(17), 174106.
 """
 import numpy as np
-
 from functools import partial
 from multiprocessing import Pool
 
@@ -97,7 +96,6 @@ def comp_hrow_hf(mo_eps, mo_eris, scf_energy, csfs, num_csfs, options):
     N = sum(num_csfs)
     E0 = scf_energy
     row = np.zeros(N)
-    i,j,a,b = csfs[0]
     try:
         row[0] = E0
         Q = 1
@@ -153,7 +151,7 @@ def comp_hrow_ia(mo_eps, mo_eris, scf_energy, csfs, num_csfs, options, P):
     row = np.zeros(N)
     i,j,a,b = csfs[P]
     try:    
-        row[0] = 0.0
+        
         Q = 1
         n_ia = num_csfs[1]    
         for right_ex in csfs[Q:Q+n_ia]:
@@ -721,7 +719,7 @@ def comp_hcisd(mo_eps, mo_eris, scf_energy, orbinfo, active_space, options, ncor
     hcisd = np.array(hcisd)
     return hcisd
 
-def comp_oeprop_hf(mo_oeprop, csfs, num_csfs, options):
+def comp_oeprop_hf(mo_oeprop, mo_oeprop_trace, csfs, num_csfs, options):
     singles, full_cis, doubles, doubles_options = options
     (doubles_iiaa, doubles_iiab, doubles_ijaa,
     doubles_ijab_A, doubles_ijab_B) = doubles_options
@@ -729,13 +727,13 @@ def comp_oeprop_hf(mo_oeprop, csfs, num_csfs, options):
     row = np.zeros(N)
     i,j,a,b = csfs[0]
     try:
-        row[0.0] = 0.0
+        row[0] = mo_oeprop_trace
         Q = 1
         if singles:
             n_ia = num_csfs[1]
             for right_ex in csfs[Q:Q+n_ia]:
                 k,l,c,d = right_ex
-                row[Q] = 0.0
+                row[Q] = np.sqrt(2) * mo_oeprop[k,c]
                 Q += 1
         n_iiaa = num_csfs[2]
         n_iiab = num_csfs[3]
@@ -743,35 +741,21 @@ def comp_oeprop_hf(mo_oeprop, csfs, num_csfs, options):
         n_ijab_A = num_csfs[5]
         n_ijab_B = num_csfs[6]
         if doubles_iiaa:
-            for right_ex in csfs[Q:Q+n_iiaa]:
-                k,l,c,d = right_ex
-                row[Q] = 0.0
-                Q += 1
+            Q += n_iiaa
         if doubles_iiab:
-            for right_ex in csfs[Q:Q+n_iiab]:
-                k,l,c,d = right_ex
-                row[Q] = 0.0
-                Q +=1
+            Q += n_iiab
         if doubles_ijaa:
-            for right_ex in csfs[Q:Q+n_ijaa]:
-                k,l,c,d = right_ex
-                row[Q] = 0.0
-                Q += 1
+            Q += n_ijaa
         if doubles_ijab_A:
-            for right_es in csfs[Q:Q+n_ijab_A]:
-                k,l,c,d = right_ex
-                row[Q] = 0.0
-                Q += 1
+            Q += n_ijab_A
         if doubles_ijab_B:
-            for right_ex in csfs[Q:Q+n_ijab_B]:
-                row[Q] = 0.0
-                Q += 1
+            Q += n_ijab_B
         return row, 1           
     except:
-        raise Exception("Something went wronh while computing row %i"%(P))
+        raise Exception("Something went wronh while computing row %i"%(0))
     return row, 0
 
-def comp_oeprop_ia(mo_oeprop, csfs, num_csfs, options, P):
+def comp_oeprop_ia(mo_oeprop, mo_oeprop_trace, csfs, num_csfs, options, P):
     singles, full_cis, doubles, doubles_options = options
     (doubles_iiaa, doubles_iiab, doubles_ijaa,
     doubles_ijab_A, doubles_ijab_B) = doubles_options
@@ -779,13 +763,15 @@ def comp_oeprop_ia(mo_oeprop, csfs, num_csfs, options, P):
     row = np.zeros(N)
     i,j,a,b = csfs[P]
     try:
-        row[0.0] = 0.0
+        row[0] = np.sqrt(2) * mo_oeprop[i,a]
         Q = 1
         if singles:
             n_ia = num_csfs[1]
             for right_ex in csfs[Q:Q+n_ia]:
                 k,l,c,d = right_ex
-                row[Q] = 0.0
+                row[Q] = ((i==k)*(a==c)*mo_oeprop_trace 
+                         - (a==c)*mo_oeprop[k,i]
+                         + (i==k)*mo_oeprop[a,c])
                 Q += 1
         n_iiaa = num_csfs[2]
         n_iiab = num_csfs[3]
@@ -795,33 +781,41 @@ def comp_oeprop_ia(mo_oeprop, csfs, num_csfs, options, P):
         if doubles_iiaa:
             for right_ex in csfs[Q:Q+n_iiaa]:
                 k,l,c,d = right_ex
-                row[Q] = 0.0
+                row[Q] = (i==k)*(a==c)*np.sqrt(2)*mo_oeprop[i,a]
                 Q += 1
         if doubles_iiab:
             for right_ex in csfs[Q:Q+n_iiab]:
                 k,l,c,d = right_ex
-                row[Q] = 0.0
+                row[Q] = ((i==k)*(a==c)*mo_oeprop[i,d]
+                        + (i==k)*(a==d)*mo_oeprop[i,c])
                 Q +=1
         if doubles_ijaa:
             for right_ex in csfs[Q:Q+n_ijaa]:
                 k,l,c,d = right_ex
-                row[Q] = 0.0
+                row[Q] = ((i==k)*(a==c)*mo_oeprop[l,a]
+                        + (i==l)*(a==c)*mo_oeprop[k,a])
                 Q += 1
         if doubles_ijab_A:
             for right_es in csfs[Q:Q+n_ijab_A]:
                 k,l,c,d = right_ex
-                row[Q] = 0.0
+                row[Q] = np.sqrt(1.5)*((i==k)*(a==c)*mo_oeprop[l,d]
+                                     - (i==k)*(a==d)*mo_oeprop[l,c]
+                                     - (i==l)*(a==c)*mo_oeprop[k,d]
+                                     + (i==l)*(a==d)*mo_oeprop[k,c])
                 Q += 1
         if doubles_ijab_B:
             for right_ex in csfs[Q:Q+n_ijab_B]:
-                row[Q] = 0.0
+                row[Q] = np.sqrt(0.5)*((i==k)*(a==c)*mo_oeprop[l,d]
+                                     + (i==k)*(a==d)*mo_oeprop[l,c]
+                                     + (i==l)*(a==c)*mo_oeprop[k,d]
+                                     + (i==l)*(a==d)*mo_oeprop[k,c])
                 Q += 1
         return row, 1           
     except:
         raise Exception("Something went wronh while computing row %i"%(P))
     return row, 0
 
-def comp_oeprop_iiaa(mo_oeprop, csfs, num_csfs, options, P):
+def comp_oeprop_iiaa(mo_oeprop, mo_oeprop_trace, csfs, num_csfs, options, P):
     singles, full_cis, doubles, doubles_options = options
     (doubles_iiaa, doubles_iiab, doubles_ijaa,
     doubles_ijab_A, doubles_ijab_B) = doubles_options
@@ -829,13 +823,12 @@ def comp_oeprop_iiaa(mo_oeprop, csfs, num_csfs, options, P):
     row = np.zeros(N)
     i,j,a,b = csfs[P]
     try:
-        row[0.0] = 0.0
         Q = 1
         if singles:
             n_ia = num_csfs[1]
             for right_ex in csfs[Q:Q+n_ia]:
                 k,l,c,d = right_ex
-                row[Q] = 0.0
+                row[Q] = (k==i)*(c==a)*np.sqrt(2)*mo_oeprop[k,c]
                 Q += 1
         n_iiaa = num_csfs[2]
         n_iiab = num_csfs[3]
@@ -845,33 +838,82 @@ def comp_oeprop_iiaa(mo_oeprop, csfs, num_csfs, options, P):
         if doubles_iiaa:
             for right_ex in csfs[Q:Q+n_iiaa]:
                 k,l,c,d = right_ex
-                row[Q] = 0.0
+                row[Q] = (i==k)*(a==c)*(mo_oeprop_trace
+                                    - 2*mo_oeprop[i,i]
+                                    + 2*mo_oeprop[a,a])
                 Q += 1
         if doubles_iiab:
             for right_ex in csfs[Q:Q+n_iiab]:
                 k,l,c,d = right_ex
-                row[Q] = 0.0
+                row[Q] = np.sqrt(2)*((i==k)*(a==c)*mo_oeprop[a,d]
+                                   + (i==k)*(a==d)*mo_oeprop[a,c])
                 Q +=1
         if doubles_ijaa:
             for right_ex in csfs[Q:Q+n_ijaa]:
                 k,l,c,d = right_ex
-                row[Q] = 0.0
+                row[Q] = -np.sqrt(2)*((i==k)*(a==c)*mo_oeprop[l,i]
+                                    + (i==l)*(a==c)*mo_oeprop[k,i])
                 Q += 1
         if doubles_ijab_A:
-            for right_es in csfs[Q:Q+n_ijab_A]:
+            Q += n_ijab_A
+        if doubles_ijab_B:
+            Q += n_ijab_B
+        return row, 1           
+    except:
+        raise Exception("Something went wronh while computing row %i"%(P))
+    return row, 0
+
+def comp_oeprop_iiab(mo_oeprop, mo_oeprop_trace, csfs, num_csfs, options, P):
+    singles, full_cis, doubles, doubles_options = options
+    (doubles_iiaa, doubles_iiab, doubles_ijaa,
+    doubles_ijab_A, doubles_ijab_B) = doubles_options
+    N = sum(num_csfs)
+    row = np.zeros(N)
+    i,j,a,b = csfs[P]
+    try:        
+        Q = 1
+        if singles:
+            n_ia = num_csfs[1]
+            for right_ex in csfs[Q:Q+n_ia]:
                 k,l,c,d = right_ex
-                row[Q] = 0.0
+                row[Q] = ((k==i)*(c==a)*mo_oeprop[k,b]
+                        + (k==i)*(c==b)*mo_oeprop[k,a])
                 Q += 1
+        n_iiaa = num_csfs[2]
+        n_iiab = num_csfs[3]
+        n_ijaa = num_csfs[4]
+        n_ijab_A = num_csfs[5]
+        n_ijab_B = num_csfs[6]
+        if doubles_iiaa:
+            for right_ex in csfs[Q:Q+n_iiaa]:
+                k,l,c,d = right_ex
+                row[Q] = np.sqrt(2)*((k==i)*(c==a)*mo_oeprop[c,b]
+                                   + (k==i)*(c==b)*mo_oeprop[c,a])
+                Q += 1
+        if doubles_iiab:
+            for right_ex in csfs[Q:Q+n_iiab]:
+                k,l,c,d = right_ex
+                row[Q] = ((i==k)*(a==c)*(b==d)*(mo_oeprop_trace - 2*mo_oeprop[i,i])
+                        + (i==k)*(a==c)*mo_oeprop[b,d]
+                        + (i==k)*(a==d)*mo_oeprop[b,c]
+                        + (i==k)*(b==c)*mo_oeprop[a,d]
+                        + (i==k)*(b==d)*mo_oeprop[a,c])
+                Q +=1
+        if doubles_ijaa:
+            Q += n_ijaa
+        if doubles_ijab_A:
+            Q += n_ijab_A
         if doubles_ijab_B:
             for right_ex in csfs[Q:Q+n_ijab_B]:
-                row[Q] = 0.0
+                row[Q] = -np.sqrt(2)*((i==k)*(a==c)*(b==d)*mo_oeprop[l,i]
+                                    + (i==l)*(a==c)*(b==d)*mo_oeprop[k,i])
                 Q += 1
         return row, 1           
     except:
         raise Exception("Something went wronh while computing row %i"%(P))
     return row, 0
 
-def comp_oeprop_iiab(mo_oeprop, csfs, num_csfs, options, P):
+def comp_oeprop_ijaa(mo_oeprop, mo_oeprop_trace, csfs, num_csfs, options, P):
     singles, full_cis, doubles, doubles_options = options
     (doubles_iiaa, doubles_iiab, doubles_ijaa,
     doubles_ijab_A, doubles_ijab_B) = doubles_options
@@ -879,13 +921,13 @@ def comp_oeprop_iiab(mo_oeprop, csfs, num_csfs, options, P):
     row = np.zeros(N)
     i,j,a,b = csfs[P]
     try:
-        row[0.0] = 0.0
         Q = 1
         if singles:
             n_ia = num_csfs[1]
             for right_ex in csfs[Q:Q+n_ia]:
                 k,l,c,d = right_ex
-                row[Q] = 0.0
+                row[Q] = ((k==i)*(c==a)*mo_oeprop[j,c]
+                        + (k==j)*(c==a)*mo_oeprop[i,c])
                 Q += 1
         n_iiaa = num_csfs[2]
         n_iiab = num_csfs[3]
@@ -895,47 +937,49 @@ def comp_oeprop_iiab(mo_oeprop, csfs, num_csfs, options, P):
         if doubles_iiaa:
             for right_ex in csfs[Q:Q+n_iiaa]:
                 k,l,c,d = right_ex
-                row[Q] = 0.0
+                row[Q] = -np.sqrt(2)*((k==i)*(c==a)*mo_oeprop[j,k]
+                                    + (k==j)*(c==a)*mo_oeprop[i,k])
                 Q += 1
         if doubles_iiab:
-            for right_ex in csfs[Q:Q+n_iiab]:
-                k,l,c,d = right_ex
-                row[Q] = 0.0
-                Q +=1
+            Q += n_iiab
         if doubles_ijaa:
             for right_ex in csfs[Q:Q+n_ijaa]:
                 k,l,c,d = right_ex
-                row[Q] = 0.0
+                row[Q] = ((i==k)*(j==l)*(a==c)*(mo_oeprop_trace + 2*mo_oeprop[a,a])
+                         -(i==k)*(a==c)*mo_oeprop[l==j]
+                         -(i==l)*(a==c)*mo_oeprop[k==j]
+                         -(j==k)*(a==c)*mo_oeprop[l==i]
+                         -(j==l)*(a==c)*mo_oeprop[k==i])
                 Q += 1
         if doubles_ijab_A:
-            for right_es in csfs[Q:Q+n_ijab_A]:
-                k,l,c,d = right_ex
-                row[Q] = 0.0
-                Q += 1
+            Q += n_ijab_A
         if doubles_ijab_B:
             for right_ex in csfs[Q:Q+n_ijab_B]:
-                row[Q] = 0.0
+                row[Q] = np.sqrt(2)*((i==k)*(j==l)*(a==c)*mo_oeprop[a,d]
+                                    +(i==k)*(j==l)*(a==d)*mo_oeprop[a,c])
                 Q += 1
         return row, 1           
     except:
         raise Exception("Something went wronh while computing row %i"%(P))
     return row, 0
 
-def comp_oeprop_ijaa(mo_oeprop, csfs, num_csfs, options, P):
+def comp_oeprop_ijab_A(mo_oeprop, mo_oeprop_trace, csfs, num_csfs, options, P):
     singles, full_cis, doubles, doubles_options = options
     (doubles_iiaa, doubles_iiab, doubles_ijaa,
     doubles_ijab_A, doubles_ijab_B) = doubles_options
     N = sum(num_csfs)
     row = np.zeros(N)
     i,j,a,b = csfs[P]
-    try:
-        row[0.0] = 0.0
+    try:  
         Q = 1
         if singles:
             n_ia = num_csfs[1]
             for right_ex in csfs[Q:Q+n_ia]:
                 k,l,c,d = right_ex
-                row[Q] = 0.0
+                row[Q] = np.sqrt(1.5)*((k==i)*(c==a)*mo_oeprop[j,b]
+                                     - (k==i)*(c==b)*mo_oeprop[j,a]
+                                     - (k==j)*(c==a)*mo_oeprop[i,b]
+                                     + (k==j)*(c==b)*mo_oeprop[i,a])
                 Q += 1
         n_iiaa = num_csfs[2]
         n_iiab = num_csfs[3]
@@ -943,49 +987,49 @@ def comp_oeprop_ijaa(mo_oeprop, csfs, num_csfs, options, P):
         n_ijab_A = num_csfs[5]
         n_ijab_B = num_csfs[6]
         if doubles_iiaa:
-            for right_ex in csfs[Q:Q+n_iiaa]:
-                k,l,c,d = right_ex
-                row[Q] = 0.0
-                Q += 1
+            Q += n_iiaa
         if doubles_iiab:
-            for right_ex in csfs[Q:Q+n_iiab]:
-                k,l,c,d = right_ex
-                row[Q] = 0.0
-                Q +=1
+            Q += n_iiab
         if doubles_ijaa:
-            for right_ex in csfs[Q:Q+n_ijaa]:
-                k,l,c,d = right_ex
-                row[Q] = 0.0
-                Q += 1
+            Q += n_ijaa
         if doubles_ijab_A:
             for right_es in csfs[Q:Q+n_ijab_A]:
                 k,l,c,d = right_ex
-                row[Q] = 0.0
+                row[Q] = ((i==k)*(j==l)*(a==c)*(b==d)*mo_oeprop_trace
+                        - (i==k)*(a==c)*(b==d)*mo_oeprop[l,j]
+                        + (i==l)*(a==c)*(b==d)*mo_oeprop[k,j]
+                        + (j==k)*(a==c)*(b==d)*mo_oeprop[l,i]
+                        - (j==l)*(a==c)*(b==d)*mo_oeprop[k,i]
+                        + (i==k)*(j==l)*(a==c)*mo_oeprop[b,d]
+                        - (i==k)*(j==l)*(a==d)*mo_oeprop[b,c]
+                        - (i==k)*(j==l)*(b==c)*mo_oeprop[a,d]
+                        + (i==k)*(j==l)*(b==d)*mo_oeprop[a,c])
                 Q += 1
         if doubles_ijab_B:
-            for right_ex in csfs[Q:Q+n_ijab_B]:
-                row[Q] = 0.0
-                Q += 1
+            Q += n_ijab_B
         return row, 1           
     except:
         raise Exception("Something went wronh while computing row %i"%(P))
     return row, 0
 
-def comp_oeprop_ijab_A(mo_oeprop, csfs, num_csfs, options, P):
+def comp_oeprop_ijab_B(mo_oeprop, mo_oeprop_trace, csfs, num_csfs, options, P):
     singles, full_cis, doubles, doubles_options = options
     (doubles_iiaa, doubles_iiab, doubles_ijaa,
     doubles_ijab_A, doubles_ijab_B) = doubles_options
     N = sum(num_csfs)
     row = np.zeros(N)
     i,j,a,b = csfs[P]
-    try:
-        row[0.0] = 0.0
+    try:  
         Q = 1
         if singles:
             n_ia = num_csfs[1]
             for right_ex in csfs[Q:Q+n_ia]:
                 k,l,c,d = right_ex
-                row[Q] = 0.0
+                row[Q] = np.sqrt(0.5)*((k==i)*(c==a)*mo_oeprop[j,b]
+                                     + (k==i)*(c==b)*mo_oeprop[j,a]
+                                     + (k==j)*(c==a)*mo_oeprop[i,b]
+                                     + (k==j)*(c==b)*mo_oeprop[i,a])
+
                 Q += 1
         n_iiaa = num_csfs[2]
         n_iiab = num_csfs[3]
@@ -993,97 +1037,52 @@ def comp_oeprop_ijab_A(mo_oeprop, csfs, num_csfs, options, P):
         n_ijab_A = num_csfs[5]
         n_ijab_B = num_csfs[6]
         if doubles_iiaa:
-            for right_ex in csfs[Q:Q+n_iiaa]:
-                k,l,c,d = right_ex
-                row[Q] = 0.0
-                Q += 1
+            Q += n_iiaa
         if doubles_iiab:
             for right_ex in csfs[Q:Q+n_iiab]:
                 k,l,c,d = right_ex
-                row[Q] = 0.0
+                row[Q] = -np.sqrt(2)*((k==i)*(c==a)*(d==b)*mo_oeprop[j,k]
+                                    + (k==j)*(c==a)*(d==b)*mo_oeprop[i,k])
                 Q +=1
         if doubles_ijaa:
             for right_ex in csfs[Q:Q+n_ijaa]:
                 k,l,c,d = right_ex
-                row[Q] = 0.0
+                row[Q] = np.sqrt(2)*((k==i)*(l==j)*(c==a)*mo_oeprop[c,b]
+                                    +(k==i)*(l==j)*(c==b)*mo_oeprop[c,a])
                 Q += 1
         if doubles_ijab_A:
-            for right_es in csfs[Q:Q+n_ijab_A]:
-                k,l,c,d = right_ex
-                row[Q] = 0.0
-                Q += 1
+            Q += n_ijab_A
         if doubles_ijab_B:
             for right_ex in csfs[Q:Q+n_ijab_B]:
-                row[Q] = 0.0
+                row[Q] = ((i==k)*(j==l)*(a==c)*(b==d)*mo_oeprop_trace
+                        - (i==k)*(a==c)*(b==d)*mo_oeprop[l,j]
+                        - (i==l)*(a==c)*(b==d)*mo_oeprop[k,j]
+                        - (j==k)*(a==c)*(b==d)*mo_oeprop[l,i]
+                        - (j==l)*(a==c)*(b==d)*mo_oeprop[k,i]
+                        + (i==k)*(j==l)*(a==c)*mo_oeprop[b,d]
+                        + (i==k)*(j==l)*(a==d)*mo_oeprop[b,c]
+                        + (i==k)*(j==l)*(b==c)*mo_oeprop[a,d]
+                        + (i==k)*(j==l)*(b==d)*mo_oeprop[a,c])
+
                 Q += 1
         return row, 1           
     except:
         raise Exception("Something went wronh while computing row %i"%(P))
     return row, 0
 
-def comp_oeprop_ijab_B(mo_oeprop, csfs, num_csfs, options, P):
-    singles, full_cis, doubles, doubles_options = options
-    (doubles_iiaa, doubles_iiab, doubles_ijaa,
-    doubles_ijab_A, doubles_ijab_B) = doubles_options
-    N = sum(num_csfs)
-    row = np.zeros(N)
-    i,j,a,b = csfs[P]
-    try:
-        row[0.0] = 0.0
-        Q = 1
-        if singles:
-            n_ia = num_csfs[1]
-            for right_ex in csfs[Q:Q+n_ia]:
-                k,l,c,d = right_ex
-                row[Q] = 0.0
-                Q += 1
-        n_iiaa = num_csfs[2]
-        n_iiab = num_csfs[3]
-        n_ijaa = num_csfs[4]
-        n_ijab_A = num_csfs[5]
-        n_ijab_B = num_csfs[6]
-        if doubles_iiaa:
-            for right_ex in csfs[Q:Q+n_iiaa]:
-                k,l,c,d = right_ex
-                row[Q] = 0.0
-                Q += 1
-        if doubles_iiab:
-            for right_ex in csfs[Q:Q+n_iiab]:
-                k,l,c,d = right_ex
-                row[Q] = 0.0
-                Q +=1
-        if doubles_ijaa:
-            for right_ex in csfs[Q:Q+n_ijaa]:
-                k,l,c,d = right_ex
-                row[Q] = 0.0
-                Q += 1
-        if doubles_ijab_A:
-            for right_es in csfs[Q:Q+n_ijab_A]:
-                k,l,c,d = right_ex
-                row[Q] = 0.0
-                Q += 1
-        if doubles_ijab_B:
-            for right_ex in csfs[Q:Q+n_ijab_B]:
-                row[Q] = 0.0
-                Q += 1
-        return row, 1           
-    except:
-        raise Exception("Something went wronh while computing row %i"%(P))
-    return row, 0
-
-def comp_oeprop_matrix(mo_oeprop, csfs, num_csfs, options, ncore=4):
+def comp_oeprop_matrix(mo_oeprop, mo_oeprop_trace, csfs, num_csfs, options, ncore=4):
     singles, full_cis, doubles, doubles_options = options
     (doubles_iiaa, doubles_iiab, doubles_ijaa, 
     doubles_ijab_A, doubles_ijab_B) = doubles_options
     N = sum(num_csfs)
     csf_oeprop = []
     P = 0 
-    row_hf, log_hf = comp_oeprop_hf(mo_oeprop, csfs, num_csfs, options)
+    row_hf, log_hf = comp_oeprop_hf(mo_oeprop, mo_oeprop_trace, csfs, num_csfs, options)
     csf_oeprop += [row_hf]
     P += 1
     if singles:
         n_ia = num_csfs[1]
-        pfunc_oeprop_ia = partial(comp_oeprop_ia, mo_oeprop, csfs, num_csfs, options)
+        pfunc_oeprop_ia = partial(comp_oeprop_ia, mo_oeprop, mo_oeprop_trace, csfs, num_csfs, options)
         Plist_ia = list(range(P, P+n_ia))
         rows_ia, log_ia = multproc_comp_rows(pfunc_oeprop_ia, Plist_ia, ncore=ncore)
         csf_oeprop += rows_ia
@@ -1091,35 +1090,35 @@ def comp_oeprop_matrix(mo_oeprop, csfs, num_csfs, options, ncore=4):
     if doubles:
         if doubles_iiaa:
             n_iiaa = num_csfs[2]
-            pfunc_oeprop_iiaa = partial(comp_oeprop_iiaa, mo_oeprop, csfs, num_csfs, options)
+            pfunc_oeprop_iiaa = partial(comp_oeprop_iiaa, mo_oeprop, mo_oeprop_trace, csfs, num_csfs, options)
             Plist_iiaa = list(range(P, P+n_iiaa))
             rows_iiaa, log_iiaa = multproc_comp_rows(pfunc_oeprop_iiaa, Plist_iiaa, ncore=ncore)
             csf_oeprop += rows_iiaa
             P += n_iiaa
         if doubles_iiab:
             n_iiab = num_csfs[3]
-            pfunc_oeprop_iiab = partial(comp_oeprop_iiab, mo_oeprop, csfs, num_csfs, options)
+            pfunc_oeprop_iiab = partial(comp_oeprop_iiab, mo_oeprop, mo_oeprop_trace, csfs, num_csfs, options)
             Plist_iiab = list(range(P, P+n_iiab))
             rows_iiab, log_iiab = multproc_comp_rows(pfunc_oeprop_iiab, Plist_iiab, ncore=ncore)
             csf_oeprop += rows_iiab
             P += n_iiab
         if doubles_ijaa:
             n_ijaa = num_csfs[4]
-            pfunc_oeprop_ijaa = partial(comp_oeprop_ijaa, mo_oeprop, csfs, num_csfs, options)
+            pfunc_oeprop_ijaa = partial(comp_oeprop_ijaa, mo_oeprop, mo_oeprop_trace, csfs, num_csfs, options)
             Plist_ijaa = list(range(P, P+n_ijaa))
             rows_ijaa, log_ijaa = multproc_comp_rows(pfunc_oeprop_ijaa, Plist_ijaa, ncore=ncore)
             csf_oeprop += rows_ijaa
             P += n_ijaa
         if doubles_ijab_A:
             n_ijab_A = num_csfs[5]
-            pfunc_oeprop_ijab_A = partial(comp_oeprop_ijab_A, mo_oeprop, csfs, num_csfs, options)
+            pfunc_oeprop_ijab_A = partial(comp_oeprop_ijab_A, mo_oeprop, mo_oeprop_trace, csfs, num_csfs, options)
             Plist_ijab_A = list(range(P, P+n_ijab_A))
             rows_ijab_A, log_ijab_A = multproc_comp_rows(pfunc_oeprop_ijab_A, Plist_ijab_A, ncore=ncore)
             csf_oeprop += rows_ijab_A
             P += n_ijab_A
         if doubles_ijab_B:
             n_ijab_B = num_csfs[6]
-            pfunc_oeprop_ijab_B = partial(comp_oeprop_ijab_B, mo_oeprop, csfs, num_csfs, options)
+            pfunc_oeprop_ijab_B = partial(comp_oeprop_ijab_B, mo_oeprop, mo_oeprop_trace, csfs, num_csfs, options)
             Plist_ijab_B = list(range(P, P+n_ijab_B))
             rows_ijab_B, log_ijab_B = multproc_comp_rows(pfunc_oeprop_ijab_B, Plist_ijab_B, ncore=ncore)
             csf_oeprop += rows_ijab_B
