@@ -1,3 +1,4 @@
+from pyci.configint.rcisd import comp_oeprop_matrix
 from pyci.utils import (
     psi4utils,
     AOint
@@ -13,8 +14,10 @@ from pyci.configint import (
     comp_cis_edipole_r,
     comp_cis_edipoles,
     multp_cis,
+    multproc_comp_rows,
     generate_csfs,
-    comp_hcisd
+    comp_hcisd,
+    comp_oeprop_matrix,
 )
 
 from pyci.utils import (
