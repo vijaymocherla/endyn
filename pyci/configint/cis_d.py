@@ -12,7 +12,7 @@ import numpy as np
 class CIS_D:
     """ A class to compute perturbative corrections from doubles(D) for enegies from configuration interation singles(CIS).
     """
-    def __init__(self, orbinfo, cis_eigvals, cis_eigvecs, mo_eps, mo_so_eris):
+    def __init__(self, cis_eigvals, cis_eigvecs, mo_eps, mo_so_eris, orbinfo):
         """input args :
             cis_eigvals: eigenvalues of the CIS hamiltonian,
             cis_eigvecs: eigenvectors of the CIS hamiltonian,
@@ -23,8 +23,8 @@ class CIS_D:
             nvir: no. of virtual orbitals
             nmo: no. of molecular orbitals
         """
-        self.nel, self.nbf, self.nmo = orbinfo
-        self.nocc, self.nvir, self.nmo = int(self.nel/2), int((self.nmo-self.nel)/2), self.nmo
+        self.nocc, self.nmo = orbinfo
+        self.nvir, self.nel = self.nmo- self.nocc, 2*self.nocc
         self.nso = 2*self.nmo
         self.cis_iterlist = list(product(range(self.nocc), range(self.nocc,self.nmo)))
         self.occ_list = range(self.nel)

@@ -9,7 +9,7 @@ from itertools import product
 from multiprocessing import Pool
 
 
-def comp_cis_hamiltonian(orbinfo, mo_eps, mo_eris, parallelised=False, ncore=1):
+def comp_cis_hamiltonian(mo_eps, mo_eris, orbinfo, parallelised=False, ncore=1):
     """Computes the configuration-interaction singles(CIS) hamiltonian in the
     spin-adapted singlet determinant basis.
     ! Note: The Hamiltonian needs scaled to SCF ground state energy, therefore 
@@ -24,7 +24,8 @@ def comp_cis_hamiltonian(orbinfo, mo_eps, mo_eris, parallelised=False, ncore=1):
         multp_obj = multp_cis(orbinfo, mo_eps, mo_eris)
         HCIS = multp_obj.comp_hcis(ncore)
     else:    
-        nocc, nvir, nmo = orbinfo
+        nocc, nmo = orbinfo
+        nvir = nmo-nocc
         excitation_singles = list(product(range(nocc), range(nocc, nmo)))
         nDets = (nocc * nvir) + 1
         HCIS = np.zeros((nDets, nDets))
@@ -43,8 +44,8 @@ class multp_cis:
     def __init__(self, orbinfo, mo_eps, mo_eris):
         """Parallelised implementation to get the HCIS Matrix
         """
-        nel, nbf, nmo = orbinfo
-        nocc, nvir = int(nel/2), int((nmo-nel)/2)
+        nocc, nmo = orbinfo
+        nvir = nmo-nocc
         self.excitation_singles = list(product(range(nocc), range(nocc, nmo)))
         self.nDets = (nocc * nvir) + 1
         self.mo_eris = mo_eris
@@ -87,7 +88,7 @@ def comp_cis_edipole_r(orbinfo, mo_edipole_r):
     """Computes electric dipole operator for a particular cartesian 
     coordinate(say < -r >), in spin adapted CSF basis for CIS states.
     """
-    nocc, nvir, nmo = orbinfo
+    nocc, nmo = orbinfo
     nDets = (nocc * nvir) + 1
     excitation_singles = list(product(range(nocc), range(nocc, nocc+nvir)))
     cis_edipole_r = np.zeros((nDets, nDets))
