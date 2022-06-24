@@ -40,7 +40,7 @@ def generate_csfs(orbinfo, active_space, options):
     num_csfs = [1,0,0,0,0,0,0]
     if singles:
         if full_cis:
-            D_ia = [(i,0,a,0) for i in range(0,nocc) for a in range(nocc,nmo)]
+            D_ia = [(i,0,a,0) for i in range(nocc) for a in range(nocc,nmo)]
         else:    
             D_ia = [(i,0,a,0) for i in occ_list for a in vir_list]
         csfs.extend(D_ia)
@@ -156,7 +156,7 @@ def comp_hrow_ia(mo_eps, mo_eris, scf_energy, csfs, num_csfs, options, P):
         n_ia = num_csfs[1]    
         for right_ex in csfs[Q:Q+n_ia]:
             k,l,c,d = right_ex
-            row[Q] = ((i==k)*(a==c)*(E0 - mo_eps[i]+ mo_eps[a])
+            row[Q] = ((i==k)*(a==c)*(E0 + mo_eps[a] - mo_eps[i])
                                 +2*mo_eris[a,i,c,k] - mo_eris[c,a,k,i]) 
             Q += 1
         if doubles:
@@ -1070,11 +1070,12 @@ def comp_oeprop_ijab_B(mo_oeprop, mo_oeprop_trace, csfs, num_csfs, options, P):
         raise Exception("Something went wronh while computing row %i"%(P))
     return row, 0
 
-def comp_oeprop_matrix(mo_oeprop, mo_oeprop_trace, csfs, num_csfs, options, ncore=4):
+def comp_oeprop_matrix(mo_oeprop, csfs, num_csfs, options, ncore=4):
     singles, full_cis, doubles, doubles_options = options
     (doubles_iiaa, doubles_iiab, doubles_ijaa, 
     doubles_ijab_A, doubles_ijab_B) = doubles_options
     N = sum(num_csfs)
+    mo_oeprop_trace = np.sum(np.diag(mo_oeprop))
     csf_oeprop = []
     P = 0 
     row_hf, log_hf = comp_oeprop_hf(mo_oeprop, mo_oeprop_trace, csfs, num_csfs, options)
