@@ -1,3 +1,4 @@
+from pickletools import optimize
 import psi4
 import numpy as np
 import gc
@@ -96,7 +97,7 @@ class psi4utils:
 
     @staticmethod
     def matrix_ao2mo(Ca, matrix):
-        mo_matrix = np.einsum('pq,pI,qJ->IJ', matrix, Ca)
+        mo_matrix = np.einsum('pq,pI,qJ->IJ', matrix, Ca, Ca, optimize=True)
         return mo_matrix
     
 
