@@ -668,6 +668,7 @@ def comp_hcisd(mo_eps, mo_eris, scf_energy, orbinfo, active_space, options, ncor
     doubles_ijab_A, doubles_ijab_B) = doubles_options
     csfs, num_csfs = generate_csfs(orbinfo, active_space, options)
     N = sum(num_csfs)
+    # optimizing num_cores assigned
     hcisd = []
     P = 0
     row_hf, log_hf = comp_hrow_hf(mo_eps, mo_eris, scf_energy, csfs, num_csfs, options)
@@ -677,7 +678,7 @@ def comp_hcisd(mo_eps, mo_eris, scf_energy, orbinfo, active_space, options, ncor
         n_ia = num_csfs[1]
         pfunc_hrow_ia = partial(comp_hrow_ia, mo_eps, mo_eris, scf_energy, csfs, num_csfs, options)
         Plist_ia = list(range(P,P+n_ia))
-        rows_ia, log_ia = multproc_comp_rows(pfunc_hrow_ia, Plist_ia, ncore=8)
+        rows_ia, log_ia = multproc_comp_rows(pfunc_hrow_ia, Plist_ia, ncore=ncore)
         hcisd += rows_ia
         P += n_ia
     if doubles:
