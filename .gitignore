@@ -1,3 +1,7 @@
+# psi4 and numpy files 
+*.npz
+*.clean
+*.dat
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
