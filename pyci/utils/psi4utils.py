@@ -34,7 +34,6 @@ class psi4utils:
         Ca_psi4_matrix = psi4.core.Matrix.from_array(Ca)
         Cb_psi4_matrix = psi4.core.Matrix.from_array(Cb)
         mo_spin_eri_tensor = np.asarray(self.mints.mo_spin_eri(Ca_psi4_matrix, Cb_psi4_matrix))
-        mo_spin_eri_tensor = mo_spin_eri_tensor.transpose(0, 2, 1, 3)
         return mo_spin_eri_tensor
 
     @staticmethod    
@@ -159,6 +158,32 @@ class AOint(psi4utils):
                 dpy_aoints=dpy_aoints,
                 dpz_aoints=dpz_aoints)
         return 1
+
+    def save_ao_dpints(self):
+        """Saves dipole integrals in AO basis as a .npz file.
+           For example, you can load the saved integrals as follows:
+           ```py
+           >>> ao_dipoles_data = np.load('ao_qdints.npz')
+           >>> ao_qdxx = ao_dipoles_data['qdxx_aoints']
+           >>> ao_qdxy = ao_dipoles_data['qdxy_aoints']
+           >>> ao_qdxz = ao_dipoles_data['qdxz_aoints']
+           >>> ao_qdyy = ao_dipoles_data['qdyy_aoints']
+           >>> ao_qdyz = ao_dipoles_data['qdyz_aoints']
+           >>> ao_qdzz = ao_dipoles_data['qdzz_aoints']
+
+           ```
+        """
+        (qdxx_aoints, qdxy_aoints, qdxz_aoints, 
+        qdyy_aoints, qdyz_aoints, qdzz_aoints) =  np.asarray(self.mints.ao_quadrupole())
+        np.savez(self.scratch+'ao_qdints.npz',
+                qdxx_aoints=qdxx_aoints,
+                qdxy_aoints=qdxy_aoints,
+                qdxz_aoints=qdxz_aoints,
+                qdyy_aoints=qdyy_aoints,
+                qdyz_aoints=qdyz_aoints,
+                qdzz_aoints=qdzz_aoints)
+        return 1
+
 
     def save_all_aoints(self):
         self.save_ao_erints()
