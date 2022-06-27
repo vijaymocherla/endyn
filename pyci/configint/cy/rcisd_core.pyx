@@ -16,6 +16,7 @@ References:
     
 import numpy as np
 cimport numpy as cnp
+from libcpp cimport bool as bool_t
 
 # calculate row for HF reference csf
 def cy_comp_hrow_hf(cnp.ndarray[double, ndim=1] mo_eps, 
@@ -29,9 +30,9 @@ def cy_comp_hrow_hf(cnp.ndarray[double, ndim=1] mo_eps,
     cdef int n_ia, n_iiaa, n_iiab, n_ijaa, n_ijab_A, n_ijab_B
     cdef double E0
     
-    cdef bint singles, full_cis, doubles
-    cdef bint doubles_iiaa, doubles_iiab, doubles_ijaa
-    cdef bint doubles_ijab_A, doubles_ijab_B
+    cdef bool_t singles, full_cis, doubles
+    cdef bool_t doubles_iiaa, doubles_iiab, doubles_ijaa
+    cdef bool_t doubles_ijab_A, doubles_ijab_B
     cdef cnp.ndarray[double, ndim=1] row
     (singles, full_cis, doubles, doubles_iiaa, doubles_iiab,
      doubles_ijaa, doubles_ijab_A, doubles_ijab_B)  = options
@@ -95,9 +96,9 @@ def cy_comp_hrow_ia(cnp.ndarray[double, ndim=1] mo_eps,
     cdef int n_ia, n_iiaa, n_iiab, n_ijaa, n_ijab_A, n_ijab_B
     cdef double E0
     
-    cdef bint singles, full_cis, doubles
-    cdef bint doubles_iiaa, doubles_iiab, doubles_ijaa
-    cdef bint doubles_ijab_A, doubles_ijab_B
+    cdef bool_t singles, full_cis, doubles
+    cdef bool_t doubles_iiaa, doubles_iiab, doubles_ijaa
+    cdef bool_t doubles_ijab_A, doubles_ijab_B
     cdef cnp.ndarray[double, ndim=1] row
     (singles, full_cis, doubles, doubles_iiaa, doubles_iiab,
      doubles_ijaa, doubles_ijab_A, doubles_ijab_B) = options
@@ -176,9 +177,9 @@ def cy_comp_hrow_iiaa(cnp.ndarray[double, ndim=1] mo_eps,
     cdef int N, Q
     cdef int n_ia, n_iiaa, n_iiab, n_ijaa, n_ijab_A, n_ijab_B
     cdef double E0
-    cdef bint singles, full_cis, doubles
-    cdef bint doubles_iiaa, doubles_iiab, doubles_ijaa
-    cdef bint doubles_ijab_A, doubles_ijab_B
+    cdef bool_t singles, full_cis, doubles
+    cdef bool_t doubles_iiaa, doubles_iiab, doubles_ijaa
+    cdef bool_t doubles_ijab_A, doubles_ijab_B
     cdef cnp.ndarray[double, ndim=1] row
     (singles, full_cis, doubles, doubles_iiaa, doubles_iiab,
      doubles_ijaa, doubles_ijab_A, doubles_ijab_B) = options
@@ -256,9 +257,9 @@ def cy_comp_hrow_iiab(cnp.ndarray[double, ndim=1] mo_eps,
     cdef int N, Q
     cdef int n_ia, n_iiaa, n_iiab, n_ijaa, n_ijab_A, n_ijab_B
     cdef double E0
-    cdef bint singles, full_cis, doubles
-    cdef bint doubles_iiaa, doubles_iiab, doubles_ijaa
-    cdef bint doubles_ijab_A, doubles_ijab_B
+    cdef bool_t singles, full_cis, doubles
+    cdef bool_t doubles_iiaa, doubles_iiab, doubles_ijaa
+    cdef bool_t doubles_ijab_A, doubles_ijab_B
     cdef cnp.ndarray[double, ndim=1] row
     (singles, full_cis, doubles, doubles_iiaa, doubles_iiab,
      doubles_ijaa, doubles_ijab_A, doubles_ijab_B) = options
@@ -350,9 +351,9 @@ def cy_comp_hrow_ijaa(cnp.ndarray[double, ndim=1] mo_eps,
     cdef int N, Q
     cdef int n_ia, n_iiaa, n_iiab, n_ijaa, n_ijab_A, n_ijab_B
     cdef double E0
-    cdef bint singles, full_cis, doubles
-    cdef bint doubles_iiaa, doubles_iiab, doubles_ijaa
-    cdef bint doubles_ijab_A, doubles_ijab_B
+    cdef bool_t singles, full_cis, doubles
+    cdef bool_t doubles_iiaa, doubles_iiab, doubles_ijaa
+    cdef bool_t doubles_ijab_A, doubles_ijab_B
     cdef cnp.ndarray[double, ndim=1] row
     (singles, full_cis, doubles, doubles_iiaa, doubles_iiab,
      doubles_ijaa, doubles_ijab_A, doubles_ijab_B) = options
@@ -445,9 +446,9 @@ def cy_comp_hrow_ijab_A(cnp.ndarray[double, ndim=1] mo_eps,
     cdef int n_ia, n_iiaa, n_iiab, n_ijaa, n_ijab_A, n_ijab_B
     cdef double E0
     
-    cdef bint singles, full_cis, doubles
-    cdef bint doubles_iiaa, doubles_iiab, doubles_ijaa
-    cdef bint doubles_ijab_A, doubles_ijab_B
+    cdef bool_t singles, full_cis, doubles
+    cdef bool_t doubles_iiaa, doubles_iiab, doubles_ijaa
+    cdef bool_t doubles_ijab_A, doubles_ijab_B
     cdef cnp.ndarray[double, ndim=1] row
     (singles, full_cis, doubles, doubles_iiaa, doubles_iiab,
      doubles_ijaa, doubles_ijab_A, doubles_ijab_B) = options
@@ -566,9 +567,9 @@ def cy_comp_hrow_ijab_B(cnp.ndarray[double, ndim=1] mo_eps,
     cdef int n_ia, n_iiaa, n_iiab, n_ijaa, n_ijab_A, n_ijab_B
     cdef double E0
     
-    cdef bint singles, full_cis, doubles
-    cdef bint doubles_iiaa, doubles_iiab, doubles_ijaa
-    cdef bint doubles_ijab_A, doubles_ijab_B
+    cdef bool_t singles, full_cis, doubles
+    cdef bool_t doubles_iiaa, doubles_iiab, doubles_ijaa
+    cdef bool_t doubles_ijab_A, doubles_ijab_B
     cdef cnp.ndarray[double, ndim=1] row
     (singles, full_cis, doubles, doubles_iiaa, doubles_iiab,
      doubles_ijaa, doubles_ijab_A, doubles_ijab_B) = options
