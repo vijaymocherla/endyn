@@ -7,12 +7,18 @@ import sys
 from setuptools import setup, Extension, find_packages
 from Cython.Build import cythonize
 from Cython.Distutils import build_ext
-
+import numpy 
+import scipy
 
 __version__ = ''
 exec(open('pyci/_version.py').read())
 
-EXT_MODULES = []
+EXT_MODULES = [
+          Extension("pyci.configint.cy.rcisd_core",
+        sources=["pyci/configint/cy/rcisd_core.pyx"],
+        include_dirs = [numpy.get_include(),scipy.get_include()],
+        extra_compile_args = ["-O3", "-funroll-loops"],)
+]
 
 # Package setup commands 
 setup(name = 'pyci',

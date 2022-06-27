@@ -16,7 +16,16 @@ References:
 import numpy as np
 from functools import partial
 from multiprocessing import Pool
-
+# from pyci.configint.cy import rcisd_core
+from .cy.rcisd_core import (
+    cy_comp_hrow_hf,
+    cy_comp_hrow_ia,
+    cy_comp_hrow_iiaa,
+    cy_comp_hrow_iiab,
+    cy_comp_hrow_ijaa,
+    cy_comp_hrow_ijab_A,
+    cy_comp_hrow_ijab_B
+)
 # input : eps, Ca, mo_oeints, mo_eris
 # methods : 
 #   1. Setup CI calculation options: singles, doubles, full_cis and active space.
@@ -31,11 +40,10 @@ from multiprocessing import Pool
 #
 
 def generate_csfs(orbinfo, active_space, options):
-    singles, full_cis, doubles, doubles_options = options
     nocc, nmo = orbinfo
-    (doubles_iiaa, doubles_iiab, doubles_ijaa, 
-    doubles_ijab_A, doubles_ijab_B) = doubles_options
     act_occ, act_vir = active_space
+    (singles, full_cis, doubles, doubles_iiaa, doubles_iiab,
+     doubles_ijaa, doubles_ijab_A, doubles_ijab_B) = options
     occ_list = range(nocc-act_occ, nocc)
     vir_list = range(nocc, nocc+act_vir)
     csfs = [(0,0,0,0)]
@@ -92,9 +100,8 @@ def multproc_comp_rows(pfunc, Plist, ncore=4, run_checks=False):
     return rows, log
 
 def comp_hrow_hf(mo_eps, mo_eris, scf_energy, csfs, num_csfs, options):
-    singles, full_cis, doubles, doubles_options = options
-    (doubles_iiaa, doubles_iiab, doubles_ijaa, 
-    doubles_ijab_A, doubles_ijab_B) = doubles_options
+    (singles, full_cis, doubles, doubles_iiaa, doubles_iiab,
+     doubles_ijaa, doubles_ijab_A, doubles_ijab_B) = options
     N = sum(num_csfs)
     E0 = scf_energy
     row = np.zeros(N)
@@ -145,9 +152,8 @@ def comp_hrow_hf(mo_eps, mo_eris, scf_energy, csfs, num_csfs, options):
 
 # calculate rows for singles csf
 def comp_hrow_ia(mo_eps, mo_eris, scf_energy, csfs, num_csfs, options, P):
-    singles, full_cis, doubles, doubles_options = options
-    (doubles_iiaa, doubles_iiab, doubles_ijaa, 
-    doubles_ijab_A, doubles_ijab_B) = doubles_options
+    (singles, full_cis, doubles, doubles_iiaa, doubles_iiab,
+    doubles_ijaa, doubles_ijab_A, doubles_ijab_B)  = options
     N = sum(num_csfs)
     E0 = scf_energy
     row = np.zeros(N)
@@ -213,9 +219,8 @@ def comp_hrow_ia(mo_eps, mo_eris, scf_energy, csfs, num_csfs, options, P):
 
 # calculate rows for doubles csf
 def comp_hrow_iiaa(mo_eps, mo_eris, scf_energy, csfs, num_csfs, options, P):
-    singles, full_cis, doubles, doubles_options = options
-    (doubles_iiaa, doubles_iiab, doubles_ijaa, 
-    doubles_ijab_A, doubles_ijab_B) = doubles_options
+    (singles, full_cis, doubles, doubles_iiaa, doubles_iiab,
+    doubles_ijaa, doubles_ijab_A, doubles_ijab_B) = options
     N = sum(num_csfs)
     E0 = scf_energy
     row = np.zeros(N)
@@ -281,9 +286,8 @@ def comp_hrow_iiaa(mo_eps, mo_eris, scf_energy, csfs, num_csfs, options, P):
         return row, 0
 
 def comp_hrow_iiab(mo_eps, mo_eris, scf_energy, csfs, num_csfs, options, P):
-    singles, full_cis, doubles, doubles_options = options
-    (doubles_iiaa, doubles_iiab, doubles_ijaa, 
-    doubles_ijab_A, doubles_ijab_B) = doubles_options
+    (singles, full_cis, doubles, doubles_iiaa, doubles_iiab,
+    doubles_ijaa, doubles_ijab_A, doubles_ijab_B) = options
     N = sum(num_csfs)
     E0 = scf_energy
     row = np.zeros(N)
@@ -363,9 +367,8 @@ def comp_hrow_iiab(mo_eps, mo_eris, scf_energy, csfs, num_csfs, options, P):
         return row, 0
 
 def comp_hrow_ijaa(mo_eps, mo_eris, scf_energy, csfs, num_csfs, options, P):
-    singles, full_cis, doubles, doubles_options = options
-    (doubles_iiaa, doubles_iiab, doubles_ijaa, 
-    doubles_ijab_A, doubles_ijab_B) = doubles_options
+    (singles, full_cis, doubles, doubles_iiaa, doubles_iiab,
+    doubles_ijaa, doubles_ijab_A, doubles_ijab_B) = options
     N = sum(num_csfs)
     E0 = scf_energy
     row = np.zeros(N)
@@ -445,9 +448,8 @@ def comp_hrow_ijaa(mo_eps, mo_eris, scf_energy, csfs, num_csfs, options, P):
         return row, 0
 
 def comp_hrow_ijab_A(mo_eps, mo_eris, scf_energy, csfs, num_csfs, options, P):
-    singles, full_cis, doubles, doubles_options = options
-    (doubles_iiaa, doubles_iiab, doubles_ijaa, 
-    doubles_ijab_A, doubles_ijab_B) = doubles_options
+    (singles, full_cis, doubles, doubles_iiaa, doubles_iiab,
+    doubles_ijaa, doubles_ijab_A, doubles_ijab_B) = options
     N = sum(num_csfs)
     E0 = scf_energy
     row = np.zeros(N)
@@ -553,9 +555,8 @@ def comp_hrow_ijab_A(mo_eps, mo_eris, scf_energy, csfs, num_csfs, options, P):
         return row, 0
 
 def comp_hrow_ijab_B(mo_eps, mo_eris, scf_energy, csfs, num_csfs, options, P):
-    singles, full_cis, doubles, doubles_options = options
-    (doubles_iiaa, doubles_iiab, doubles_ijaa, 
-    doubles_ijab_A, doubles_ijab_B) = doubles_options
+    (singles, full_cis, doubles, doubles_iiaa, doubles_iiab,
+    doubles_ijaa, doubles_ijab_A, doubles_ijab_B) = options
     N = sum(num_csfs)
     E0 = scf_energy
     row = np.zeros(N)
@@ -663,9 +664,8 @@ def comp_hrow_ijab_B(mo_eps, mo_eris, scf_energy, csfs, num_csfs, options, P):
         return row, 0
 
 def comp_hcisd(mo_eps, mo_eris, scf_energy, orbinfo, active_space, options, ncore=4):
-    singles, full_cis, doubles, doubles_options = options
-    (doubles_iiaa, doubles_iiab, doubles_ijaa, 
-    doubles_ijab_A, doubles_ijab_B) = doubles_options
+    (singles, full_cis, doubles, doubles_iiaa, doubles_iiab,
+    doubles_ijaa, doubles_ijab_A, doubles_ijab_B)  = options
     csfs, num_csfs = generate_csfs(orbinfo, active_space, options)
     N = sum(num_csfs)
     # optimizing num_cores assigned
@@ -722,10 +722,68 @@ def comp_hcisd(mo_eps, mo_eris, scf_energy, orbinfo, active_space, options, ncor
     hcisd = np.array(hcisd)
     return hcisd
 
+def cy_comp_hcisd(mo_eps, mo_eris, scf_energy, orbinfo, active_space, options, ncore=4):
+    (singles, full_cis, doubles, doubles_iiaa, doubles_iiab,
+    doubles_ijaa, doubles_ijab_A, doubles_ijab_B)  = options
+    csfs, num_csfs = generate_csfs(orbinfo, active_space, options)
+    N = sum(num_csfs)
+    # optimizing num_cores assigned
+    hcisd = []
+    P = 0
+    row_hf = cy_comp_hrow_hf(mo_eps, mo_eris, scf_energy, csfs, num_csfs, options)
+    hcisd += [row_hf]
+    P += 1
+    if singles:
+        n_ia = num_csfs[1]
+        pfunc_hrow_ia = partial(cy_comp_hrow_ia, mo_eps, mo_eris, scf_energy, csfs, num_csfs, options)
+        Plist_ia = list(range(P,P+n_ia))
+        rows_ia = multproc_comp_rows(pfunc_hrow_ia, Plist_ia, ncore=ncore)
+        hcisd += rows_ia
+        P += n_ia
+    if doubles:
+        if doubles_iiaa:
+            n_iiaa = num_csfs[2]
+            pfunc_hrow_iiaa = partial(cy_comp_hrow_iiaa, mo_eps, mo_eris, scf_energy, csfs, num_csfs, options)
+            Plist_iiaa = list(range(P,P+n_iiaa))
+            rows_iiaa = multproc_comp_rows(pfunc_hrow_iiaa, Plist_iiaa, ncore=ncore)
+            hcisd += rows_iiaa
+            P += n_iiaa
+        if doubles_iiab:        
+            n_iiab = num_csfs[3]
+            pfunc_hrow_iiab = partial(cy_comp_hrow_iiab, mo_eps, mo_eris, scf_energy, csfs, num_csfs, options)
+            Plist_iiab = list(range(P,P+n_iiab))
+            rows_iiab = multproc_comp_rows(pfunc_hrow_iiab, Plist_iiab, ncore=ncore)
+            hcisd += rows_iiab
+            P += n_iiab
+        if doubles_ijaa:
+            n_ijaa = num_csfs[4]
+            pfunc_hrow_ijaa = partial(cy_comp_hrow_ijaa, mo_eps, mo_eris, scf_energy, csfs, num_csfs, options)
+            Plist_ijaa = list(range(P,P+n_ijaa))
+            rows_ijaa = multproc_comp_rows(pfunc_hrow_ijaa, Plist_ijaa, ncore=ncore)
+            hcisd += rows_ijaa
+            P += n_ijaa
+        if doubles_ijab_A:
+            n_ijab_A = num_csfs[5]
+            pfunc_hrow_ijab_A = partial(cy_comp_hrow_ijab_A, mo_eps, mo_eris, scf_energy, csfs, num_csfs, options)
+            Plist_ijab_A = list(range(P,P+n_ijab_A))
+            rows_ijab_A = multproc_comp_rows(pfunc_hrow_ijab_A, Plist_ijab_A, ncore=ncore)
+            hcisd += rows_ijab_A
+            P += n_ijab_A
+        if doubles_ijab_B:        
+            n_ijab_B = num_csfs[6]
+            pfunc_hrow_ijab_B = partial(cy_comp_hrow_ijab_B, mo_eps, mo_eris, scf_energy, csfs, num_csfs, options)
+            Plist_ijab_B = list(range(P,P+n_ijab_B))
+            rows_ijab_B = multproc_comp_rows(pfunc_hrow_ijab_B, Plist_ijab_B, ncore=ncore)
+            hcisd += rows_ijab_B
+            P += n_ijab_B
+    if P != N:
+        raise Exception("ERROR: posval not equal nCSFs")
+    hcisd = np.array(hcisd)
+    return hcisd
+
 def comp_oeprop_hf(mo_oeprop, mo_oeprop_trace, csfs, num_csfs, options):
-    singles, full_cis, doubles, doubles_options = options
-    (doubles_iiaa, doubles_iiab, doubles_ijaa,
-    doubles_ijab_A, doubles_ijab_B) = doubles_options
+    (singles, full_cis, doubles, doubles_iiaa, doubles_iiab,
+     doubles_ijaa, doubles_ijab_A, doubles_ijab_B) = options
     N = sum(num_csfs)
     row = np.zeros(N)
     i,j,a,b = csfs[0]
@@ -759,9 +817,8 @@ def comp_oeprop_hf(mo_oeprop, mo_oeprop_trace, csfs, num_csfs, options):
     return row, 0
 
 def comp_oeprop_ia(mo_oeprop, mo_oeprop_trace, csfs, num_csfs, options, P):
-    singles, full_cis, doubles, doubles_options = options
-    (doubles_iiaa, doubles_iiab, doubles_ijaa,
-    doubles_ijab_A, doubles_ijab_B) = doubles_options
+    (singles, full_cis, doubles, doubles_iiaa, doubles_iiab,
+     doubles_ijaa, doubles_ijab_A, doubles_ijab_B) = options
     N = sum(num_csfs)
     row = np.zeros(N)
     i,j,a,b = csfs[P]
@@ -819,9 +876,8 @@ def comp_oeprop_ia(mo_oeprop, mo_oeprop_trace, csfs, num_csfs, options, P):
     return row, 0
 
 def comp_oeprop_iiaa(mo_oeprop, mo_oeprop_trace, csfs, num_csfs, options, P):
-    singles, full_cis, doubles, doubles_options = options
-    (doubles_iiaa, doubles_iiab, doubles_ijaa,
-    doubles_ijab_A, doubles_ijab_B) = doubles_options
+    (singles, full_cis, doubles, doubles_iiaa, doubles_iiab,
+     doubles_ijaa, doubles_ijab_A, doubles_ijab_B) = options
     N = sum(num_csfs)
     row = np.zeros(N)
     i,j,a,b = csfs[P]
@@ -867,9 +923,8 @@ def comp_oeprop_iiaa(mo_oeprop, mo_oeprop_trace, csfs, num_csfs, options, P):
     return row, 0
 
 def comp_oeprop_iiab(mo_oeprop, mo_oeprop_trace, csfs, num_csfs, options, P):
-    singles, full_cis, doubles, doubles_options = options
-    (doubles_iiaa, doubles_iiab, doubles_ijaa,
-    doubles_ijab_A, doubles_ijab_B) = doubles_options
+    (singles, full_cis, doubles, doubles_iiaa, doubles_iiab,
+     doubles_ijaa, doubles_ijab_A, doubles_ijab_B) = options
     N = sum(num_csfs)
     row = np.zeros(N)
     i,j,a,b = csfs[P]
@@ -917,9 +972,8 @@ def comp_oeprop_iiab(mo_oeprop, mo_oeprop_trace, csfs, num_csfs, options, P):
     return row, 0
 
 def comp_oeprop_ijaa(mo_oeprop, mo_oeprop_trace, csfs, num_csfs, options, P):
-    singles, full_cis, doubles, doubles_options = options
-    (doubles_iiaa, doubles_iiab, doubles_ijaa,
-    doubles_ijab_A, doubles_ijab_B) = doubles_options
+    (singles, full_cis, doubles, doubles_iiaa, doubles_iiab,
+     doubles_ijaa, doubles_ijab_A, doubles_ijab_B) = options
     N = sum(num_csfs)
     row = np.zeros(N)
     i,j,a,b = csfs[P]
@@ -967,9 +1021,8 @@ def comp_oeprop_ijaa(mo_oeprop, mo_oeprop_trace, csfs, num_csfs, options, P):
     return row, 0
 
 def comp_oeprop_ijab_A(mo_oeprop, mo_oeprop_trace, csfs, num_csfs, options, P):
-    singles, full_cis, doubles, doubles_options = options
-    (doubles_iiaa, doubles_iiab, doubles_ijaa,
-    doubles_ijab_A, doubles_ijab_B) = doubles_options
+    (singles, full_cis, doubles, doubles_iiaa, doubles_iiab,
+     doubles_ijaa, doubles_ijab_A, doubles_ijab_B) = options
     N = sum(num_csfs)
     row = np.zeros(N)
     i,j,a,b = csfs[P]
@@ -1016,9 +1069,8 @@ def comp_oeprop_ijab_A(mo_oeprop, mo_oeprop_trace, csfs, num_csfs, options, P):
     return row, 0
 
 def comp_oeprop_ijab_B(mo_oeprop, mo_oeprop_trace, csfs, num_csfs, options, P):
-    singles, full_cis, doubles, doubles_options = options
-    (doubles_iiaa, doubles_iiab, doubles_ijaa,
-    doubles_ijab_A, doubles_ijab_B) = doubles_options
+    (singles, full_cis, doubles, doubles_iiaa, doubles_iiab,
+     doubles_ijaa, doubles_ijab_A, doubles_ijab_B) = options
     N = sum(num_csfs)
     row = np.zeros(N)
     i,j,a,b = csfs[P]
@@ -1074,9 +1126,8 @@ def comp_oeprop_ijab_B(mo_oeprop, mo_oeprop_trace, csfs, num_csfs, options, P):
     return row, 0
 
 def comp_oeprop_matrix(mo_oeprop, csfs, num_csfs, options, ncore=4):
-    singles, full_cis, doubles, doubles_options = options
-    (doubles_iiaa, doubles_iiab, doubles_ijaa, 
-    doubles_ijab_A, doubles_ijab_B) = doubles_options
+    (singles, full_cis, doubles, doubles_iiaa, doubles_iiab,
+     doubles_ijaa, doubles_ijab_A, doubles_ijab_B)  = options    
     N = sum(num_csfs)
     mo_oeprop_trace = np.sum(np.diag(mo_oeprop))
     csf_oeprop = []

@@ -13,16 +13,31 @@ References:
     Woźniak, A. P., Przybytek, M., Lewenstein, M., & Moszyński, R. (2022). 
     J.Chem.Phys., 156(17), 174106.
 """
+    
 import numpy as np
+cimport numpy as cnp
 
 # calculate row for HF reference csf
-def comp_hrow_hf(mo_eps, mo_eris, scf_energy, csfs, num_csfs, options):
-    singles, full_cis, doubles, doubles_options = options
-    (doubles_iiaa, doubles_iiab, doubles_ijaa, 
-    doubles_ijab_A, doubles_ijab_B) = doubles_options
+def cy_comp_hrow_hf(cnp.ndarray[double, ndim=1] mo_eps, 
+                cnp.ndarray[double, ndim=4] mo_eris, 
+                double scf_energy,
+                list csfs, 
+                list num_csfs,
+                list options):
+    cdef int i,j,k,l,a,b,c,d
+    cdef int N, Q
+    cdef int n_ia, n_iiaa, n_iiab, n_ijaa, n_ijab_A, n_ijab_B
+    cdef double E0
+    
+    cdef bint singles, full_cis, doubles
+    cdef bint doubles_iiaa, doubles_iiab, doubles_ijaa
+    cdef bint doubles_ijab_A, doubles_ijab_B
+    cdef cnp.ndarray[double, ndim=1] row
+    (singles, full_cis, doubles, doubles_iiaa, doubles_iiab,
+     doubles_ijaa, doubles_ijab_A, doubles_ijab_B)  = options
     N = sum(num_csfs)
     E0 = scf_energy
-    row = np.zeros(N)
+    row = np.zeros(N, dtype=np.float64)
     try:
         row[0] = E0
         Q = 1
@@ -58,24 +73,37 @@ def comp_hrow_hf(mo_eps, mo_eris, scf_energy, csfs, num_csfs, options):
                     row[Q] = np.sqrt(3)*(mo_eris[c,k,d,l] - mo_eris[c,l,d,k])
                     Q += 1
             if doubles_ijab_B:
-                for  right_ex in csfs[Q:Q+n_ijab_B]:
+                for right_ex in csfs[Q:Q+n_ijab_B]:
                     # B 
                     k,l,c,d = right_ex
                     row[Q] = mo_eris[c,k,d,l] + mo_eris[c,l,d,k]
                     Q += 1
-        return row, 1
+        return row
     except :
-        raise Exception("Something went wrong while computing row %i"%(0))
-        return row, 0
+        raise Exception("Something went wrong while cy_computing row %i"%(0))
 
 # calculate rows for singles csf
-def comp_hrow_ia(mo_eps, mo_eris, scf_energy, csfs, num_csfs, options, P):
-    singles, full_cis, doubles, doubles_options = options
-    (doubles_iiaa, doubles_iiab, doubles_ijaa, 
-    doubles_ijab_A, doubles_ijab_B) = doubles_options
+def cy_comp_hrow_ia(cnp.ndarray[double, ndim=1] mo_eps, 
+                cnp.ndarray[double, ndim=4] mo_eris, 
+                double scf_energy, 
+                list csfs, 
+                list num_csfs, 
+                list options, 
+                int P):
+    cdef int i,j,k,l,a,b,c,d
+    cdef int N, Q
+    cdef int n_ia, n_iiaa, n_iiab, n_ijaa, n_ijab_A, n_ijab_B
+    cdef double E0
+    
+    cdef bint singles, full_cis, doubles
+    cdef bint doubles_iiaa, doubles_iiab, doubles_ijaa
+    cdef bint doubles_ijab_A, doubles_ijab_B
+    cdef cnp.ndarray[double, ndim=1] row
+    (singles, full_cis, doubles, doubles_iiaa, doubles_iiab,
+     doubles_ijaa, doubles_ijab_A, doubles_ijab_B) = options
     N = sum(num_csfs)
     E0 = scf_energy
-    row = np.zeros(N)
+    row = np.zeros(N, dtype=np.float64)
     i,j,a,b = csfs[P]
     try:    
         
@@ -131,19 +159,32 @@ def comp_hrow_ia(mo_eps, mo_eris, scf_energy, csfs, num_csfs, options, P):
                                         -(a==c)*(mo_eris[d,k,l,i] - mo_eris[d,l,k,i])
                                         -(a==d)*(mo_eris[c,k,l,i] - mo_eris[c,l,k,i]))
                     Q += 1
-        return row, 1
+        return row
     except:
-        raise Exception("Something went wrong while computing row %i" % (P))
-        return row, 0
+        raise Exception("Something went wrong while cy_computing row %i" % (P))
+
 
 # calculate rows for doubles csf
-def comp_hrow_iiaa(mo_eps, mo_eris, scf_energy, csfs, num_csfs, options, P):
-    singles, full_cis, doubles, doubles_options = options
-    (doubles_iiaa, doubles_iiab, doubles_ijaa, 
-    doubles_ijab_A, doubles_ijab_B) = doubles_options
+def cy_comp_hrow_iiaa(cnp.ndarray[double, ndim=1] mo_eps, 
+                cnp.ndarray[double, ndim=4] mo_eris, 
+                double scf_energy, 
+                list csfs,
+                list num_csfs, 
+                list options, 
+                int P):
+    cdef int i,j,k,l,a,b,c,d
+    cdef int N, Q
+    cdef int n_ia, n_iiaa, n_iiab, n_ijaa, n_ijab_A, n_ijab_B
+    cdef double E0
+    cdef bint singles, full_cis, doubles
+    cdef bint doubles_iiaa, doubles_iiab, doubles_ijaa
+    cdef bint doubles_ijab_A, doubles_ijab_B
+    cdef cnp.ndarray[double, ndim=1] row
+    (singles, full_cis, doubles, doubles_iiaa, doubles_iiab,
+     doubles_ijaa, doubles_ijab_A, doubles_ijab_B) = options
     N = sum(num_csfs)
     E0 = scf_energy
-    row = np.zeros(N)
+    row = np.zeros(N, dtype=np.float64)
     i,j,a,b = csfs[P]
     try:
         row[0] = mo_eris[a,i,a,i]
@@ -200,18 +241,30 @@ def comp_hrow_iiaa(mo_eps, mo_eris, scf_energy, csfs, num_csfs, options, P):
                         + (i==l)*(a==c)*(mo_eris[a,i,d,k] - 2*mo_eris[a,d,k,i])
                         + (i==l)*(a==d)*(mo_eris[a,i,c,k] - 2*mo_eris[a,c,k,i]))
                 Q += 1
-        return row, 1
+        return row
     except:
-        raise Exception("Something went wrong while computing row %i" % (P))
-        return row, 0
+        raise Exception("Something went wrong while cy_computing row %i" % (P))
 
-def comp_hrow_iiab(mo_eps, mo_eris, scf_energy, csfs, num_csfs, options, P):
-    singles, full_cis, doubles, doubles_options = options
-    (doubles_iiaa, doubles_iiab, doubles_ijaa, 
-    doubles_ijab_A, doubles_ijab_B) = doubles_options
+def cy_comp_hrow_iiab(cnp.ndarray[double, ndim=1] mo_eps, 
+                cnp.ndarray[double, ndim=4] mo_eris, 
+                double scf_energy, 
+                list csfs, 
+                list num_csfs, 
+                list options, 
+                int P):
+    cdef int i,j,k,l,a,b,c,d
+    cdef int N, Q
+    cdef int n_ia, n_iiaa, n_iiab, n_ijaa, n_ijab_A, n_ijab_B
+    cdef double E0
+    cdef bint singles, full_cis, doubles
+    cdef bint doubles_iiaa, doubles_iiab, doubles_ijaa
+    cdef bint doubles_ijab_A, doubles_ijab_B
+    cdef cnp.ndarray[double, ndim=1] row
+    (singles, full_cis, doubles, doubles_iiaa, doubles_iiab,
+     doubles_ijaa, doubles_ijab_A, doubles_ijab_B) = options
     N = sum(num_csfs)
     E0 = scf_energy
-    row = np.zeros(N)
+    row = np.zeros(N, dtype=np.float64)
     i,j,a,b = csfs[P]
     try :
         row[0] = np.sqrt(2)*mo_eris[a,i,b,i]
@@ -282,18 +335,30 @@ def comp_hrow_iiab(mo_eps, mo_eris, scf_energy, csfs, num_csfs, options, P):
                                         +(i==l)*(b==d)*(mo_eris[a,i,c,k]- 2*mo_eris[a,c,k,i])
                                         +(a==c)*(b==d)*2*mo_eris[k,i,l,i])
                 Q += 1
-        return row, 1
+        return row
     except:
-        raise Exception("Something went wrong while computing row %i" % (P))
-        return row, 0
+        raise Exception("Something went wrong while cy_computing row %i" % (P))
 
-def comp_hrow_ijaa(mo_eps, mo_eris, scf_energy, csfs, num_csfs, options, P):
-    singles, full_cis, doubles, doubles_options = options
-    (doubles_iiaa, doubles_iiab, doubles_ijaa, 
-    doubles_ijab_A, doubles_ijab_B) = doubles_options
+def cy_comp_hrow_ijaa(cnp.ndarray[double, ndim=1] mo_eps, 
+                cnp.ndarray[double, ndim=4] mo_eris, 
+                double scf_energy, 
+                list csfs, 
+                list num_csfs, 
+                list options, 
+                int P):
+    cdef int i,j,k,l,a,b,c,d
+    cdef int N, Q
+    cdef int n_ia, n_iiaa, n_iiab, n_ijaa, n_ijab_A, n_ijab_B
+    cdef double E0
+    cdef bint singles, full_cis, doubles
+    cdef bint doubles_iiaa, doubles_iiab, doubles_ijaa
+    cdef bint doubles_ijab_A, doubles_ijab_B
+    cdef cnp.ndarray[double, ndim=1] row
+    (singles, full_cis, doubles, doubles_iiaa, doubles_iiab,
+     doubles_ijaa, doubles_ijab_A, doubles_ijab_B) = options
     N = sum(num_csfs)
     E0 = scf_energy
-    row = np.zeros(N)
+    row = np.zeros(N, dtype=np.float64)
     i,j,a,b = csfs[P]
     try:
         row[0] = np.sqrt(2)*mo_eris[a,i,a,j]
@@ -364,18 +429,31 @@ def comp_hrow_ijaa(mo_eps, mo_eris, scf_energy, csfs, num_csfs, options, P):
                                     + (j==l)*(a==d)*(mo_eris[a,i,c,k] -2*mo_eris[a,c,i,k])
                                     + (i==k)*(j==l)*2*mo_eris[c,a,d,a])
                 Q += 1
-        return row, 1
+        return row
     except:
-        raise Exception("Something went wrong while computing row %i" % (P))
-        return row, 0
+        raise Exception("Something went wrong while cy_computing row %i" % (P))
 
-def comp_hrow_ijab_A(mo_eps, mo_eris, scf_energy, csfs, num_csfs, options, P):
-    singles, full_cis, doubles, doubles_options = options
-    (doubles_iiaa, doubles_iiab, doubles_ijaa, 
-    doubles_ijab_A, doubles_ijab_B) = doubles_options
+def cy_comp_hrow_ijab_A(cnp.ndarray[double, ndim=1] mo_eps, 
+                cnp.ndarray[double, ndim=4] mo_eris, 
+                double scf_energy, 
+                list csfs, 
+                list num_csfs, 
+                list options, 
+                int P):
+    cdef int i,j,k,l,a,b,c,d
+    cdef int N, Q
+    cdef int n_ia, n_iiaa, n_iiab, n_ijaa, n_ijab_A, n_ijab_B
+    cdef double E0
+    
+    cdef bint singles, full_cis, doubles
+    cdef bint doubles_iiaa, doubles_iiab, doubles_ijaa
+    cdef bint doubles_ijab_A, doubles_ijab_B
+    cdef cnp.ndarray[double, ndim=1] row
+    (singles, full_cis, doubles, doubles_iiaa, doubles_iiab,
+     doubles_ijaa, doubles_ijab_A, doubles_ijab_B) = options
     N = sum(num_csfs)
     E0 = scf_energy
-    row = np.zeros(N)
+    row = np.zeros(N, dtype=np.float64)
     i,j,a,b = csfs[P]
     try :
         row[0] = np.sqrt(3)*(mo_eris[a,i,b,j] - mo_eris[a,j,b,i])
@@ -472,18 +550,31 @@ def comp_hrow_ijab_A(mo_eps, mo_eris, scf_energy, csfs, num_csfs, options, P):
                                         +(j==l)*(b==c)*(mo_eris[a,i,d,k])
                                         +(j==l)*(b==d)*(mo_eris[a,i,c,k]))
                 Q += 1
-        return row, 1
+        return row
     except:
-        raise Exception("Something went wrong while computing row %i" % (P))
-        return row, 0
+        raise Exception("Something went wrong while cy_computing row %i" % (P))
 
-def comp_hrow_ijab_B(mo_eps, mo_eris, scf_energy, csfs, num_csfs, options, P):
-    singles, full_cis, doubles, doubles_options = options
-    (doubles_iiaa, doubles_iiab, doubles_ijaa, 
-    doubles_ijab_A, doubles_ijab_B) = doubles_options
+def cy_comp_hrow_ijab_B(cnp.ndarray[double, ndim=1] mo_eps, 
+                cnp.ndarray[double, ndim=4] mo_eris, 
+                double scf_energy, 
+                list csfs, 
+                list num_csfs, 
+                list options, 
+                int P):
+    cdef int i,j,k,l,a,b,c,d
+    cdef int N, Q
+    cdef int n_ia, n_iiaa, n_iiab, n_ijaa, n_ijab_A, n_ijab_B
+    cdef double E0
+    
+    cdef bint singles, full_cis, doubles
+    cdef bint doubles_iiaa, doubles_iiab, doubles_ijaa
+    cdef bint doubles_ijab_A, doubles_ijab_B
+    cdef cnp.ndarray[double, ndim=1] row
+    (singles, full_cis, doubles, doubles_iiaa, doubles_iiab,
+     doubles_ijaa, doubles_ijab_A, doubles_ijab_B) = options
     N = sum(num_csfs)
     E0 = scf_energy
-    row = np.zeros(N)
+    row = np.zeros(N, dtype=np.float64)
     i,j,a,b = csfs[P]
     try:
         row[0] = mo_eris[a,i,b,j] + mo_eris[a,j,b,i]
@@ -582,7 +673,6 @@ def comp_hrow_ijab_B(mo_eps, mo_eris, scf_energy, csfs, num_csfs, options, P):
                         +(i==k)*(j==l)*(mo_eris[a,c,d,b] + mo_eris[a,d,c,b])
                         +(a==c)*(b==d)*(mo_eris[i,k,j,l] + mo_eris[i,l,k,j]))
                 Q += 1
-        return row, 1
+        return row
     except:
-        raise Exception("Something went wrong while computing row %i" % (P))
-        return row, 0
+        raise Exception("Something went wrong while cy_computing row %i" % (P))

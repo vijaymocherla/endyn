@@ -1,4 +1,3 @@
-from pyci.configint.rcisd import comp_oeprop_matrix
 from pyci.utils import (
     psi4utils,
     AOint
@@ -7,6 +6,7 @@ from pyci.integrators import (
     RK4,
     ExactProp,
 )    
+
 
 from pyci.configint import (
     CIS_D,
@@ -18,6 +18,7 @@ from pyci.configint import (
     generate_csfs,
     comp_hcisd,
     comp_oeprop_matrix,
+    cy_comp_hcisd
 )
 
 from pyci.utils import (
