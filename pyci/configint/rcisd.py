@@ -1092,11 +1092,13 @@ def comp_oeprop_ijab_B(mo_oeprop, mo_oeprop_trace, csfs, num_csfs, options, P):
     except:
         raise Exception("Something went wronh while computing row %i"%(P))
     
-def comp_oeprop_matrix(mo_oeprop, csfs, num_csfs, options, ncore=4):
+def comp_oeprop_matrix(mo_oeprop, orbinfo, active_space, options, ncore=4):
+    csfs, num_csfs = generate_csfs(orbinfo, active_space, options)
+    nocc, nmo = orbinfo
     (singles, full_cis, doubles, doubles_iiaa, doubles_iiab,
      doubles_ijaa, doubles_ijab_A, doubles_ijab_B)  = options    
     N = sum(num_csfs)
-    mo_oeprop_trace = np.sum(np.diag(mo_oeprop))
+    mo_oeprop_trace = np.sum(np.diag(mo_oeprop)[:nocc])
     csf_oeprop = []
     P = 0 
     row_hf = comp_oeprop_hf(mo_oeprop, mo_oeprop_trace, csfs, num_csfs, options)

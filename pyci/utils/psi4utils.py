@@ -97,7 +97,7 @@ class psi4utils:
 
     @staticmethod
     def matrix_ao2mo(Ca, matrix):
-        mo_matrix = np.einsum('pq,pI,qJ->IJ', matrix, Ca, optimize=True)
+        mo_matrix = np.einsum('pq,pI,qJ->IJ', matrix, Ca, Ca, optimize=True)
         return mo_matrix
     
     @staticmethod
