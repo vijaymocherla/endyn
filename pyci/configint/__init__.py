@@ -1,4 +1,4 @@
-from .cis import (
+from .old_cis import (
     comp_cis_hamiltonian,
     comp_cis_edipole_r,
     comp_cis_edipoles,
