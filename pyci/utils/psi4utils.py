@@ -97,7 +97,7 @@ class psi4utils:
 
     @staticmethod
     def matrix_ao2mo(Ca, matrix):
-        mo_matrix = np.einsum('pq,pI,qJ->IJ', matrix, Ca, Ca, optimize=True)
+        mo_matrix = np.einsum('pq,pI,qJ->IJ', matrix, Ca, optimize=True)
         return mo_matrix
     
     @staticmethod
@@ -164,7 +164,7 @@ class AOint(psi4utils):
                 dpz_aoints=dpz_aoints)
         return 1
 
-    def save_ao_dpints(self):
+    def save_ao_qdints(self):
         """Saves dipole integrals in AO basis as a .npz file.
            For example, you can load the saved integrals as follows:
            ```py
