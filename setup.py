@@ -11,7 +11,7 @@ import numpy
 import scipy
 
 __version__ = ''
-exec(open('pyci/_version.py').read())
+exec(open('pyci/__init__.py').read())
 
 EXT_MODULES = [
           Extension("pyci.configint.cy.rcisd_core",

@@ -32,7 +32,6 @@ from .rcisd import(
     comp_hrow_ijab_B,
     comp_hcisd,
     cy_comp_hcisd,
-    multproc_comp_rows,
     comp_oeprop_hf,
     comp_oeprop_ia,
     comp_oeprop_iiaa,
