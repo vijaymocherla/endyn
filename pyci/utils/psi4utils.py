@@ -2,9 +2,10 @@
 #
 # Author : Sai Vijay Mocherla <vijaysai.mocherla@gmail.com>
 #
+from pickletools import optimize
 import psi4
 import numpy as np
-
+from opt_einsum import contract
 
 class psi4utils:
     """Helper class to get AO integrals and other abinitio data from PSI4 
@@ -92,12 +93,12 @@ class psi4utils:
             mo_erints = np.dot(mo_erints.reshape(-1, size), Ca)
             mo_erints = mo_erints.reshape(size, size, size, size).transpose(1, 0, 3, 2)
         else:
-            mo_erints = np.einsum('pqrs,pI,qJ,rK,sL->IJKL', ao_erints, Ca, Ca, Ca, Ca, optimize=True)
+            mo_erints = contract('pqrs,pI,qJ,rK,sL->IJKL', ao_erints, Ca, Ca, Ca, Ca, optimize=True)
         return mo_erints
 
     @staticmethod
     def matrix_ao2mo(Ca, matrix):
-        mo_matrix = np.einsum('pq,pI,qJ->IJ', matrix, Ca, Ca, optimize=True)
+        mo_matrix = contract('pq,pI,qJ->IJ', matrix, Ca, Ca, optimize=True)
         return mo_matrix
     
     @staticmethod
