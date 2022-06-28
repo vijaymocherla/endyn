@@ -15,7 +15,7 @@ References:
 """
 import numpy as np
 from functools import partial
-from multiprocessing import Pool
+from pyci.utils.multproc import pool_jobs
 # from pyci.configint.cy import rcisd_core
 from .cy.rcisd_core import (
     cy_comp_hrow_hf,
@@ -80,25 +80,6 @@ def generate_csfs(orbinfo, active_space, options):
             num_csfs[6] = len(D_ijab_B)
     return csfs, num_csfs
 
-def multproc_comp_rows(pfunc, Plist, ncore=4, run_checks=False):
-    n = len(Plist)
-    with Pool(processes=ncore) as pool:
-        async_object = pool.map_async(pfunc, Plist)
-        data = async_object.get()
-        pool.close()
-        pool.join() 
-    rows = [data[i][0] for i in range(n)]
-    log = [data[i][1] for i in range(n)]
-    if run_checks:
-        print('Checking if all process finished succesfully...\n')
-        if sum(log) != n:
-            for idx, P in enumerate(Plist):
-                if log[idx] != 1:
-                    print('Something went wrong while computing row %i' % (P))
-        else:
-            print("All rows were computed successfully! \n")
-    return rows, log
-
 def comp_hrow_hf(mo_eps, mo_eris, scf_energy, csfs, num_csfs, options):
     (singles, full_cis, doubles, doubles_iiaa, doubles_iiab,
      doubles_ijaa, doubles_ijab_A, doubles_ijab_B) = options
@@ -145,11 +126,10 @@ def comp_hrow_hf(mo_eps, mo_eris, scf_energy, csfs, num_csfs, options):
                     k,l,c,d = right_ex
                     row[Q] = mo_eris[c,k,d,l] + mo_eris[c,l,d,k]
                     Q += 1
-        return row, 1
+        return row
     except :
         raise Exception("Something went wrong while computing row %i"%(0))
-        return row, 0
-
+        
 # calculate rows for singles csf
 def comp_hrow_ia(mo_eps, mo_eris, scf_energy, csfs, num_csfs, options, P):
     (singles, full_cis, doubles, doubles_iiaa, doubles_iiab,
@@ -212,11 +192,10 @@ def comp_hrow_ia(mo_eps, mo_eris, scf_energy, csfs, num_csfs, options, P):
                                         -(a==c)*(mo_eris[d,k,l,i] - mo_eris[d,l,k,i])
                                         -(a==d)*(mo_eris[c,k,l,i] - mo_eris[c,l,k,i]))
                     Q += 1
-        return row, 1
+        return row
     except:
         raise Exception("Something went wrong while computing row %i" % (P))
-        return row, 0
-
+        
 # calculate rows for doubles csf
 def comp_hrow_iiaa(mo_eps, mo_eris, scf_energy, csfs, num_csfs, options, P):
     (singles, full_cis, doubles, doubles_iiaa, doubles_iiab,
@@ -280,11 +259,10 @@ def comp_hrow_iiaa(mo_eps, mo_eris, scf_energy, csfs, num_csfs, options, P):
                         + (i==l)*(a==c)*(mo_eris[a,i,d,k] - 2*mo_eris[a,d,k,i])
                         + (i==l)*(a==d)*(mo_eris[a,i,c,k] - 2*mo_eris[a,c,k,i]))
                 Q += 1
-        return row, 1
+        return row
     except:
         raise Exception("Something went wrong while computing row %i" % (P))
-        return row, 0
-
+        
 def comp_hrow_iiab(mo_eps, mo_eris, scf_energy, csfs, num_csfs, options, P):
     (singles, full_cis, doubles, doubles_iiaa, doubles_iiab,
     doubles_ijaa, doubles_ijab_A, doubles_ijab_B) = options
@@ -361,11 +339,10 @@ def comp_hrow_iiab(mo_eps, mo_eris, scf_energy, csfs, num_csfs, options, P):
                                         +(i==l)*(b==d)*(mo_eris[a,i,c,k]- 2*mo_eris[a,c,k,i])
                                         +(a==c)*(b==d)*2*mo_eris[k,i,l,i])
                 Q += 1
-        return row, 1
+        return row
     except:
         raise Exception("Something went wrong while computing row %i" % (P))
-        return row, 0
-
+        
 def comp_hrow_ijaa(mo_eps, mo_eris, scf_energy, csfs, num_csfs, options, P):
     (singles, full_cis, doubles, doubles_iiaa, doubles_iiab,
     doubles_ijaa, doubles_ijab_A, doubles_ijab_B) = options
@@ -442,11 +419,10 @@ def comp_hrow_ijaa(mo_eps, mo_eris, scf_energy, csfs, num_csfs, options, P):
                                     + (j==l)*(a==d)*(mo_eris[a,i,c,k] -2*mo_eris[a,c,i,k])
                                     + (i==k)*(j==l)*2*mo_eris[c,a,d,a])
                 Q += 1
-        return row, 1
+        return row
     except:
         raise Exception("Something went wrong while computing row %i" % (P))
-        return row, 0
-
+        
 def comp_hrow_ijab_A(mo_eps, mo_eris, scf_energy, csfs, num_csfs, options, P):
     (singles, full_cis, doubles, doubles_iiaa, doubles_iiab,
     doubles_ijaa, doubles_ijab_A, doubles_ijab_B) = options
@@ -549,11 +525,10 @@ def comp_hrow_ijab_A(mo_eps, mo_eris, scf_energy, csfs, num_csfs, options, P):
                                         +(j==l)*(b==c)*(mo_eris[a,i,d,k])
                                         +(j==l)*(b==d)*(mo_eris[a,i,c,k]))
                 Q += 1
-        return row, 1
+        return row
     except:
         raise Exception("Something went wrong while computing row %i" % (P))
-        return row, 0
-
+        
 def comp_hrow_ijab_B(mo_eps, mo_eris, scf_energy, csfs, num_csfs, options, P):
     (singles, full_cis, doubles, doubles_iiaa, doubles_iiab,
     doubles_ijaa, doubles_ijab_A, doubles_ijab_B) = options
@@ -658,11 +633,10 @@ def comp_hrow_ijab_B(mo_eps, mo_eris, scf_energy, csfs, num_csfs, options, P):
                         +(i==k)*(j==l)*(mo_eris[a,c,d,b] + mo_eris[a,d,c,b])
                         +(a==c)*(b==d)*(mo_eris[i,k,j,l] + mo_eris[i,l,k,j]))
                 Q += 1
-        return row, 1
+        return row
     except:
         raise Exception("Something went wrong while computing row %i" % (P))
-        return row, 0
-
+        
 def comp_hcisd(mo_eps, mo_eris, scf_energy, orbinfo, active_space, options, ncore=4):
     (singles, full_cis, doubles, doubles_iiaa, doubles_iiab,
     doubles_ijaa, doubles_ijab_A, doubles_ijab_B)  = options
@@ -671,14 +645,14 @@ def comp_hcisd(mo_eps, mo_eris, scf_energy, orbinfo, active_space, options, ncor
     # optimizing num_cores assigned
     hcisd = []
     P = 0
-    row_hf, log_hf = comp_hrow_hf(mo_eps, mo_eris, scf_energy, csfs, num_csfs, options)
+    row_hf = comp_hrow_hf(mo_eps, mo_eris, scf_energy, csfs, num_csfs, options)
     hcisd += [row_hf]
     P += 1
     if singles:
         n_ia = num_csfs[1]
         pfunc_hrow_ia = partial(comp_hrow_ia, mo_eps, mo_eris, scf_energy, csfs, num_csfs, options)
         Plist_ia = list(range(P,P+n_ia))
-        rows_ia, log_ia = multproc_comp_rows(pfunc_hrow_ia, Plist_ia, ncore=ncore)
+        rows_ia = pool_jobs(pfunc_hrow_ia, Plist_ia, ncore=ncore)
         hcisd += rows_ia
         P += n_ia
     if doubles:
@@ -686,35 +660,35 @@ def comp_hcisd(mo_eps, mo_eris, scf_energy, orbinfo, active_space, options, ncor
             n_iiaa = num_csfs[2]
             pfunc_hrow_iiaa = partial(comp_hrow_iiaa, mo_eps, mo_eris, scf_energy, csfs, num_csfs, options)
             Plist_iiaa = list(range(P,P+n_iiaa))
-            rows_iiaa, log_iiaa = multproc_comp_rows(pfunc_hrow_iiaa, Plist_iiaa, ncore=ncore)
+            rows_iiaa = pool_jobs(pfunc_hrow_iiaa, Plist_iiaa, ncore=ncore)
             hcisd += rows_iiaa
             P += n_iiaa
         if doubles_iiab:        
             n_iiab = num_csfs[3]
             pfunc_hrow_iiab = partial(comp_hrow_iiab, mo_eps, mo_eris, scf_energy, csfs, num_csfs, options)
             Plist_iiab = list(range(P,P+n_iiab))
-            rows_iiab, log_iiab = multproc_comp_rows(pfunc_hrow_iiab, Plist_iiab, ncore=ncore)
+            rows_iiab = pool_jobs(pfunc_hrow_iiab, Plist_iiab, ncore=ncore)
             hcisd += rows_iiab
             P += n_iiab
         if doubles_ijaa:
             n_ijaa = num_csfs[4]
             pfunc_hrow_ijaa = partial(comp_hrow_ijaa, mo_eps, mo_eris, scf_energy, csfs, num_csfs, options)
             Plist_ijaa = list(range(P,P+n_ijaa))
-            rows_ijaa, log_ijaa = multproc_comp_rows(pfunc_hrow_ijaa, Plist_ijaa, ncore=ncore)
+            rows_ijaa = pool_jobs(pfunc_hrow_ijaa, Plist_ijaa, ncore=ncore)
             hcisd += rows_ijaa
             P += n_ijaa
         if doubles_ijab_A:
             n_ijab_A = num_csfs[5]
             pfunc_hrow_ijab_A = partial(comp_hrow_ijab_A, mo_eps, mo_eris, scf_energy, csfs, num_csfs, options)
             Plist_ijab_A = list(range(P,P+n_ijab_A))
-            rows_ijab_A, log_ijab_A = multproc_comp_rows(pfunc_hrow_ijab_A, Plist_ijab_A, ncore=ncore)
+            rows_ijab_A = pool_jobs(pfunc_hrow_ijab_A, Plist_ijab_A, ncore=ncore)
             hcisd += rows_ijab_A
             P += n_ijab_A
         if doubles_ijab_B:        
             n_ijab_B = num_csfs[6]
             pfunc_hrow_ijab_B = partial(comp_hrow_ijab_B, mo_eps, mo_eris, scf_energy, csfs, num_csfs, options)
             Plist_ijab_B = list(range(P,P+n_ijab_B))
-            rows_ijab_B, log_ijab_B = multproc_comp_rows(pfunc_hrow_ijab_B, Plist_ijab_B, ncore=ncore)
+            rows_ijab_B = pool_jobs(pfunc_hrow_ijab_B, Plist_ijab_B, ncore=ncore)
             hcisd += rows_ijab_B
             P += n_ijab_B
     if P != N:
@@ -737,7 +711,7 @@ def cy_comp_hcisd(mo_eps, mo_eris, scf_energy, orbinfo, active_space, options, n
         n_ia = num_csfs[1]
         pfunc_hrow_ia = partial(cy_comp_hrow_ia, mo_eps, mo_eris, scf_energy, csfs, num_csfs, options)
         Plist_ia = list(range(P,P+n_ia))
-        rows_ia = multproc_comp_rows(pfunc_hrow_ia, Plist_ia, ncore=ncore)
+        rows_ia = pool_jobs(pfunc_hrow_ia, Plist_ia, ncore=ncore)
         hcisd += rows_ia
         P += n_ia
     if doubles:
@@ -745,35 +719,35 @@ def cy_comp_hcisd(mo_eps, mo_eris, scf_energy, orbinfo, active_space, options, n
             n_iiaa = num_csfs[2]
             pfunc_hrow_iiaa = partial(cy_comp_hrow_iiaa, mo_eps, mo_eris, scf_energy, csfs, num_csfs, options)
             Plist_iiaa = list(range(P,P+n_iiaa))
-            rows_iiaa = multproc_comp_rows(pfunc_hrow_iiaa, Plist_iiaa, ncore=ncore)
+            rows_iiaa = pool_jobs(pfunc_hrow_iiaa, Plist_iiaa, ncore=ncore)
             hcisd += rows_iiaa
             P += n_iiaa
         if doubles_iiab:        
             n_iiab = num_csfs[3]
             pfunc_hrow_iiab = partial(cy_comp_hrow_iiab, mo_eps, mo_eris, scf_energy, csfs, num_csfs, options)
             Plist_iiab = list(range(P,P+n_iiab))
-            rows_iiab = multproc_comp_rows(pfunc_hrow_iiab, Plist_iiab, ncore=ncore)
+            rows_iiab = pool_jobs(pfunc_hrow_iiab, Plist_iiab, ncore=ncore)
             hcisd += rows_iiab
             P += n_iiab
         if doubles_ijaa:
             n_ijaa = num_csfs[4]
             pfunc_hrow_ijaa = partial(cy_comp_hrow_ijaa, mo_eps, mo_eris, scf_energy, csfs, num_csfs, options)
             Plist_ijaa = list(range(P,P+n_ijaa))
-            rows_ijaa = multproc_comp_rows(pfunc_hrow_ijaa, Plist_ijaa, ncore=ncore)
+            rows_ijaa = pool_jobs(pfunc_hrow_ijaa, Plist_ijaa, ncore=ncore)
             hcisd += rows_ijaa
             P += n_ijaa
         if doubles_ijab_A:
             n_ijab_A = num_csfs[5]
             pfunc_hrow_ijab_A = partial(cy_comp_hrow_ijab_A, mo_eps, mo_eris, scf_energy, csfs, num_csfs, options)
             Plist_ijab_A = list(range(P,P+n_ijab_A))
-            rows_ijab_A = multproc_comp_rows(pfunc_hrow_ijab_A, Plist_ijab_A, ncore=ncore)
+            rows_ijab_A = pool_jobs(pfunc_hrow_ijab_A, Plist_ijab_A, ncore=ncore)
             hcisd += rows_ijab_A
             P += n_ijab_A
         if doubles_ijab_B:        
             n_ijab_B = num_csfs[6]
             pfunc_hrow_ijab_B = partial(cy_comp_hrow_ijab_B, mo_eps, mo_eris, scf_energy, csfs, num_csfs, options)
             Plist_ijab_B = list(range(P,P+n_ijab_B))
-            rows_ijab_B = multproc_comp_rows(pfunc_hrow_ijab_B, Plist_ijab_B, ncore=ncore)
+            rows_ijab_B = pool_jobs(pfunc_hrow_ijab_B, Plist_ijab_B, ncore=ncore)
             hcisd += rows_ijab_B
             P += n_ijab_B
     if P != N:
@@ -811,11 +785,10 @@ def comp_oeprop_hf(mo_oeprop, mo_oeprop_trace, csfs, num_csfs, options):
             Q += n_ijab_A
         if doubles_ijab_B:
             Q += n_ijab_B
-        return row, 1           
+        return row           
     except:
         raise Exception("Something went wronh while computing row %i"%(0))
-    return row, 0
-
+    
 def comp_oeprop_ia(mo_oeprop, mo_oeprop_trace, csfs, num_csfs, options, P):
     (singles, full_cis, doubles, doubles_iiaa, doubles_iiab,
      doubles_ijaa, doubles_ijab_A, doubles_ijab_B) = options
@@ -870,11 +843,10 @@ def comp_oeprop_ia(mo_oeprop, mo_oeprop_trace, csfs, num_csfs, options, P):
                                      + (i==l)*(a==c)*mo_oeprop[k,d]
                                      + (i==l)*(a==d)*mo_oeprop[k,c])
                 Q += 1
-        return row, 1           
+        return row           
     except:
         raise Exception("Something went wronh while computing row %i"%(P))
-    return row, 0
-
+    
 def comp_oeprop_iiaa(mo_oeprop, mo_oeprop_trace, csfs, num_csfs, options, P):
     (singles, full_cis, doubles, doubles_iiaa, doubles_iiab,
      doubles_ijaa, doubles_ijab_A, doubles_ijab_B) = options
@@ -917,11 +889,10 @@ def comp_oeprop_iiaa(mo_oeprop, mo_oeprop_trace, csfs, num_csfs, options, P):
             Q += n_ijab_A
         if doubles_ijab_B:
             Q += n_ijab_B
-        return row, 1           
+        return row           
     except:
         raise Exception("Something went wronh while computing row %i"%(P))
-    return row, 0
-
+    
 def comp_oeprop_iiab(mo_oeprop, mo_oeprop_trace, csfs, num_csfs, options, P):
     (singles, full_cis, doubles, doubles_iiaa, doubles_iiab,
      doubles_ijaa, doubles_ijab_A, doubles_ijab_B) = options
@@ -966,11 +937,10 @@ def comp_oeprop_iiab(mo_oeprop, mo_oeprop_trace, csfs, num_csfs, options, P):
                 row[Q] = -np.sqrt(2)*((i==k)*(a==c)*(b==d)*mo_oeprop[l,i]
                                     + (i==l)*(a==c)*(b==d)*mo_oeprop[k,i])
                 Q += 1
-        return row, 1           
+        return row           
     except:
         raise Exception("Something went wronh while computing row %i"%(P))
-    return row, 0
-
+    
 def comp_oeprop_ijaa(mo_oeprop, mo_oeprop_trace, csfs, num_csfs, options, P):
     (singles, full_cis, doubles, doubles_iiaa, doubles_iiab,
      doubles_ijaa, doubles_ijab_A, doubles_ijab_B) = options
@@ -1015,11 +985,10 @@ def comp_oeprop_ijaa(mo_oeprop, mo_oeprop_trace, csfs, num_csfs, options, P):
                 row[Q] = np.sqrt(2)*((i==k)*(j==l)*(a==c)*mo_oeprop[a,d]
                                     +(i==k)*(j==l)*(a==d)*mo_oeprop[a,c])
                 Q += 1
-        return row, 1           
+        return row           
     except:
         raise Exception("Something went wronh while computing row %i"%(P))
-    return row, 0
-
+    
 def comp_oeprop_ijab_A(mo_oeprop, mo_oeprop_trace, csfs, num_csfs, options, P):
     (singles, full_cis, doubles, doubles_iiaa, doubles_iiab,
      doubles_ijaa, doubles_ijab_A, doubles_ijab_B) = options
@@ -1063,11 +1032,10 @@ def comp_oeprop_ijab_A(mo_oeprop, mo_oeprop_trace, csfs, num_csfs, options, P):
                 Q += 1
         if doubles_ijab_B:
             Q += n_ijab_B
-        return row, 1           
+        return row           
     except:
         raise Exception("Something went wronh while computing row %i"%(P))
-    return row, 0
-
+    
 def comp_oeprop_ijab_B(mo_oeprop, mo_oeprop_trace, csfs, num_csfs, options, P):
     (singles, full_cis, doubles, doubles_iiaa, doubles_iiab,
      doubles_ijaa, doubles_ijab_A, doubles_ijab_B) = options
@@ -1120,11 +1088,10 @@ def comp_oeprop_ijab_B(mo_oeprop, mo_oeprop_trace, csfs, num_csfs, options, P):
                         + (i==k)*(j==l)*(b==d)*mo_oeprop[a,c])
 
                 Q += 1
-        return row, 1           
+        return row           
     except:
         raise Exception("Something went wronh while computing row %i"%(P))
-    return row, 0
-
+    
 def comp_oeprop_matrix(mo_oeprop, csfs, num_csfs, options, ncore=4):
     (singles, full_cis, doubles, doubles_iiaa, doubles_iiab,
      doubles_ijaa, doubles_ijab_A, doubles_ijab_B)  = options    
@@ -1132,14 +1099,14 @@ def comp_oeprop_matrix(mo_oeprop, csfs, num_csfs, options, ncore=4):
     mo_oeprop_trace = np.sum(np.diag(mo_oeprop))
     csf_oeprop = []
     P = 0 
-    row_hf, log_hf = comp_oeprop_hf(mo_oeprop, mo_oeprop_trace, csfs, num_csfs, options)
+    row_hf = comp_oeprop_hf(mo_oeprop, mo_oeprop_trace, csfs, num_csfs, options)
     csf_oeprop += [row_hf]
     P += 1
     if singles:
         n_ia = num_csfs[1]
         pfunc_oeprop_ia = partial(comp_oeprop_ia, mo_oeprop, mo_oeprop_trace, csfs, num_csfs, options)
         Plist_ia = list(range(P, P+n_ia))
-        rows_ia, log_ia = multproc_comp_rows(pfunc_oeprop_ia, Plist_ia, ncore=ncore)
+        rows_ia = pool_jobs(pfunc_oeprop_ia, Plist_ia, ncore=ncore)
         csf_oeprop += rows_ia
         P += n_ia
     if doubles:
@@ -1147,35 +1114,35 @@ def comp_oeprop_matrix(mo_oeprop, csfs, num_csfs, options, ncore=4):
             n_iiaa = num_csfs[2]
             pfunc_oeprop_iiaa = partial(comp_oeprop_iiaa, mo_oeprop, mo_oeprop_trace, csfs, num_csfs, options)
             Plist_iiaa = list(range(P, P+n_iiaa))
-            rows_iiaa, log_iiaa = multproc_comp_rows(pfunc_oeprop_iiaa, Plist_iiaa, ncore=ncore)
+            rows_iiaa = pool_jobs(pfunc_oeprop_iiaa, Plist_iiaa, ncore=ncore)
             csf_oeprop += rows_iiaa
             P += n_iiaa
         if doubles_iiab:
             n_iiab = num_csfs[3]
             pfunc_oeprop_iiab = partial(comp_oeprop_iiab, mo_oeprop, mo_oeprop_trace, csfs, num_csfs, options)
             Plist_iiab = list(range(P, P+n_iiab))
-            rows_iiab, log_iiab = multproc_comp_rows(pfunc_oeprop_iiab, Plist_iiab, ncore=ncore)
+            rows_iiab = pool_jobs(pfunc_oeprop_iiab, Plist_iiab, ncore=ncore)
             csf_oeprop += rows_iiab
             P += n_iiab
         if doubles_ijaa:
             n_ijaa = num_csfs[4]
             pfunc_oeprop_ijaa = partial(comp_oeprop_ijaa, mo_oeprop, mo_oeprop_trace, csfs, num_csfs, options)
             Plist_ijaa = list(range(P, P+n_ijaa))
-            rows_ijaa, log_ijaa = multproc_comp_rows(pfunc_oeprop_ijaa, Plist_ijaa, ncore=ncore)
+            rows_ijaa = pool_jobs(pfunc_oeprop_ijaa, Plist_ijaa, ncore=ncore)
             csf_oeprop += rows_ijaa
             P += n_ijaa
         if doubles_ijab_A:
             n_ijab_A = num_csfs[5]
             pfunc_oeprop_ijab_A = partial(comp_oeprop_ijab_A, mo_oeprop, mo_oeprop_trace, csfs, num_csfs, options)
             Plist_ijab_A = list(range(P, P+n_ijab_A))
-            rows_ijab_A, log_ijab_A = multproc_comp_rows(pfunc_oeprop_ijab_A, Plist_ijab_A, ncore=ncore)
+            rows_ijab_A = pool_jobs(pfunc_oeprop_ijab_A, Plist_ijab_A, ncore=ncore)
             csf_oeprop += rows_ijab_A
             P += n_ijab_A
         if doubles_ijab_B:
             n_ijab_B = num_csfs[6]
             pfunc_oeprop_ijab_B = partial(comp_oeprop_ijab_B, mo_oeprop, mo_oeprop_trace, csfs, num_csfs, options)
             Plist_ijab_B = list(range(P, P+n_ijab_B))
-            rows_ijab_B, log_ijab_B = multproc_comp_rows(pfunc_oeprop_ijab_B, Plist_ijab_B, ncore=ncore)
+            rows_ijab_B = pool_jobs(pfunc_oeprop_ijab_B, Plist_ijab_B, ncore=ncore)
             csf_oeprop += rows_ijab_B
             P += n_ijab_B
     if P != N:

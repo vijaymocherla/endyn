@@ -2,11 +2,6 @@
 #
 # Author : Sai Vijay Mocherla <vijaysai.mocherla@gmail.com>
 #
-# Reference: 
-#
-#
-#
-
 """ Self-Consistent Field(SCF) procedure accelerated with Direct Inversion 
     of the Iterative Subspace(DIIS)
 """

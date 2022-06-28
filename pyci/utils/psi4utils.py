@@ -1,8 +1,9 @@
-from pickletools import optimize
+#!/usr/bin/python envs
+#
+# Author : Sai Vijay Mocherla <vijaysai.mocherla@gmail.com>
+#
 import psi4
 import numpy as np
-import gc
-import os
 
 
 class psi4utils:
@@ -99,6 +100,10 @@ class psi4utils:
         mo_matrix = np.einsum('pq,pI,qJ->IJ', matrix, Ca, Ca, optimize=True)
         return mo_matrix
     
+    @staticmethod
+    def eri_mo2so(Ca, Cb, mo_eri):
+        mo_so_eri = []
+        return mo_so_eri
 
 
 
