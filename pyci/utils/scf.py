@@ -6,32 +6,32 @@
     of the Iterative Subspace(DIIS)
 """
 import numpy as np
-
+from pyci.utils import AOint
 ### TO DO : 
 #    - Repurpose following code into an SCF function
 #    - Add options to control DIIS
 #    - Check future compatibility for EDIIS and other variational relaxation   
-#
-# H_core = T + V
-# # ==> Inspecting S for AO orthonormality <==
-# hope = np.allclose(S, np.eye(S.shape[0]))
-# print('\nDo we have any hope that our AO basis is orthonormal? %s!' % (hope))
+# S = np.load('../data/h2o_oeints.npz')['overlap']
+# T = np.load('../data/h2o_oeints.npz')['kinetic']
+# V = np.load('../data/h2o_oeints.npz')['potential']
+# I = np.load('../data/h2o_erints.npz')['erints']
+def orthonormalize(S, atol=1e-8):
+    # Diagonalise the Overlap matrix
+    svals, svecs = np.linalg.eigh(S)
+    # Taking the inverse square root
+    X = np.linalg.inv(np.diag(np.sqrt(svals)))
+    # Using the eigen vector back transform from eigen basis to previous basis.
+    X = np.einsum('aI,IJ,Jb', svecs, X, svecs.T)
+    # Orthonormalising S
+    S_p = np.einsum('ij,jk,kl->il', X.T, S, X)
+    # Checking if orthonormalised
+    orthonormalised = np.allclose(S_p, np.eye(S.shape[0]), atol=atol)
+    if orthonormalised:
+        print("There is a chance for diagonalisation")
+    else:
+        raise Exception("There's something wrong with symmetric orthonormalisation")
+    return S_p    
 # 
-# # Diagonalise the Overlap matrix
-# svals, svecs = np.linalg.eigh(S)
-# # Taking the inverse square root
-# X = np.linalg.inv(np.diag(np.sqrt(svals)))
-# # Using the eigen vector back transform from eigen basis to previous basis.
-# X = np.einsum('aI,IJ,Jb', svecs, X, svecs.T)
-# 
-# # Orthonormalising S
-# S_p = np.einsum('ij,jk,kl->il', X.T, S, X)
-# # Checking if orthonormalised
-# orthonormalised = np.allclose(S_p, np.eye(S.shape[0]), atol=1e-08)
-# if orthonormalised:
-#     print("There is a chance for diagonalisation")
-# else:
-#     print("There's something wrong with the transformation.")
 # 
 # # Transforming the Fock matrix
 # F_p = np.einsum('ij,jk,kl->il', X.T, H_core, X)
