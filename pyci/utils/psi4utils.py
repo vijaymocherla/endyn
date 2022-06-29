@@ -133,6 +133,15 @@ class AOint(psi4utils):
                 kinetic_aoints=kinetic_aoints,
                 potential_aoints=potential_aoints)
         return 1
+
+    def get_ao_oeints(self):
+        """ Returns S, T, V in AO basis
+        """
+        self.save_ao_oeints()
+        S = np.load(self.scratch+'ao_oeints.npz')['overlap_aoints']
+        T = np.load(self.scratch+'ao_oeints.npz')['kinetic_aoints']
+        V = np.load(self.scratch+'ao_oeints.npz')['potential_aoints']
+        return S, T, V
     
     def save_ao_erints(self): 
         """Saves 2-electron repulsion integrals in AO basis as a .npz file.

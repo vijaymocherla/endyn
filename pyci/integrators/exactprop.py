@@ -17,27 +17,23 @@ class ExactProp(object):
         self.y_list = [self.y0]
         self.t_list = [self.t0]
 
-
     def project_eigbasis(self, y):
         """Projects y from CSF basis => EIGEN basis 
         """
         y_eig = contract('ij,j', np.conjugate(self.eigvecs).T, y, optimize=True)
         return y_eig
     
-
     def project_csfbasis(self, y):
         """Projects y from EIGEN basis => CSF basis 
         """
         y_csf = contract('ij,j', self.eigvecs, y, optimize=True)
         return y_csf
     
-
     def _exac_prop_step(self, ti):
         tn = ti + self.dt
         yn_eigen = np.e**(-1j*self.eigvals*tn) * self.y0_eigen
         yn_csf = self.project_csfbasis(yn_eigen)
         return(yn_csf, tn)
-
 
     def _time_propagation(self, check_norm=False):
         yi, ti = self.y0, self.t0
@@ -52,6 +48,3 @@ class ExactProp(object):
         stop = perf_counter()
         print( 'Time taken %3.3f seconds' % (stop-start))    
         return self.y_list, self.t_list 
-
-
-
