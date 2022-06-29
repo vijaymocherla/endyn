@@ -6,13 +6,13 @@ class ExactProp(object):
     """Given eigenvalues and eigen-vectors(in a certain basis), the methods of 
     exact_prop() aids in exact time-propagation.  
     """
-    def __init__(self, eigen_values, eigen_vectors,  y0, t0, dt, t_bound):
+    def __init__(self, eigen_values, eigen_vectors,  y0, t0, tf, dt):
         self.eigvals = eigen_values         # eigvals[i] => i-th eigenvalue
         self.eigvecs = eigen_vectors        # eigvecs[:,i] => i-th eigen-vector 
         self.y0 = y0                                # initial state in CSF basis 
         self.y0_eigen = self.project_eigbasis(y0)   # initial state in EIGEN basis
         self.t0 = t0
-        self.t_bound = t_bound
+        self.tf = tf
         self.dt = dt
         self.y_list = [self.y0]
         self.t_list = [self.t0]
@@ -39,7 +39,7 @@ class ExactProp(object):
         yi, ti = self.y0, self.t0
         i = 0 
         start = perf_counter()
-        while ti < self.t_bound:
+        while ti < self.tf:
             #print('t = %2.3f' % ti)
             yi, ti = self._exac_prop_step(ti)
             self.y_list.append(yi)
