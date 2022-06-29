@@ -2,17 +2,19 @@
 #
 # Author : Sai Vijay Mocherla <vijaysai.mocherla@gmail.com>
 #
-from pickletools import optimize
 import psi4
 import numpy as np
 from opt_einsum import contract
+import os 
 
 class psi4utils:
     """Helper class to get AO integrals and other abinitio data from PSI4 
        for time-dependent configuration interaction(TDCI) calculations.
     """
-    def __init__(self, basis, molfile, psi4mem='2 Gb', scratch='./'):
-        self.scratch = scratch
+    def __init__(self, basis, molfile, psi4mem='2 Gb', wd='./'):
+        self.scratch = scratch = wd+'.scratch/'
+        if not os.path.isdir(self.scratch):
+            os.system('mkdir '+wd+'.scratch')
         psi4.core.set_output_file('psi4_output.dat', False) # psi4 output
         psi4.set_memory(psi4mem) # psi4 memory 
         self.numpy_memory = 2 # numpy memory
@@ -37,6 +39,7 @@ class psi4utils:
         Cb_psi4_matrix = psi4.core.Matrix.from_array(Cb)
         mo_spin_eri_tensor = np.asarray(self.mints.mo_spin_eri(Ca_psi4_matrix, Cb_psi4_matrix))
         return mo_spin_eri_tensor
+    
 
     @staticmethod    
     def get_mol_str(molfile):
