@@ -41,11 +41,24 @@ double* comp_oeprop_ijab_a(void *mo_oeprop_in, int nmo, double moeprop_trace,
                          void *csfs_in, int *num_csfs, bool* options, int p);                        
 double* comp_oeprop_ijab_b(void *mo_oeprop_in, int nmo, double moeprop_trace,
                          void *csfs_in, int *num_csfs, bool* options, int p);
+
+// BOOST_PYTHON_MODULE(rcisd)
+// {
+//         def("comp_hrow_hf", comp_hrow_hf);
+//         def("comp_hrow_ia", comp_hrow_ia);
+//         def("comp_hrow_iiaa", comp_hrow_iiaa);
+//         def("comp_hrow_iiab", comp_hrow_iiab);
+//         def("comp_hrow_ijaa", comp_hrow_ijaa);
+//         def("comp_hrow_ijab_a", comp_hrow_ijab_a);
+//         def("comp_hrow_ijab_b", comp_hrow_ijab_b);
+// }
+
 // void testnd(void *b, int ndim);
 // void test1d(double *b);
 
-int main(void){
-  /*  Nothing qere for now.*/
+int main(int a){
+  /*  Nothing here for now.*/
+        return a*a;
 }
 // void test1d(double *b){
 //         // for (int i = 0; i < 11; ++i){
@@ -1087,6 +1100,7 @@ double* comp_oeprop_ia(void *mo_oeprop_in, int nmo, double mo_oeprop_trace, void
         a = csfs[p][2];
         b = csfs[p][3];
         double *row;
+        row[0] = sqrt(2) * mo_oeprop[i][a];
         if (singles)
         {
                 for (int idx = q; idx < q + n_ia; ++idx)
@@ -1095,7 +1109,9 @@ double* comp_oeprop_ia(void *mo_oeprop_in, int nmo, double mo_oeprop_trace, void
                         l = csfs[idx][1];
                         c = csfs[idx][2];
                         d = csfs[idx][3];
-                        row[idx] = 0.0;
+                        row[idx] = ((i == k) * (a == c) * mo_oeprop_trace 
+                                  - (a == c) * mo_oeprop[k][i] 
+                                  + (i == k) * mo_oeprop[a][c]);
                 }
                 q += n_ia;
         }
@@ -1109,7 +1125,7 @@ double* comp_oeprop_ia(void *mo_oeprop_in, int nmo, double mo_oeprop_trace, void
                                 l = csfs[idx][1];
                                 c = csfs[idx][2];
                                 d = csfs[idx][3];
-                                row[idx] = 0.0;
+                                row[idx] = (i == k) * (a == c) * sqrt(2) * mo_oeprop[i][a];
                         }
                         q += n_iiaa;
                 }
@@ -1121,7 +1137,8 @@ double* comp_oeprop_ia(void *mo_oeprop_in, int nmo, double mo_oeprop_trace, void
                                 l = csfs[idx][1];
                                 c = csfs[idx][2];
                                 d = csfs[idx][3];
-                                row[idx] = 0.0;
+                                row[idx] = ((i == k) * (a == c) * mo_oeprop[i][d] 
+                                          + (i == k) * (a == d) * mo_oeprop[i][c]);
                         }
                         q += n_iiab;
                 }
@@ -1133,7 +1150,8 @@ double* comp_oeprop_ia(void *mo_oeprop_in, int nmo, double mo_oeprop_trace, void
                                 l = csfs[idx][1];
                                 c = csfs[idx][2];
                                 d = csfs[idx][3];
-                                row[idx] = 0.0;
+                                row[idx] = ((i == k) * (a == c) * mo_oeprop[l][a] 
+                                          + (i == l) * (a == c) * mo_oeprop[k][a]);
                         }
                         q += n_ijaa;
                 }
@@ -1145,7 +1163,10 @@ double* comp_oeprop_ia(void *mo_oeprop_in, int nmo, double mo_oeprop_trace, void
                                 l = csfs[idx][1];
                                 c = csfs[idx][2];
                                 d = csfs[idx][3];
-                                row[idx] = 0.0;
+                                row[idx] = sqrt(1.5) * ((i == k) * (a == c) * mo_oeprop[l][d] 
+                                                      - (i == k) * (a == d) * mo_oeprop[l][c] 
+                                                      - (i == l) * (a == c) * mo_oeprop[k][d] 
+                                                      + (i == l) * (a == d) * mo_oeprop[k][c]);
                         }
                         q += n_ijab_a;
                 }
@@ -1157,7 +1178,10 @@ double* comp_oeprop_ia(void *mo_oeprop_in, int nmo, double mo_oeprop_trace, void
                                 l = csfs[idx][1];
                                 c = csfs[idx][2];
                                 d = csfs[idx][3];
-                                row[idx] = 0.0;
+                                row[idx] = sqrt(0.5) * ((i == k) * (a == c) * mo_oeprop[l][d] 
+                                                      + (i == k) * (a == d) * mo_oeprop[l][c] 
+                                                      + (i == l) * (a == c) * mo_oeprop[k][d] 
+                                                      + (i == l) * (a == d) * mo_oeprop[k][c]);
                         }
                         q += n_ijab_b;
                 }
@@ -1192,6 +1216,7 @@ double* comp_oeprop_iiaa(void *mo_oeprop_in, int nmo, double mo_oeprop_trace, vo
         a = csfs[p][2];
         b = csfs[p][3];
         double *row;
+        row[0] = 0.0;
         if (singles)
         {
                 for (int idx = q; idx < q + n_ia; ++idx)
@@ -1200,7 +1225,7 @@ double* comp_oeprop_iiaa(void *mo_oeprop_in, int nmo, double mo_oeprop_trace, vo
                         l = csfs[idx][1];
                         c = csfs[idx][2];
                         d = csfs[idx][3];
-                        row[idx] = 0.0;
+                        row[idx] = (k == i) * (c == a) * sqrt(2) * mo_oeprop[k][c];
                 }
                 q += n_ia;
         }
@@ -1214,7 +1239,9 @@ double* comp_oeprop_iiaa(void *mo_oeprop_in, int nmo, double mo_oeprop_trace, vo
                                 l = csfs[idx][1];
                                 c = csfs[idx][2];
                                 d = csfs[idx][3];
-                                row[idx] = 0.0;
+                                row[idx] = (i == k) * (a == c) * (mo_oeprop_trace 
+                                                            - 2 * mo_oeprop[i][i] 
+                                                            + 2 * mo_oeprop[a][a]);
                         }
                         q += n_iiaa;
                 }
@@ -1226,7 +1253,8 @@ double* comp_oeprop_iiaa(void *mo_oeprop_in, int nmo, double mo_oeprop_trace, vo
                                 l = csfs[idx][1];
                                 c = csfs[idx][2];
                                 d = csfs[idx][3];
-                                row[idx] = 0.0;
+                                row[idx] = sqrt(2) * ((i == k) * (a == c) * mo_oeprop[a][d] 
+                                                    + (i == k) * (a == d) * mo_oeprop[a][c]);
                         }
                         q += n_iiab;
                 }
@@ -1238,7 +1266,8 @@ double* comp_oeprop_iiaa(void *mo_oeprop_in, int nmo, double mo_oeprop_trace, vo
                                 l = csfs[idx][1];
                                 c = csfs[idx][2];
                                 d = csfs[idx][3];
-                                row[idx] = 0.0;
+                                row[idx] = - sqrt(2) * ((i == k) * (a == c) * mo_oeprop[l][i] 
+                                                      + (i == l) * (a == c) * mo_oeprop[k][i]);
                         }
                         q += n_ijaa;
                 }
@@ -1297,6 +1326,7 @@ double* comp_oeprop_iiab(void *mo_oeprop_in, int nmo, double mo_oeprop_trace, vo
         a = csfs[p][2];
         b = csfs[p][3];
         double *row;
+        row[0] = 0.0;
         if (singles)
         {
                 for (int idx = q; idx < q + n_ia; ++idx)
@@ -1305,7 +1335,8 @@ double* comp_oeprop_iiab(void *mo_oeprop_in, int nmo, double mo_oeprop_trace, vo
                         l = csfs[idx][1];
                         c = csfs[idx][2];
                         d = csfs[idx][3];
-                        row[idx] = 0.0;
+                        row[idx] = ((k == i) * (c == a) * mo_oeprop[k][b] 
+                                  + (k == i) * (c == b) * mo_oeprop[k][a]);
                 }
                 q += n_ia;
         }
@@ -1319,7 +1350,8 @@ double* comp_oeprop_iiab(void *mo_oeprop_in, int nmo, double mo_oeprop_trace, vo
                                 l = csfs[idx][1];
                                 c = csfs[idx][2];
                                 d = csfs[idx][3];
-                                row[idx] = 0.0;
+                                row[idx] = sqrt(2) * ((k == i) * (c == a) * mo_oeprop[c][b] 
+                                                    + (k == i) * (c == b) * mo_oeprop[c][a]);
                         }
                         q += n_iiaa;
                 }
@@ -1331,7 +1363,11 @@ double* comp_oeprop_iiab(void *mo_oeprop_in, int nmo, double mo_oeprop_trace, vo
                                 l = csfs[idx][1];
                                 c = csfs[idx][2];
                                 d = csfs[idx][3];
-                                row[idx] = 0.0;
+                                row[idx] = ((i == k) * (a == c) * (b == d) * (mo_oeprop_trace - 2 * mo_oeprop[i][i]) 
+                                          + (i == k) * (a == c) * mo_oeprop[b][d] 
+                                          + (i == k) * (a == d) * mo_oeprop[b][c] 
+                                          + (i == k) * (b == c) * mo_oeprop[a][d] 
+                                          + (i == k) * (b == d) * mo_oeprop[a][c]);
                         }
                         q += n_iiab;
                 }
@@ -1367,7 +1403,8 @@ double* comp_oeprop_iiab(void *mo_oeprop_in, int nmo, double mo_oeprop_trace, vo
                                 l = csfs[idx][1];
                                 c = csfs[idx][2];
                                 d = csfs[idx][3];
-                                row[idx] = 0.0;
+                                row[idx] = -sqrt(2) * ((i == k) * (a == c) * (b == d) * mo_oeprop[l][i] 
+                                                     + (i == l) * (a == c) * (b == d) * mo_oeprop[k][i]);
                         }
                         q += n_ijab_b;
                 }
@@ -1402,6 +1439,7 @@ double* comp_oeprop_ijaa(void *mo_oeprop_in, int nmo, double mo_oeprop_trace, vo
         a = csfs[p][2];
         b = csfs[p][3];
         double *row;
+        row[0] = 0.0; 
         if (singles)
         {
                 for (int idx = q; idx < q + n_ia; ++idx)
@@ -1410,7 +1448,8 @@ double* comp_oeprop_ijaa(void *mo_oeprop_in, int nmo, double mo_oeprop_trace, vo
                         l = csfs[idx][1];
                         c = csfs[idx][2];
                         d = csfs[idx][3];
-                        row[idx] = 0.0;
+                        row[idx] = ((k == i) * (c == a) * mo_oeprop[j][c] 
+                                  + (k == j) * (c == a) * mo_oeprop[i][c]);
                 }
                 q += n_ia;
         }
@@ -1424,7 +1463,8 @@ double* comp_oeprop_ijaa(void *mo_oeprop_in, int nmo, double mo_oeprop_trace, vo
                                 l = csfs[idx][1];
                                 c = csfs[idx][2];
                                 d = csfs[idx][3];
-                                row[idx] = 0.0;
+                                row[idx] = -sqrt(2) * ((k == i) * (c == a) * mo_oeprop[j][k] 
+                                                     + (k == j) * (c == a) * mo_oeprop[i][k]);
                         }
                         q += n_iiaa;
                 }
@@ -1448,7 +1488,11 @@ double* comp_oeprop_ijaa(void *mo_oeprop_in, int nmo, double mo_oeprop_trace, vo
                                 l = csfs[idx][1];
                                 c = csfs[idx][2];
                                 d = csfs[idx][3];
-                                row[idx] = 0.0;
+                                row[idx] = ((i == k) * (j == l) * (a == c) * (mo_oeprop_trace + 2 * mo_oeprop[a][a]) 
+                                          - (i == k) * (a == c) * mo_oeprop[l][j] 
+                                          - (i == l) * (a == c) * mo_oeprop[k][j] 
+                                          - (j == k) * (a == c) * mo_oeprop[l][i] 
+                                          - (j == l) * (a == c) * mo_oeprop[k][i]);
                         }
                         q += n_ijaa;
                 }
@@ -1472,7 +1516,8 @@ double* comp_oeprop_ijaa(void *mo_oeprop_in, int nmo, double mo_oeprop_trace, vo
                                 l = csfs[idx][1];
                                 c = csfs[idx][2];
                                 d = csfs[idx][3];
-                                row[idx] = 0.0;
+                                row[idx] = sqrt(2) * ((i == k) * (j == l) * (a == c) * mo_oeprop[a][d] 
+                                                    + (i == k) * (j == l) * (a == d) * mo_oeprop[a][c]);
                         }
                         q += n_ijab_b;
                 }
@@ -1507,6 +1552,7 @@ double* comp_oeprop_ijab_a(void *mo_oeprop_in, int nmo, double mo_oeprop_trace, 
         a = csfs[p][2];
         b = csfs[p][3];
         double *row;
+        row[0] = 0.0;
         if (singles)
         {
                 for (int idx = q; idx < q + n_ia; ++idx)
@@ -1515,7 +1561,10 @@ double* comp_oeprop_ijab_a(void *mo_oeprop_in, int nmo, double mo_oeprop_trace, 
                         l = csfs[idx][1];
                         c = csfs[idx][2];
                         d = csfs[idx][3];
-                        row[idx] = 0.0;
+                        row[idx] = sqrt(1.5) * ((k == i) * (c == a) * mo_oeprop[j][b] 
+                                              - (k == i) * (c == b) * mo_oeprop[j][a] 
+                                              - (k == j) * (c == a) * mo_oeprop[i][b] 
+                                              + (k == j) * (c == b) * mo_oeprop[i][a]);
                 }
                 q += n_ia;
         }
@@ -1565,7 +1614,15 @@ double* comp_oeprop_ijab_a(void *mo_oeprop_in, int nmo, double mo_oeprop_trace, 
                                 l = csfs[idx][1];
                                 c = csfs[idx][2];
                                 d = csfs[idx][3];
-                                row[idx] = 0.0;
+                                row[idx] = ((i == k) * (j == l) * (a == c) * (b == d) * mo_oeprop_trace 
+                                          - (i == k) * (a == c) * (b == d) * mo_oeprop[l][j] 
+                                          + (i == l) * (a == c) * (b == d) * mo_oeprop[k][j] 
+                                          + (j == k) * (a == c) * (b == d) * mo_oeprop[l][i] 
+                                          - (j == l) * (a == c) * (b == d) * mo_oeprop[k][i] 
+                                          + (i == k) * (j == l) * (a == c) * mo_oeprop[b][d] 
+                                          - (i == k) * (j == l) * (a == d) * mo_oeprop[b][c] 
+                                          - (i == k) * (j == l) * (b == c) * mo_oeprop[a][d] 
+                                          + (i == k) * (j == l) * (b == d) * mo_oeprop[a][c]);
                         }
                         q += n_ijab_a;
                 }
@@ -1612,6 +1669,7 @@ double* comp_oeprop_ijab_b(void *mo_oeprop_in, int nmo, double mo_oeprop_trace, 
         a = csfs[p][2];
         b = csfs[p][3];
         double *row;
+        row[0] = 0.0;
         if (singles)
         {
                 for (int idx = q; idx < q + n_ia; ++idx)
@@ -1620,7 +1678,10 @@ double* comp_oeprop_ijab_b(void *mo_oeprop_in, int nmo, double mo_oeprop_trace, 
                         l = csfs[idx][1];
                         c = csfs[idx][2];
                         d = csfs[idx][3];
-                        row[idx] = 0.0;
+                        row[idx] = sqrt(0.5) * ((k == i) * (c == a) * mo_oeprop[j][b] 
+                                              + (k == i) * (c == b) * mo_oeprop[j][a] 
+                                              + (k == j) * (c == a) * mo_oeprop[i][b] 
+                                              + (k == j) * (c == b) * mo_oeprop[i][a]);
                 }
                 q += n_ia;
         }
@@ -1646,7 +1707,8 @@ double* comp_oeprop_ijab_b(void *mo_oeprop_in, int nmo, double mo_oeprop_trace, 
                                 l = csfs[idx][1];
                                 c = csfs[idx][2];
                                 d = csfs[idx][3];
-                                row[idx] = 0.0;
+                                row[idx] = -sqrt(2) * ((k == i) * (c == a) * (d == b) * mo_oeprop[j][k] 
+                                                     + (k == j) * (c == a) * (d == b) * mo_oeprop[i][k]);
                         }
                         q += n_iiab;
                 }
@@ -1658,7 +1720,8 @@ double* comp_oeprop_ijab_b(void *mo_oeprop_in, int nmo, double mo_oeprop_trace, 
                                 l = csfs[idx][1];
                                 c = csfs[idx][2];
                                 d = csfs[idx][3];
-                                row[idx] = 0.0;
+                                row[idx] = sqrt(2) * ((k == i) * (l == j) * (c == a) * mo_oeprop[c][b]
+                                                    + (k == i) * (l == j) * (c == b) * mo_oeprop[c][a]);
                         }
                         q += n_ijaa;
                 }
@@ -1682,7 +1745,15 @@ double* comp_oeprop_ijab_b(void *mo_oeprop_in, int nmo, double mo_oeprop_trace, 
                                 l = csfs[idx][1];
                                 c = csfs[idx][2];
                                 d = csfs[idx][3];
-                                row[idx] = 0.0;
+                                row[idx] = ((i==k)*(j==l)*(a==c)*(b==d)*mo_oeprop_trace
+                                          - (i==k)*(a==c)*(b==d)*mo_oeprop[l][j]
+                                          - (i==l)*(a==c)*(b==d)*mo_oeprop[k][j]
+                                          - (j==k)*(a==c)*(b==d)*mo_oeprop[l][i]
+                                          - (j==l)*(a==c)*(b==d)*mo_oeprop[k][i]
+                                          + (i==k)*(j==l)*(a==c)*mo_oeprop[b][d]
+                                          + (i==k)*(j==l)*(a==d)*mo_oeprop[b][c]
+                                          + (i==k)*(j==l)*(b==c)*mo_oeprop[a][d]
+                                          + (i==k)*(j==l)*(b==d)*mo_oeprop[a][c]);
                         }
                         q += n_ijab_b;
                 }
