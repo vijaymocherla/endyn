@@ -46,10 +46,6 @@ double* comp_oeprop_ijab_b(void *mo_oeprop_in, int nmo, double moeprop_trace,
 
 int main(void){
   /*  Nothing qere for now.*/
-//   double x[12][12][12][12];
-//   double y[5] = {1,2,3,4,5};
-//   testnd(x, 12);
-//   test1d(y);
 }
 // void test1d(double *b){
 //         // for (int i = 0; i < 11; ++i){
