@@ -1,7 +1,7 @@
 
 /* 
  *
- * author: Sai Vijay Mocqerla <vijaysai.mocqerla@gmail.com>
+ * author: Sai Vijay Mocherla <vijaysai.mocherla@gmail.com>
  */
 
 #include <stdlib.h>
