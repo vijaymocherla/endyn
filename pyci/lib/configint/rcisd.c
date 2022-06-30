@@ -13,19 +13,19 @@
 double sqrt(double); 
 
 // Declaring functions
-double* comp_hrow_hf(double *mo_eps, void *mo_eris_in, double scf_energy, 
+double* comp_hrow_hf(void *mo_eps_in, void *mo_eris_in, int nmo, double scf_energy, 
                         void *csfs_in, int *num_csfs, bool* options, int p);
-double* comp_hrow_ia(double *mo_eps, void *mo_eris_in, double scf_energy, 
+double* comp_hrow_ia(void *mo_eps_in, void *mo_eris_in, int nmo, double scf_energy, 
                         void *csfs_in, int *num_csfs, bool* options, int p);
-double* comp_hrow_iiaa(double *mo_eps, void *mo_eris_in, double scf_energy, 
+double* comp_hrow_iiaa(void *mo_eps_in, void *mo_eris_in, int nmo, double scf_energy, 
                         void *csfs_in, int *num_csfs, bool* options, int p);
-double* comp_hrow_iiab(double *mo_eps, void *mo_eris_in, double scf_energy, 
+double* comp_hrow_iiab(void *mo_eps_in, void *mo_eris_in, int nmo, double scf_energy, 
                         void *csfs_in, int *num_csfs, bool* options, int p);
-double* comp_hrow_ijaa(double *mo_eps, void *mo_eris_in, double scf_energy, 
+double* comp_hrow_ijaa(void *mo_eps_in, void *mo_eris_in, int nmo, double scf_energy, 
                         void *csfs_in, int *num_csfs, bool* options, int p);
-double* comp_hrow_ijab_a(double *mo_eps, void *mo_eris_in, double scf_energy, 
+double* comp_hrow_ijab_a(void *mo_eps_in, void *mo_eris_in, int nmo, double scf_energy, 
                         void *csfs_in, int *num_csfs, bool* options, int p);
-double* comp_hrow_ijab_b(double *mo_eps, void *mo_eris_in, double scf_energy, 
+double* comp_hrow_ijab_b(void *mo_eps_in, void *mo_eris_in, int nmo, double scf_energy, 
                         void *csfs_in, int *num_csfs, bool* options, int p);
 double *comp_oeprop_hf(void *mo_oeprop_in, int nmo, double moeprop_trace, 
                         void *csfs_in, int *num_csfs, bool *options, int p);
@@ -88,7 +88,7 @@ int main(int a){
 //         }
 // }
 
-double* comp_hrow_hf(double *mo_eps, void *mo_eris_in, double scf_energy,
+double* comp_hrow_hf(void *mo_eps_in, void *mo_eris_in, int nmo, double scf_energy,
                      void *csfs_in, int *num_csfs, bool* options, int p){
         // declaring variables
         int i, j, k, l, a, b, c, d;
@@ -99,11 +99,11 @@ double* comp_hrow_hf(double *mo_eps, void *mo_eris_in, double scf_energy,
         int n_ijaa = num_csfs[4]; 
         int n_ijab_a = num_csfs[5]; 
         int n_ijab_b = num_csfs[6];
-        int nmo = sizeof(mo_eps)/sizeof(mo_eps[0]);
+        double E0 = scf_energy;    
+        double(*mo_eps) = (double(*))mo_eps_in;
         int ndim = n_ia + n_iiaa + n_iiab + n_ijaa + n_ijab_a + n_ijab_b;   
         double(*mo_eris)[nmo][nmo][nmo] = (double(*)[nmo][nmo][nmo])mo_eris_in;
         double(*csfs)[ndim] = (double(*)[ndim])csfs_in;
-        double E0;    
         bool singles = options[0]; 
         bool full_cis = options[1]; 
         bool doubles = options[2]; 
@@ -112,8 +112,7 @@ double* comp_hrow_hf(double *mo_eps, void *mo_eris_in, double scf_energy,
         bool doubles_ijaa = options[5];
         bool doubles_ijab_a = options[6];
         bool doubles_ijab_b = options[7];
-        int n = 1 + n_ia + n_iiaa + n_iiab + n_ijaa + n_ijab_a + n_ijab_b;
-        double* row;
+        double row[ndim];
         row[0] = E0; 
         q = 1; 
         if (singles){
@@ -170,7 +169,7 @@ double* comp_hrow_hf(double *mo_eps, void *mo_eris_in, double scf_energy,
         return row;
 }
 
-double* comp_hrow_ia(double *mo_eps, void *mo_eris_in, double scf_energy,
+double* comp_hrow_ia(void *mo_eps_in, void *mo_eris_in, int nmo, double scf_energy,
                      void *csfs_in, int *num_csfs, bool* options, int p){
         int i, j, k, l, a, b, c, d;
         int q  = 0; 
@@ -180,11 +179,11 @@ double* comp_hrow_ia(double *mo_eps, void *mo_eris_in, double scf_energy,
         int n_ijaa = num_csfs[4]; 
         int n_ijab_a = num_csfs[5]; 
         int n_ijab_b = num_csfs[6];
-        int nmo = sizeof(mo_eps) / sizeof(mo_eps[0]);
+        double(*mo_eps) = (double(*))mo_eps_in;
         int ndim = 1 + n_ia + n_iiaa + n_iiab + n_ijaa + n_ijab_a + n_ijab_b;
         double(*mo_eris)[nmo][nmo][nmo] = (double(*)[nmo][nmo][nmo])mo_eris_in;
         double(*csfs)[ndim] = (double(*)[ndim])csfs_in;
-        double E0;
+        double E0 = scf_energy;
         bool singles = options[0]; 
         bool full_cis = options[1]; 
         bool doubles = options[2]; 
@@ -197,8 +196,7 @@ double* comp_hrow_ia(double *mo_eps, void *mo_eris_in, double scf_energy,
         j = csfs[p][1];
         a = csfs[p][2];
         b = csfs[p][3];
-        int n = 1 + n_ia + n_iiaa  + n_iiab + n_ijaa + n_ijab_a + n_ijab_b;        
-        double* row;
+        double row[ndim];
         row[0] = 0.0; 
         q += 1;
         if (singles){
@@ -277,7 +275,7 @@ double* comp_hrow_ia(double *mo_eps, void *mo_eris_in, double scf_energy,
         return row; 
 }
 
-double* comp_hrow_iiaa(double *mo_eps, void *mo_eris_in, double scf_energy,
+double* comp_hrow_iiaa(void *mo_eps_in, void *mo_eris_in, int nmo, double scf_energy,
                        void *csfs_in, int *num_csfs, bool* options, int p)
 {
         int i, j, k, l, a, b, c, d;
@@ -288,11 +286,11 @@ double* comp_hrow_iiaa(double *mo_eps, void *mo_eris_in, double scf_energy,
         int n_ijaa = num_csfs[4]; 
         int n_ijab_a = num_csfs[5]; 
         int n_ijab_b = num_csfs[6]; 
-        double E0;
-        int nmo = sizeof(mo_eps) / sizeof(mo_eps[0]);
+        double(*mo_eps) = (double(*))mo_eps_in;
         int ndim = 1 + n_ia + n_iiaa + n_iiab + n_ijaa + n_ijab_a + n_ijab_b;
         double(*mo_eris)[nmo][nmo][nmo] = (double(*)[nmo][nmo][nmo])mo_eris_in;
         double(*csfs)[ndim] = (double(*)[ndim])csfs_in;
+        double E0 = scf_energy;
         bool singles = options[0]; 
         bool full_cis = options[1]; 
         bool doubles = options[2]; 
@@ -305,8 +303,7 @@ double* comp_hrow_iiaa(double *mo_eps, void *mo_eris_in, double scf_energy,
         j = csfs[p][1];
         a = csfs[p][2];
         b = csfs[p][3];
-        int n = 1 + n_ia + n_iiaa  + n_iiab + n_ijaa + n_ijab_a + n_ijab_b;        
-        double* row;
+        double row[ndim];
         row[0] = mo_eris[a][i][a][i];
         q += 1;
         if (singles)
@@ -398,7 +395,7 @@ double* comp_hrow_iiaa(double *mo_eps, void *mo_eris_in, double scf_energy,
         return row;
 }
 
-double* comp_hrow_iiab(double *mo_eps, void *mo_eris_in, double scf_energy,
+double* comp_hrow_iiab(void *mo_eps_in, void *mo_eris_in, int nmo, double scf_energy,
                        void *csfs_in, int *num_csfs, bool* options, int p)
 {
         int i, j, k, l, a, b, c, d;
@@ -408,8 +405,7 @@ double* comp_hrow_iiab(double *mo_eps, void *mo_eris_in, double scf_energy,
         int n_iiab = num_csfs[3]; 
         int n_ijaa = num_csfs[4]; 
         int n_ijab_a = num_csfs[5]; 
-        int n_ijab_b = num_csfs[6]; 
-        double E0;
+        int n_ijab_b = num_csfs[6];
         bool singles = options[0]; 
         bool full_cis = options[1]; 
         bool doubles = options[2]; 
@@ -418,7 +414,8 @@ double* comp_hrow_iiab(double *mo_eps, void *mo_eris_in, double scf_energy,
         bool doubles_ijaa = options[5];
         bool doubles_ijab_a = options[6];
         bool doubles_ijab_b = options[7];
-        int nmo = sizeof(mo_eps) / sizeof(mo_eps[0]);
+        double E0 = scf_energy;
+        double(*mo_eps) = (double(*))mo_eps_in;
         int ndim = 1 + n_ia + n_iiaa + n_iiab + n_ijaa + n_ijab_a + n_ijab_b;
         double(*mo_eris)[nmo][nmo][nmo] = (double(*)[nmo][nmo][nmo])mo_eris_in;
         double(*csfs)[ndim] = (double(*)[ndim])csfs_in;
@@ -426,8 +423,7 @@ double* comp_hrow_iiab(double *mo_eps, void *mo_eris_in, double scf_energy,
         j = csfs[p][1];
         a = csfs[p][2];
         b = csfs[p][3];
-        int n = 1 + n_ia + n_iiaa  + n_iiab + n_ijaa + n_ijab_a + n_ijab_b;        
-        double* row;
+        double row[ndim];
         row[0] = sqrt(2)*mo_eris[a][i][b][i];
         q += 1;
         if (singles)
@@ -533,7 +529,7 @@ double* comp_hrow_iiab(double *mo_eps, void *mo_eris_in, double scf_energy,
         return row;
 }
 
-double* comp_hrow_ijaa(double *mo_eps, void *mo_eris_in, double scf_energy,
+double* comp_hrow_ijaa(void *mo_eps_in, void *mo_eris_in, int nmo, double scf_energy,
                        void *csfs_in, int *num_csfs, bool* options, int p)
 {
         int i, j, k, l, a, b, c, d;
@@ -544,7 +540,7 @@ double* comp_hrow_ijaa(double *mo_eps, void *mo_eris_in, double scf_energy,
         int n_ijaa = num_csfs[4]; 
         int n_ijab_a = num_csfs[5]; 
         int n_ijab_b = num_csfs[6]; 
-        double E0;
+        double E0 = scf_energy;
         bool singles = options[0]; 
         bool full_cis = options[1]; 
         bool doubles = options[2]; 
@@ -553,7 +549,7 @@ double* comp_hrow_ijaa(double *mo_eps, void *mo_eris_in, double scf_energy,
         bool doubles_ijaa = options[5];
         bool doubles_ijab_a = options[6];
         bool doubles_ijab_b = options[7];
-        int nmo = sizeof(mo_eps) / sizeof(mo_eps[0]);
+        double(*mo_eps) = (double(*))mo_eps_in;
         int ndim = 1 + n_ia + n_iiaa + n_iiab + n_ijaa + n_ijab_a + n_ijab_b;
         double(*mo_eris)[nmo][nmo][nmo] = (double(*)[nmo][nmo][nmo])mo_eris_in;
         double(*csfs)[ndim] = (double(*)[ndim])csfs_in;
@@ -561,8 +557,7 @@ double* comp_hrow_ijaa(double *mo_eps, void *mo_eris_in, double scf_energy,
         j = csfs[p][1];
         a = csfs[p][2];
         b = csfs[p][3];
-        int n = 1 + n_ia + n_iiaa  + n_iiab + n_ijaa + n_ijab_a + n_ijab_b;        
-        double* row;
+        double row[ndim];
         row[0] = sqrt(2) * mo_eris[a][i][a][j];
         q += 1;
         if (singles)
@@ -667,7 +662,7 @@ double* comp_hrow_ijaa(double *mo_eps, void *mo_eris_in, double scf_energy,
         return row;
 }
 
-double* comp_hrow_ijab_a(double *mo_eps, void *mo_eris_in, double scf_energy,
+double* comp_hrow_ijab_a(void *mo_eps_in, void *mo_eris_in, int nmo, double scf_energy,
                        void *csfs_in, int *num_csfs, bool* options, int p)
 {
         int i, j, k, l, a, b, c, d;
@@ -678,7 +673,7 @@ double* comp_hrow_ijab_a(double *mo_eps, void *mo_eris_in, double scf_energy,
         int n_ijaa = num_csfs[4]; 
         int n_ijab_a = num_csfs[5]; 
         int n_ijab_b = num_csfs[6]; 
-        double E0;
+        double E0 = scf_energy;
         bool singles = options[0]; 
         bool full_cis = options[1]; 
         bool doubles = options[2]; 
@@ -687,7 +682,7 @@ double* comp_hrow_ijab_a(double *mo_eps, void *mo_eris_in, double scf_energy,
         bool doubles_ijaa = options[5];
         bool doubles_ijab_a = options[6];
         bool doubles_ijab_b = options[7];
-        int nmo = sizeof(mo_eps) / sizeof(mo_eps[0]);
+        double(*mo_eps) = (double(*))mo_eps_in;
         int ndim = 1 + n_ia + n_iiaa + n_iiab + n_ijaa + n_ijab_a + n_ijab_b;
         double(*mo_eris)[nmo][nmo][nmo] = (double(*)[nmo][nmo][nmo])mo_eris_in;
         double(*csfs)[ndim] = (double(*)[ndim])csfs_in;
@@ -695,8 +690,7 @@ double* comp_hrow_ijab_a(double *mo_eps, void *mo_eris_in, double scf_energy,
         j = csfs[p][1];
         a = csfs[p][2];
         b = csfs[p][3];
-        int n = 1 + n_ia + n_iiaa  + n_iiab + n_ijaa + n_ijab_a + n_ijab_b;        
-        double* row;
+        double row[ndim];
         row[0] = sqrt(3) * (mo_eris[a][i][b][j] - mo_eris[a][j][b][i]);
         q += 1;
         if (singles)
@@ -827,7 +821,7 @@ double* comp_hrow_ijab_a(double *mo_eps, void *mo_eris_in, double scf_energy,
         return row;
 }
 
-double* comp_hrow_ijab_b(double *mo_eps, void *mo_eris_in, double scf_energy,
+double* comp_hrow_ijab_b(void *mo_eps_in, void *mo_eris_in, int nmo, double scf_energy,
                          void *csfs_in, int *num_csfs, bool* options, int p)
 {
         int i, j, k, l, a, b, c, d;
@@ -838,7 +832,7 @@ double* comp_hrow_ijab_b(double *mo_eps, void *mo_eris_in, double scf_energy,
         int n_ijaa = num_csfs[4]; 
         int n_ijab_a = num_csfs[5]; 
         int n_ijab_b = num_csfs[6]; 
-        double E0;
+        double E0 = scf_energy;
         bool singles = options[0]; 
         bool full_cis = options[1]; 
         bool doubles = options[2]; 
@@ -847,7 +841,7 @@ double* comp_hrow_ijab_b(double *mo_eps, void *mo_eris_in, double scf_energy,
         bool doubles_ijaa = options[5];
         bool doubles_ijab_a = options[6];
         bool doubles_ijab_b = options[7];
-        int nmo = sizeof(mo_eps) / sizeof(mo_eps[0]);
+        double(*mo_eps) = (double(*))mo_eps_in;
         int ndim = 1 + n_ia + n_iiaa + n_iiab + n_ijaa + n_ijab_a + n_ijab_b;
         double(*mo_eris)[nmo][nmo][nmo] = (double(*)[nmo][nmo][nmo])mo_eris_in;
         double(*csfs)[ndim] = (double(*)[ndim])csfs_in;
@@ -855,8 +849,7 @@ double* comp_hrow_ijab_b(double *mo_eps, void *mo_eris_in, double scf_energy,
         j = csfs[p][1];
         a = csfs[p][2];
         b = csfs[p][3];
-        int n = 1 + n_ia + n_iiaa  + n_iiab + n_ijaa + n_ijab_a + n_ijab_b;        
-        double* row;
+        double row[ndim];
         row[0] = mo_eris[a][i][b][j] - mo_eris[a][j][b][i]; 
         q += 1;
         if (singles)
@@ -1016,8 +1009,7 @@ double* comp_oeprop_hf(void *mo_oeprop_in, int nmo, double mo_oeprop_trace, void
         j = csfs[p][1];
         a = csfs[p][2];
         b = csfs[p][3];
-        int n = 1 + n_ia + n_iiaa  + n_iiab + n_ijaa + n_ijab_a + n_ijab_b;        
-        double* row;
+        double row[ndim];
         row[0] = mo_oeprop_trace;
         if (singles){
                 for (int idx = q; idx < q + n_ia; ++idx){
@@ -1099,7 +1091,7 @@ double* comp_oeprop_ia(void *mo_oeprop_in, int nmo, double mo_oeprop_trace, void
         j = csfs[p][1];
         a = csfs[p][2];
         b = csfs[p][3];
-        double *row;
+        double row[ndim];
         row[0] = sqrt(2) * mo_oeprop[i][a];
         if (singles)
         {
@@ -1215,7 +1207,7 @@ double* comp_oeprop_iiaa(void *mo_oeprop_in, int nmo, double mo_oeprop_trace, vo
         j = csfs[p][1];
         a = csfs[p][2];
         b = csfs[p][3];
-        double *row;
+        double row[ndim];
         row[0] = 0.0;
         if (singles)
         {
@@ -1325,7 +1317,7 @@ double* comp_oeprop_iiab(void *mo_oeprop_in, int nmo, double mo_oeprop_trace, vo
         j = csfs[p][1];
         a = csfs[p][2];
         b = csfs[p][3];
-        double *row;
+        double row[ndim];
         row[0] = 0.0;
         if (singles)
         {
@@ -1438,7 +1430,7 @@ double* comp_oeprop_ijaa(void *mo_oeprop_in, int nmo, double mo_oeprop_trace, vo
         j = csfs[p][1];
         a = csfs[p][2];
         b = csfs[p][3];
-        double *row;
+        double row[ndim];
         row[0] = 0.0; 
         if (singles)
         {
@@ -1551,7 +1543,7 @@ double* comp_oeprop_ijab_a(void *mo_oeprop_in, int nmo, double mo_oeprop_trace, 
         j = csfs[p][1];
         a = csfs[p][2];
         b = csfs[p][3];
-        double *row;
+        double row[ndim];
         row[0] = 0.0;
         if (singles)
         {
@@ -1668,7 +1660,7 @@ double* comp_oeprop_ijab_b(void *mo_oeprop_in, int nmo, double mo_oeprop_trace, 
         j = csfs[p][1];
         a = csfs[p][2];
         b = csfs[p][3];
-        double *row;
+        double row[ndim];
         row[0] = 0.0;
         if (singles)
         {
