@@ -31,7 +31,7 @@ from .rcisd import(
     comp_hrow_ijab_A,
     comp_hrow_ijab_B,
     comp_hcisd,
-    cy_comp_hcisd,
+    # c_comp_hcisd,
     comp_oeprop_hf,
     comp_oeprop_ia,
     comp_oeprop_iiaa,

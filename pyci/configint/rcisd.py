@@ -16,16 +16,10 @@ References:
 import numpy as np
 from functools import partial
 from pyci.utils.multproc import pool_jobs
+# import pyci.lib.configint.rcisd as lib_rcisd
 # from pyci.configint.cy import rcisd_core
-from .cy.rcisd_core import (
-    cy_comp_hrow_hf,
-    cy_comp_hrow_ia,
-    cy_comp_hrow_iiaa,
-    cy_comp_hrow_iiab,
-    cy_comp_hrow_ijaa,
-    cy_comp_hrow_ijab_A,
-    cy_comp_hrow_ijab_B
-)
+
+#
 # input : eps, Ca, mo_oeints, mo_eris
 # methods : 
 #   1. Setup CI calculation options: singles, doubles, full_cis and active space.
@@ -34,9 +28,8 @@ from .cy.rcisd_core import (
 #       b. calculate OEPROPs(dipoles, charges etc)
 #       c. parallel routines   
 # TODO:   
-#   - Check functions for dipole operators
-#   - Caculate 1-RDM from a state in CSF basis
 #   - Cythonize comp_row functions() and import to use parallisation funcs 
+#   - Caculate 1-RDM from a state in CSF basis
 #
 
 def generate_csfs(orbinfo, active_space, options):
@@ -696,64 +689,64 @@ def comp_hcisd(mo_eps, mo_eris, scf_energy, orbinfo, active_space, options, ncor
     hcisd = np.array(hcisd)
     return hcisd
 
-def cy_comp_hcisd(mo_eps, mo_eris, scf_energy, orbinfo, active_space, options, ncore=4):
-    (singles, full_cis, doubles, doubles_iiaa, doubles_iiab,
-    doubles_ijaa, doubles_ijab_A, doubles_ijab_B)  = options
-    csfs, num_csfs = generate_csfs(orbinfo, active_space, options)
-    N = sum(num_csfs)
-    # optimizing num_cores assigned
-    hcisd = []
-    P = 0
-    row_hf = cy_comp_hrow_hf(mo_eps, mo_eris, scf_energy, csfs, num_csfs, options)
-    hcisd += [row_hf]
-    P += 1
-    if singles:
-        n_ia = num_csfs[1]
-        pfunc_hrow_ia = partial(cy_comp_hrow_ia, mo_eps, mo_eris, scf_energy, csfs, num_csfs, options)
-        Plist_ia = list(range(P,P+n_ia))
-        rows_ia = pool_jobs(pfunc_hrow_ia, Plist_ia, ncore=ncore)
-        hcisd += rows_ia
-        P += n_ia
-    if doubles:
-        if doubles_iiaa:
-            n_iiaa = num_csfs[2]
-            pfunc_hrow_iiaa = partial(cy_comp_hrow_iiaa, mo_eps, mo_eris, scf_energy, csfs, num_csfs, options)
-            Plist_iiaa = list(range(P,P+n_iiaa))
-            rows_iiaa = pool_jobs(pfunc_hrow_iiaa, Plist_iiaa, ncore=ncore)
-            hcisd += rows_iiaa
-            P += n_iiaa
-        if doubles_iiab:        
-            n_iiab = num_csfs[3]
-            pfunc_hrow_iiab = partial(cy_comp_hrow_iiab, mo_eps, mo_eris, scf_energy, csfs, num_csfs, options)
-            Plist_iiab = list(range(P,P+n_iiab))
-            rows_iiab = pool_jobs(pfunc_hrow_iiab, Plist_iiab, ncore=ncore)
-            hcisd += rows_iiab
-            P += n_iiab
-        if doubles_ijaa:
-            n_ijaa = num_csfs[4]
-            pfunc_hrow_ijaa = partial(cy_comp_hrow_ijaa, mo_eps, mo_eris, scf_energy, csfs, num_csfs, options)
-            Plist_ijaa = list(range(P,P+n_ijaa))
-            rows_ijaa = pool_jobs(pfunc_hrow_ijaa, Plist_ijaa, ncore=ncore)
-            hcisd += rows_ijaa
-            P += n_ijaa
-        if doubles_ijab_A:
-            n_ijab_A = num_csfs[5]
-            pfunc_hrow_ijab_A = partial(cy_comp_hrow_ijab_A, mo_eps, mo_eris, scf_energy, csfs, num_csfs, options)
-            Plist_ijab_A = list(range(P,P+n_ijab_A))
-            rows_ijab_A = pool_jobs(pfunc_hrow_ijab_A, Plist_ijab_A, ncore=ncore)
-            hcisd += rows_ijab_A
-            P += n_ijab_A
-        if doubles_ijab_B:        
-            n_ijab_B = num_csfs[6]
-            pfunc_hrow_ijab_B = partial(cy_comp_hrow_ijab_B, mo_eps, mo_eris, scf_energy, csfs, num_csfs, options)
-            Plist_ijab_B = list(range(P,P+n_ijab_B))
-            rows_ijab_B = pool_jobs(pfunc_hrow_ijab_B, Plist_ijab_B, ncore=ncore)
-            hcisd += rows_ijab_B
-            P += n_ijab_B
-    if P != N:
-        raise Exception("ERROR: posval not equal nCSFs")
-    hcisd = np.array(hcisd)
-    return hcisd
+# def c_comp_hcisd(mo_eps, mo_eris, scf_energy, orbinfo, active_space, options, ncore=4):
+#     (singles, full_cis, doubles, doubles_iiaa, doubles_iiab,
+#     doubles_ijaa, doubles_ijab_A, doubles_ijab_B)  = options
+#     csfs, num_csfs = generate_csfs(orbinfo, active_space, options)
+#     N = sum(num_csfs)
+#     # optimizing num_cores assigned
+#     hcisd = []
+#     P = 0
+#     row_hf = lib_rcisd.comp_hrow_hf(mo_eps, mo_eris, scf_energy, csfs, num_csfs, options)
+#     hcisd += [row_hf]
+#     P += 1
+#     if singles:
+#         n_ia = num_csfs[1]
+#         pfunc_hrow_ia = partial(lib_rcisd.comp_hrow_ia, mo_eps, mo_eris, scf_energy, csfs, num_csfs, options)
+#         Plist_ia = list(range(P,P+n_ia))
+#         rows_ia = pool_jobs(pfunc_hrow_ia, Plist_ia, ncore=ncore)
+#         hcisd += rows_ia
+#         P += n_ia
+#     if doubles:
+#         if doubles_iiaa:
+#             n_iiaa = num_csfs[2]
+#             pfunc_hrow_iiaa = partial(lib_rcisd.comp_hrow_iiaa, mo_eps, mo_eris, scf_energy, csfs, num_csfs, options)
+#             Plist_iiaa = list(range(P,P+n_iiaa))
+#             rows_iiaa = pool_jobs(pfunc_hrow_iiaa, Plist_iiaa, ncore=ncore)
+#             hcisd += rows_iiaa
+#             P += n_iiaa
+#         if doubles_iiab:        
+#             n_iiab = num_csfs[3]
+#             pfunc_hrow_iiab = partial(lib_rcisd.comp_hrow_iiab, mo_eps, mo_eris, scf_energy, csfs, num_csfs, options)
+#             Plist_iiab = list(range(P,P+n_iiab))
+#             rows_iiab = pool_jobs(pfunc_hrow_iiab, Plist_iiab, ncore=ncore)
+#             hcisd += rows_iiab
+#             P += n_iiab
+#         if doubles_ijaa:
+#             n_ijaa = num_csfs[4]
+#             pfunc_hrow_ijaa = partial(lib_rcisd.comp_hrow_ijaa, mo_eps, mo_eris, scf_energy, csfs, num_csfs, options)
+#             Plist_ijaa = list(range(P,P+n_ijaa))
+#             rows_ijaa = pool_jobs(pfunc_hrow_ijaa, Plist_ijaa, ncore=ncore)
+#             hcisd += rows_ijaa
+#             P += n_ijaa
+#         if doubles_ijab_A:
+#             n_ijab_A = num_csfs[5]
+#             pfunc_hrow_ijab_A = partial(lib_rcisd.comp_hrow_ijab_A, mo_eps, mo_eris, scf_energy, csfs, num_csfs, options)
+#             Plist_ijab_A = list(range(P,P+n_ijab_A))
+#             rows_ijab_A = pool_jobs(pfunc_hrow_ijab_A, Plist_ijab_A, ncore=ncore)
+#             hcisd += rows_ijab_A
+#             P += n_ijab_A
+#         if doubles_ijab_B:        
+#             n_ijab_B = num_csfs[6]
+#             pfunc_hrow_ijab_B = partial(lib_rcisd.comp_hrow_ijab_B, mo_eps, mo_eris, scf_energy, csfs, num_csfs, options)
+#             Plist_ijab_B = list(range(P,P+n_ijab_B))
+#             rows_ijab_B = pool_jobs(pfunc_hrow_ijab_B, Plist_ijab_B, ncore=ncore)
+#             hcisd += rows_ijab_B
+#             P += n_ijab_B
+#     if P != N:
+#         raise Exception("ERROR: posval not equal nCSFs")
+#     hcisd = np.array(hcisd)
+#     return hcisd
 
 def comp_oeprop_hf(mo_oeprop, mo_oeprop_trace, csfs, num_csfs, options):
     (singles, full_cis, doubles, doubles_iiaa, doubles_iiab,
@@ -973,10 +966,10 @@ def comp_oeprop_ijaa(mo_oeprop, mo_oeprop_trace, csfs, num_csfs, options, P):
             for right_ex in csfs[Q:Q+n_ijaa]:
                 k,l,c,d = right_ex
                 row[Q] = ((i==k)*(j==l)*(a==c)*(mo_oeprop_trace + 2*mo_oeprop[a,a])
-                         -(i==k)*(a==c)*mo_oeprop[l==j]
-                         -(i==l)*(a==c)*mo_oeprop[k==j]
-                         -(j==k)*(a==c)*mo_oeprop[l==i]
-                         -(j==l)*(a==c)*mo_oeprop[k==i])
+                         -(i==k)*(a==c)*mo_oeprop[l][j]
+                         -(i==l)*(a==c)*mo_oeprop[k][j]
+                         -(j==k)*(a==c)*mo_oeprop[l][i]
+                         -(j==l)*(a==c)*mo_oeprop[k][i])
                 Q += 1
         if doubles_ijab_A:
             Q += n_ijab_A

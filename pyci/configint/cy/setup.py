@@ -13,7 +13,7 @@ ext_modules = [
 ]
 
 setup(
-    name='cyext',
+    name="rcisd_core",
     ext_modules=cythonize(ext_modules, language_level="3"),
     include_dirs = [numpy.get_include(), scipy.get_include()]
 )
