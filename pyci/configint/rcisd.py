@@ -6,12 +6,8 @@
 A python program with implementation of CISD in terms of CSF basis.
 
 References:
-[1] Supplimentary Material of "Effects of electronic correlation on the 
-    high harmonic generation in helium: a time-dependent 
-    configuration interaction singles vs time-dependent 
-    full configuration interaction study." 
-    Woźniak, A. P., Przybytek, M., Lewenstein, M., & Moszyński, R. (2022). 
-    J.Chem.Phys., 156(17), 174106.
+[1] Woźniak, A. P., Przybytek, M., Lewenstein, M., et al.
+J. Chem. Phys. 156, 174106 (2022); https://doi.org/10.1063/5.0087384
 """
 import numpy as np
 from functools import partial
