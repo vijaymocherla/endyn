@@ -1,7 +1,13 @@
 #!/usr/bin/python envs
 #
 # Author : Sai Vijay Mocherla <vijaysai.mocherla@gmail.com>
+# 
+# TO-DO: 
+#   1. code up eri_mo2so() MO to SO integral transform routine.
+#   2. clean up psi4utils API
 #
+"""
+"""
 import psi4
 import numpy as np
 from opt_einsum import contract
@@ -15,12 +21,13 @@ class psi4utils:
         self.scratch = scratch = wd+'.scratch/'
         if not os.path.isdir(self.scratch):
             os.system('mkdir '+wd+'.scratch')
-        psi4.core.set_output_file('psi4_output.dat', False) # psi4 output
+        psi4.core.clean()
+        psi4.core.set_output_file(scratch+'psi4_output.dat', False) # psi4 output
         psi4.set_memory(psi4mem) # psi4 memory 
         self.numpy_memory = 2 # numpy memory
         self.options_dict = { 'basis': basis,
                             'reference' : 'rhf',
-                            'scf_type' : 'pk',
+                            'scf_type' : 'direct',
                             'e_convergence' : 1e-12,
                             'd_convergence' : 1e-10}            
         psi4.set_options(self.options_dict)               
@@ -32,13 +39,6 @@ class psi4utils:
             self.wfn = psi4.core.Wavefunction.build(self.mol, psi4.core.get_global_option('basis'))   
         self.mints = psi4.core.MintsHelper(self.wfn.basisset())
 
-    def eri_mo2so(self, Ca, Cb):
-        """Returns MO spin eri tensor in physicist's notation
-        """
-        Ca_psi4_matrix = psi4.core.Matrix.from_array(Ca)
-        Cb_psi4_matrix = psi4.core.Matrix.from_array(Cb)
-        mo_spin_eri_tensor = np.asarray(self.mints.mo_spin_eri(Ca_psi4_matrix, Cb_psi4_matrix))
-        return mo_spin_eri_tensor
     
 
     @staticmethod    
@@ -88,6 +88,7 @@ class psi4utils:
     def eri_ao2mo(Ca, ao_erints, greedy=False):
         if greedy:
             # TODO Check precision issues involved if greedy=True
+            print("!!!Warning: Using greedy eri_ao2mo transform\n")
             size = Ca.shape[0]
             mo_erints = np.dot(Ca.T, ao_erints.reshape(size, -1))
             mo_erints = np.dot(mo_erints.reshape(-1, size), Ca)
@@ -105,10 +106,25 @@ class psi4utils:
         return mo_matrix
     
     @staticmethod
-    def eri_mo2so(Ca, Cb, mo_eri):
-        mo_so_eri = []
+    def eri_mo2so(mo_erints):
+        # TO-DO : code mo to so transform for eris (current implementation is bad)
+        print("!!!Warning: Using unstable MO to SO transform eri_mo2so(), instead use eri_mo2so_psi4()\n")
+        dim = mo_erints.shape[0]
+        mo_so_eri=np.zeros((dim*2,dim*2,dim*2,dim*2), np.float64)
+        for p in range(1, dim*2 + 1):
+            for q in range(1, dim*2 + 1):
+                for r in range(1, dim*2 + 1):
+                    for s in range(1, dim*2 + 1):
+                        mo_so_eri[p-1, q-1, r-1, s-1] = (((q/2)==(p/2))*((s/2)==(r/2))*mo_erints[p//2 - 1, q//2 - 1, r//2 - 1, s//2 - 1])
         return mo_so_eri
 
+    def eri_mo2so_psi4(self, Ca, Cb):
+        """Returns MO spin eri tensor in chemist's notation
+        """
+        Ca_psi4_matrix = psi4.core.Matrix.from_array(Ca)
+        Cb_psi4_matrix = psi4.core.Matrix.from_array(Cb)
+        mo_spin_eri_tensor = np.asarray(self.mints.mo_spin_eri(Ca_psi4_matrix, Cb_psi4_matrix), dtype=np.float64)
+        return mo_spin_eri_tensor
 
 
 class AOint(psi4utils):
@@ -128,9 +144,9 @@ class AOint(psi4utils):
            ```
         """
         # one-electron integrals 
-        overlap_aoints = np.asarray(self.mints.ao_overlap())
-        kinetic_aoints = np.asarray(self.mints.ao_kinetic())
-        potential_aoints = np.asarray(self.mints.ao_potential())
+        overlap_aoints = np.asarray(self.mints.ao_overlap(), dtype=np.float64)
+        kinetic_aoints = np.asarray(self.mints.ao_kinetic(), dtype=np.float64)
+        potential_aoints = np.asarray(self.mints.ao_potential(), dtype=np.float64)
         np.savez(self.scratch+'ao_oeints.npz', 
                 overlap_aoints=overlap_aoints,
                 kinetic_aoints=kinetic_aoints,
@@ -170,7 +186,7 @@ class AOint(psi4utils):
            >>> ao_dpz = ao_dipoles_data['dpz_aoints']
            ```
         """
-        dpx_aoints, dpy_aoints, dpz_aoints =  np.asarray(self.mints.ao_dipole())
+        dpx_aoints, dpy_aoints, dpz_aoints =  np.asarray(self.mints.ao_dipole(), dtype=np.float64)
         np.savez(self.scratch+'ao_dpints.npz',
                 dpx_aoints=dpx_aoints,
                 dpy_aoints=dpy_aoints,
@@ -192,7 +208,7 @@ class AOint(psi4utils):
            ```
         """
         (qdxx_aoints, qdxy_aoints, qdxz_aoints, 
-        qdyy_aoints, qdyz_aoints, qdzz_aoints) =  np.asarray(self.mints.ao_quadrupole())
+        qdyy_aoints, qdyz_aoints, qdzz_aoints) =  np.asarray(self.mints.ao_quadrupole(), dtype=np.float64)
         np.savez(self.scratch+'ao_qdints.npz',
                 qdxx_aoints=qdxx_aoints,
                 qdxy_aoints=qdxy_aoints,
@@ -223,10 +239,10 @@ class AOint(psi4utils):
         print('Ground state SCF Energy : %3.8f \n' % self.scf_energy)        # MO coefficients and energies
         print('Nuclear repulsion energy : %3.8f \n' % self.mol.nuclear_repulsion_energy())
         print('Total electronic energy : %3.8f \n' % (self.scf_energy - self.mol.nuclear_repulsion_energy()))
-        eps_a = np.array(self.scf_wfn.epsilon_a_subset('AO', 'ALL'))
-        Ca = np.array(self.scf_wfn.Ca_subset('AO','ALL'))
+        eps_a = np.array(self.scf_wfn.epsilon_a_subset('AO', 'ALL'), dtype=np.float64)
+        Ca = np.array(self.scf_wfn.Ca_subset('AO','ALL'), dtype=np.float64)
         # beta orbitals
-        # Cb = np.array(scf_wfn.Cb_subset('AO','ALL'))
-        # eps_b = np.array(scf_wfn.epsilon_b_subset('AO', 'ALL'))
-        np.savez(self.scratch+'mo_scf_info.npz', eps_a=eps_a, Ca=Ca)
+        Cb = np.array(self.scf_wfn.Cb_subset('AO','ALL'), dtype=np.float64)
+        eps_b = np.array(self.scf_wfn.epsilon_b_subset('AO', 'ALL'), dtype=np.float64)
+        np.savez(self.scratch+'mo_scf_info.npz', eps_a=eps_a, Ca=Ca, eps_b=eps_b, Cb=Cb)
         return 1

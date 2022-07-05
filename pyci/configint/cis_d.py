@@ -2,6 +2,10 @@
 #
 # Author : Sai Vijay Mocherla <vijaysai.mocherla@gmail.com>
 #
+#   TO-DO:
+#       1. check and maks sure eris in all funcs are in chemists notation.
+#       2. Simplify tensor computations further to reduce computational overhead
+#       3. clean up API 
 """ CIS(D) Spin MO version
 """
 from multiprocessing import Pool
@@ -33,13 +37,13 @@ class CIS_D:
         self.ccis = cis_eigvecs[1:, :]
         self.delta = self.comp_delta(mo_eps)
         self.g_tensor = mo_so_eris - mo_so_eris.transpose(0, 1, 3, 2)
-        self.w_tensor = -self.g_tensor[self.nel:, self.nel:, :self.nel, :self.nel]/self.delta  # g_vvoo / delta[vvoo]
+        self.w_tensor = - self.g_tensor[self.nel:, self.nel:, :self.nel, :self.nel]/self.delta  # g_vvoo / delta[vvoo]
         
     def comp_delta(self, mo_eps):
         """Computes the tensor delta_{ab}^{rs} with orbital energy differences
         """
-        so_mo_eps = np.kron(mo_eps, np.array([1.0, 1.0]))
-        delta = np.full(([self.nso]*4), 1.0)
+        so_mo_eps = np.kron(mo_eps, np.array([1.0, 1.0], dtype=np.float64))
+        delta = np.full(([self.nso]*4), 1.0, dtype=np.float64)
         iterlist = list(product(self.vir_list, self.vir_list, self.occ_list, self.occ_list))
         for conf in iterlist:
             a, b, i, j = conf
@@ -50,7 +54,7 @@ class CIS_D:
     def comp_e0mp2(self):
         """Computes MP2 correction for ground-state energy
         """
-        E0_mp2 = 0.25*contract('abij,ijab', self.w_tensor, self.g_tensor[:self.nel, :self.nel, self.nel:, self.nel:], optimize=True)
+        E0_mp2 = 0.2500*contract('abij,ijab', self.w_tensor, self.g_tensor[:self.nel, :self.nel, self.nel:, self.nel:], optimize=True)
         return E0_mp2
 
     def comp_utensor(self, Ci):
@@ -80,10 +84,7 @@ class CIS_D:
     def spin_block_ci(self, Ci):
         """Spin blocks Ci into spin blocked form
         """
-        new_Ci = np.zeros((self.nocc, self.nvir))
-        for state in self.cis_iterlist:
-            i, j = state
-            new_Ci[i, (j-self.nocc)] = Ci[self.get_idx(i, j)]
+        new_Ci = Ci.reshape(self.nocc, self.nvir)
         spin_Ci = np.kron(new_Ci, np.array([[1.0, 0.0], [0.0, 1.0]]))  # spin blocking the cis vector
         return spin_Ci
 
@@ -112,7 +113,7 @@ class CIS_D:
         print('Ei_d_corr \t Ei_t_corr \t Ei_corr \t Ei_cis(d)')
         with Pool(processes=ncores) as pool:
             async_object = pool.map_async(self.comp_dcorr, range(nevals))
-            ecis_d = self.ecis[:nevals] + np.array(async_object.get())
+            ecis_d = self.ecis[:nevals] + np.array(async_object.get(), dtype=np.float64)
             pool.close()
             pool.join()
         return ecis_d
