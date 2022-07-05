@@ -8,7 +8,7 @@
 #include <stdio.h>
 #include <math.h>
 #include <stdbool.h>
-#include <rcisd.h>
+// #include <rcisd.h>
 // Declaring math functions
 double sqrt(double); 
 
@@ -188,7 +188,7 @@ double* comp_hrow_ia(void *mo_eps_in, void *mo_eris_in, int nmo, double scf_ener
                         c = csfs[idx][2];
                         d = csfs[idx][3];
                         row[idx] = sqrt(2) * ((i == k) * mo_eris[c][a][c][i] 
-                                        - (a == c) * mo_eris[k][a][k][i]);
+                                            - (a == c) * mo_eris[k][a][k][i]);
                 }
         }
         q += n_iiaa;
@@ -199,8 +199,8 @@ double* comp_hrow_ia(void *mo_eps_in, void *mo_eris_in, int nmo, double scf_ener
                         c = csfs[idx][2];
                         d = csfs[idx][3];
                         row[idx] = ((i == k) * (mo_eris[d][a][c][i] + mo_eris[c][a][d][i]) 
-                                        - (a == c) * mo_eris[k][d][k][i] 
-                                        - (a == d) * mo_eris[k][c][k][i]);
+                                  - (a == c) * mo_eris[k][d][k][i] 
+                                  - (a == d) * mo_eris[k][c][k][i]);
                 }
                 q += n_iiab;
         }
@@ -212,8 +212,7 @@ double* comp_hrow_ia(void *mo_eps_in, void *mo_eris_in, int nmo, double scf_ener
                         d = csfs[idx][3];
                         row[idx] = ((i == k) * mo_eris[c][a][c][l] 
                                 + (i == l) * mo_eris[c][a][c][k] 
-                                + (a == c) * (mo_eris[a][l][k][i] 
-                                + mo_eris[a][k][l][i]));
+                                - (a == c) * (mo_eris[a][l][k][i] + mo_eris[a][k][l][i]));
                 }
                 q += n_ijaa;
         }
@@ -224,9 +223,9 @@ double* comp_hrow_ia(void *mo_eps_in, void *mo_eris_in, int nmo, double scf_ener
                         c = csfs[idx][2];
                         d = csfs[idx][3];
                         row[idx] = sqrt(1.5) * ((i == k) * (mo_eris[a][c][d][l] - mo_eris[a][d][c][l]) 
-                                - (i == l) * (mo_eris[a][c][d][k] - mo_eris[a][d][c][k]) 
-                                + (a == c) * (mo_eris[d][k][l][i] - mo_eris[d][l][k][i]) 
-                                - (a == d) * (mo_eris[c][k][l][i] - mo_eris[c][l][k][i]));
+                                              - (i == l) * (mo_eris[a][c][d][k] - mo_eris[a][d][c][k]) 
+                                              + (a == c) * (mo_eris[d][k][l][i] - mo_eris[d][l][k][i]) 
+                                              - (a == d) * (mo_eris[c][k][l][i] - mo_eris[c][l][k][i]));
                 }
                 q += n_ijab_a;
         }
@@ -236,10 +235,10 @@ double* comp_hrow_ia(void *mo_eps_in, void *mo_eris_in, int nmo, double scf_ener
                         l = csfs[idx][1];
                         c = csfs[idx][2];
                         d = csfs[idx][3];
-                        row[idx] = sqrt(0.5) * ((i == k) * (mo_eris[a][c][d][l] - mo_eris[a][d][c][l]) 
-                                        + (i == l) * (mo_eris[a][c][d][k] - mo_eris[a][d][c][k]) 
-                                        - (a == c) * (mo_eris[d][k][l][i] - mo_eris[d][l][k][i]) 
-                                        - (a == d) * (mo_eris[c][k][l][i] - mo_eris[c][l][k][i]));
+                        row[idx] = sqrt(0.5) * ((i == k) * (mo_eris[a][c][d][l] + mo_eris[a][d][c][l]) 
+                                              + (i == l) * (mo_eris[a][c][d][k] + mo_eris[a][d][c][k]) 
+                                              - (a == c) * (mo_eris[d][k][l][i] + mo_eris[d][l][k][i]) 
+                                              - (a == d) * (mo_eris[c][k][l][i] + mo_eris[c][l][k][i]));
                 }
                 q += n_ijab_b;
         }
@@ -831,10 +830,10 @@ double* comp_hrow_ijab_b(void *mo_eps_in, void *mo_eris_in, int nmo, double scf_
                         l = csfs[idx][1];
                         c = csfs[idx][2];
                         d = csfs[idx][3];
-                        row[idx] = sqrt(0.5) * ((k == i) * (mo_eris[c][a][b][j] - mo_eris[c][b][a][j]) 
-                                            + (k == j) * (mo_eris[c][a][b][i] - mo_eris[c][b][a][i]) 
-                                            - (c == a) * (mo_eris[b][i][j][k] - mo_eris[b][j][i][k]) 
-                                            - (c == b) * (mo_eris[a][i][j][k] - mo_eris[a][j][i][k]));
+                        row[idx] = sqrt(0.5) * ((k == i) * (mo_eris[c][a][b][j] + mo_eris[c][b][a][j]) 
+                                              + (k == j) * (mo_eris[c][a][b][i] + mo_eris[c][b][a][i]) 
+                                              - (c == a) * (mo_eris[b][i][j][k] + mo_eris[b][j][i][k]) 
+                                              - (c == b) * (mo_eris[a][i][j][k] + mo_eris[a][j][i][k]));
                 }
                 q += n_ia; 
         }
@@ -847,9 +846,9 @@ double* comp_hrow_ijab_b(void *mo_eps_in, void *mo_eris_in, int nmo, double scf_
                         c = csfs[idx][2];
                         d = csfs[idx][3];
                         row[idx] = ((k == i) * (c == a) * (mo_eris[c][k][b][j] - 2 * mo_eris[c][b][j][k]) 
-                                + (k == i) * (c == b) * (mo_eris[c][k][a][j] - 2 * mo_eris[c][a][j][k]) 
-                                + (k == j) * (c == a) * (mo_eris[c][k][b][i] - 2 * mo_eris[c][b][i][k])
-                                + (k == j) * (c == b) * (mo_eris[c][k][a][i] - 2 * mo_eris[c][a][i][k]));
+                                  + (k == i) * (c == b) * (mo_eris[c][k][a][j] - 2 * mo_eris[c][a][j][k]) 
+                                  + (k == j) * (c == a) * (mo_eris[c][k][b][i] - 2 * mo_eris[c][b][i][k])
+                                  + (k == j) * (c == b) * (mo_eris[c][k][a][i] - 2 * mo_eris[c][a][i][k]));
                 }
                 q += n_iiaa;        
         }

@@ -74,7 +74,7 @@ def comp_hrow_hf(mo_eps, mo_eris, scf_energy, csfs, num_csfs, options):
      doubles_ijaa, doubles_ijab_A, doubles_ijab_B) = options
     N = sum(num_csfs)
     E0 = scf_energy
-    row = np.zeros(N)
+    row = np.zeros(N, dtype=np.float64)
     try:
         row[0] = E0
         Q = 1
@@ -125,7 +125,7 @@ def comp_hrow_ia(mo_eps, mo_eris, scf_energy, csfs, num_csfs, options, P):
     doubles_ijaa, doubles_ijab_A, doubles_ijab_B)  = options
     N = sum(num_csfs)
     E0 = scf_energy
-    row = np.zeros(N)
+    row = np.zeros(N, dtype=np.float64)
     i,j,a,b = csfs[P]
     try:    
         
@@ -147,7 +147,7 @@ def comp_hrow_ia(mo_eps, mo_eris, scf_energy, csfs, num_csfs, options, P):
                 for right_ex in csfs[Q:Q+n_iiaa]:
                     k,l,c,d = right_ex
                     row[Q] = np.sqrt(2) * ((i==k)*mo_eris[c,a,c,i]
-                                                - (a==c)*mo_eris[k,a,k,i])
+                                         - (a==c)*mo_eris[k,a,k,i])
                     Q += 1
             if doubles_iiab:
                 for right_ex in csfs[Q:Q+n_iiab]:
@@ -161,25 +161,25 @@ def comp_hrow_ia(mo_eps, mo_eris, scf_energy, csfs, num_csfs, options, P):
                     k,l,c,d = right_ex
                     row[Q] = ((i==k)*mo_eris[c,a,c,l]
                                 + (i==l)*mo_eris[c,a,c,k]
-                                + (a==c)*(mo_eris[a,l,k,i] + mo_eris[a,k,l,i]))
+                                - (a==c)*(mo_eris[a,l,k,i] + mo_eris[a,k,l,i]))
                     Q += 1
             if doubles_ijab_A:        
                 for right_ex in csfs[Q:Q+n_ijab_A]:
                     # A 
                     k,l,c,d = right_ex
                     row[Q] = np.sqrt(1.5) * ((i==k)*(mo_eris[a,c,d,l] - mo_eris[a,d,c,l])
-                                        -(i==l)*(mo_eris[a,c,d,k] - mo_eris[a,d,c,k])
-                                        +(a==c)*(mo_eris[d,k,l,i] - mo_eris[d,l,k,i])
-                                        -(a==d)*(mo_eris[c,k,l,i] - mo_eris[c,l,k,i]))
+                                           - (i==l)*(mo_eris[a,c,d,k] - mo_eris[a,d,c,k])
+                                           + (a==c)*(mo_eris[d,k,l,i] - mo_eris[d,l,k,i])
+                                           - (a==d)*(mo_eris[c,k,l,i] - mo_eris[c,l,k,i]))
                     Q += 1
             if doubles_ijab_B:
                 for  right_ex in csfs[Q:Q+n_ijab_B]:
                     # B 
                     k,l,c,d = right_ex
-                    row[Q] = np.sqrt(0.5) * ((i==k)*(mo_eris[a,c,d,l]- mo_eris[a,d,c,l])
-                                        +(i==l)*(mo_eris[a,c,d,k] - mo_eris[a,d,c,k])
-                                        -(a==c)*(mo_eris[d,k,l,i] - mo_eris[d,l,k,i])
-                                        -(a==d)*(mo_eris[c,k,l,i] - mo_eris[c,l,k,i]))
+                    row[Q] = np.sqrt(0.5) * ((i==k)*(mo_eris[a,c,d,l] + mo_eris[a,d,c,l])
+                                           + (i==l)*(mo_eris[a,c,d,k] + mo_eris[a,d,c,k])
+                                           - (a==c)*(mo_eris[d,k,l,i] + mo_eris[d,l,k,i])
+                                           - (a==d)*(mo_eris[c,k,l,i] + mo_eris[c,l,k,i]))
                     Q += 1
         return row
     except:
@@ -191,7 +191,7 @@ def comp_hrow_iiaa(mo_eps, mo_eris, scf_energy, csfs, num_csfs, options, P):
     doubles_ijaa, doubles_ijab_A, doubles_ijab_B) = options
     N = sum(num_csfs)
     E0 = scf_energy
-    row = np.zeros(N)
+    row = np.zeros(N, dtype=np.float64)
     i,j,a,b = csfs[P]
     try:
         row[0] = mo_eris[a,i,a,i]
@@ -257,7 +257,7 @@ def comp_hrow_iiab(mo_eps, mo_eris, scf_energy, csfs, num_csfs, options, P):
     doubles_ijaa, doubles_ijab_A, doubles_ijab_B) = options
     N = sum(num_csfs)
     E0 = scf_energy
-    row = np.zeros(N)
+    row = np.zeros(N, dtype=np.float64)
     i,j,a,b = csfs[P]
     try :
         row[0] = np.sqrt(2)*mo_eris[a,i,b,i]
@@ -337,7 +337,7 @@ def comp_hrow_ijaa(mo_eps, mo_eris, scf_energy, csfs, num_csfs, options, P):
     doubles_ijaa, doubles_ijab_A, doubles_ijab_B) = options
     N = sum(num_csfs)
     E0 = scf_energy
-    row = np.zeros(N)
+    row = np.zeros(N, dtype=np.float64)
     i,j,a,b = csfs[P]
     try:
         row[0] = np.sqrt(2)*mo_eris[a,i,a,j]
@@ -347,8 +347,8 @@ def comp_hrow_ijaa(mo_eps, mo_eris, scf_energy, csfs, num_csfs, options, P):
             for right_ex in csfs[Q:Q+n_ia]:
                 k,l,c,d = right_ex
                 row[Q] =((k==i)*mo_eris[a,c,a,j]
-                            + (k==j)*mo_eris[a,c,a,i]
-                            + (c==a)*(mo_eris[c,j,i,k] + mo_eris[c,i,j,k]))
+                       + (k==j)*mo_eris[a,c,a,i]
+                       - (c==a)*(mo_eris[c,j,i,k] + mo_eris[c,i,j,k]))
                 Q += 1
         n_iiaa = num_csfs[2]
         n_iiab = num_csfs[3]
@@ -359,8 +359,8 @@ def comp_hrow_ijaa(mo_eps, mo_eris, scf_energy, csfs, num_csfs, options, P):
             for right_ex in csfs[Q:Q+n_iiaa]:
                 k,l,c,d = right_ex
                 row[Q] =  np.sqrt(2)*(((k==i)*(c==a)*(mo_eris[c,k,c,j]- 2*mo_eris[c,c,j,k]))
-                                        + (k==j)*(c==a)*(mo_eris[c,k,c,i] - 2*mo_eris[c,c,i,k])
-                                        + (c==a)*mo_eris[i,k,j,k])
+                                     + (k==j)*(c==a)*(mo_eris[c,k,c,i] - 2*mo_eris[c,c,i,k])
+                                     + (c==a)*mo_eris[i,k,j,k])
                 Q += 1
         if doubles_iiab:
             for right_ex in csfs[Q:Q+n_iiab]:
@@ -417,7 +417,7 @@ def comp_hrow_ijab_A(mo_eps, mo_eris, scf_energy, csfs, num_csfs, options, P):
     doubles_ijaa, doubles_ijab_A, doubles_ijab_B) = options
     N = sum(num_csfs)
     E0 = scf_energy
-    row = np.zeros(N)
+    row = np.zeros(N, dtype=np.float64)
     i,j,a,b = csfs[P]
     try :
         row[0] = np.sqrt(3)*(mo_eris[a,i,b,j] - mo_eris[a,j,b,i])
@@ -427,9 +427,9 @@ def comp_hrow_ijab_A(mo_eps, mo_eris, scf_energy, csfs, num_csfs, options, P):
             for right_ex in csfs[Q:Q+n_ia]:
                 k,l,c,d = right_ex
                 row[Q] = np.sqrt(1.5) * ((k==i)*(mo_eris[c,a,b,j] - mo_eris[c,b,a,j])
-                                - (k==j)*(mo_eris[c,a,b,i] - mo_eris[c,b,a,i])
-                                + (c==a)*(mo_eris[b,i,j,k] - mo_eris[b,j,i,k])
-                                - (c==b)*(mo_eris[a,i,j,k] - mo_eris[a,j,i,k]))
+                                       - (k==j)*(mo_eris[c,a,b,i] - mo_eris[c,b,a,i])
+                                       + (c==a)*(mo_eris[b,i,j,k] - mo_eris[b,j,i,k])
+                                       - (c==b)*(mo_eris[a,i,j,k] - mo_eris[a,j,i,k]))
                 Q += 1
         n_iiaa = num_csfs[2]
         n_iiab = num_csfs[3]
@@ -523,7 +523,7 @@ def comp_hrow_ijab_B(mo_eps, mo_eris, scf_energy, csfs, num_csfs, options, P):
     doubles_ijaa, doubles_ijab_A, doubles_ijab_B) = options
     N = sum(num_csfs)
     E0 = scf_energy
-    row = np.zeros(N)
+    row = np.zeros(N, dtype=np.float64)
     i,j,a,b = csfs[P]
     try:
         row[0] = mo_eris[a,i,b,j] + mo_eris[a,j,b,i]
@@ -532,10 +532,10 @@ def comp_hrow_ijab_B(mo_eps, mo_eris, scf_energy, csfs, num_csfs, options, P):
             n_ia = num_csfs[1]    
             for right_ex in csfs[Q:Q+n_ia]:
                 k,l,c,d = right_ex
-                row[Q] = np.sqrt(0.5) * ((k==i)*(mo_eris[c,a,b,j]- mo_eris[c,b,a,j])
-                                    + (k==j)*(mo_eris[c,a,b,i] - mo_eris[c,b,a,i])
-                                    - (c==a)*(mo_eris[b,i,j,k] - mo_eris[b,j,i,k])
-                                    - (c==b)*(mo_eris[a,i,j,k] - mo_eris[a,j,i,k]))
+                row[Q] = np.sqrt(0.5) * ((k==i)*(mo_eris[c,a,b,j] + mo_eris[c,b,a,j])
+                                       + (k==j)*(mo_eris[c,a,b,i] + mo_eris[c,b,a,i])
+                                       - (c==a)*(mo_eris[b,i,j,k] + mo_eris[b,j,i,k])
+                                       - (c==b)*(mo_eris[a,i,j,k] + mo_eris[a,j,i,k]))
                 Q += 1
         n_iiaa = num_csfs[2]
         n_iiab = num_csfs[3]
@@ -682,7 +682,7 @@ def comp_hcisd(mo_eps, mo_eris, scf_energy, orbinfo, active_space, options, ncor
             P += n_ijab_B
     if P != N:
         raise Exception("ERROR: posval not equal nCSFs")
-    hcisd = np.array(hcisd)
+    hcisd = np.array(hcisd, dtype=np.float64)
     return hcisd
 
 # def c_comp_hcisd(mo_eps, mo_eris, scf_energy, orbinfo, active_space, options, ncore=4):
@@ -748,7 +748,7 @@ def comp_oeprop_hf(mo_oeprop, mo_oeprop_trace, csfs, num_csfs, options):
     (singles, full_cis, doubles, doubles_iiaa, doubles_iiab,
      doubles_ijaa, doubles_ijab_A, doubles_ijab_B) = options
     N = sum(num_csfs)
-    row = np.zeros(N)
+    row = np.zeros(N, dtype=np.float64)
     i,j,a,b = csfs[0]
     try:
         row[0] = mo_oeprop_trace
@@ -782,7 +782,7 @@ def comp_oeprop_ia(mo_oeprop, mo_oeprop_trace, csfs, num_csfs, options, P):
     (singles, full_cis, doubles, doubles_iiaa, doubles_iiab,
      doubles_ijaa, doubles_ijab_A, doubles_ijab_B) = options
     N = sum(num_csfs)
-    row = np.zeros(N)
+    row = np.zeros(N, dtype=np.float64)
     i,j,a,b = csfs[P]
     try:
         row[0] = np.sqrt(2) * mo_oeprop[i,a]
@@ -840,7 +840,7 @@ def comp_oeprop_iiaa(mo_oeprop, mo_oeprop_trace, csfs, num_csfs, options, P):
     (singles, full_cis, doubles, doubles_iiaa, doubles_iiab,
      doubles_ijaa, doubles_ijab_A, doubles_ijab_B) = options
     N = sum(num_csfs)
-    row = np.zeros(N)
+    row = np.zeros(N, dtype=np.float64)
     i,j,a,b = csfs[P]
     try:
         Q = 1
@@ -886,7 +886,7 @@ def comp_oeprop_iiab(mo_oeprop, mo_oeprop_trace, csfs, num_csfs, options, P):
     (singles, full_cis, doubles, doubles_iiaa, doubles_iiab,
      doubles_ijaa, doubles_ijab_A, doubles_ijab_B) = options
     N = sum(num_csfs)
-    row = np.zeros(N)
+    row = np.zeros(N, dtype=np.float64)
     i,j,a,b = csfs[P]
     try:        
         Q = 1
@@ -934,7 +934,7 @@ def comp_oeprop_ijaa(mo_oeprop, mo_oeprop_trace, csfs, num_csfs, options, P):
     (singles, full_cis, doubles, doubles_iiaa, doubles_iiab,
      doubles_ijaa, doubles_ijab_A, doubles_ijab_B) = options
     N = sum(num_csfs)
-    row = np.zeros(N)
+    row = np.zeros(N, dtype=np.float64)
     i,j,a,b = csfs[P]
     try:
         Q = 1
@@ -982,7 +982,7 @@ def comp_oeprop_ijab_A(mo_oeprop, mo_oeprop_trace, csfs, num_csfs, options, P):
     (singles, full_cis, doubles, doubles_iiaa, doubles_iiab,
      doubles_ijaa, doubles_ijab_A, doubles_ijab_B) = options
     N = sum(num_csfs)
-    row = np.zeros(N)
+    row = np.zeros(N, dtype=np.float64)
     i,j,a,b = csfs[P]
     try:  
         Q = 1
@@ -1029,7 +1029,7 @@ def comp_oeprop_ijab_B(mo_oeprop, mo_oeprop_trace, csfs, num_csfs, options, P):
     (singles, full_cis, doubles, doubles_iiaa, doubles_iiab,
      doubles_ijaa, doubles_ijab_A, doubles_ijab_B) = options
     N = sum(num_csfs)
-    row = np.zeros(N)
+    row = np.zeros(N, dtype=np.float64)
     i,j,a,b = csfs[P]
     try:  
         Q = 1
@@ -1138,5 +1138,5 @@ def comp_oeprop_matrix(mo_oeprop, orbinfo, active_space, options, ncore=4):
             P += n_ijab_B
     if P != N:
         raise Exception("Error: posval not equal to CSFs")
-    csf_oeprop = np.array(csf_oeprop)
+    csf_oeprop = np.array(csf_oeprop, dtype=np.float64)
     return csf_oeprop
