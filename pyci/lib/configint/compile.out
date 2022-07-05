@@ -1,0 +1,312 @@
+running build_ext
+building 'rcisd' extension
+/home/dwave/anaconda3/envs/forte/bin/x86_64-conda-linux-gnu-cc -Wno-unused-result -Wsign-compare -DNDEBUG -fwrapv -O2 -Wall -Wstrict-prototypes -march=nocona -mtune=haswell -ftree-vectorize -fPIC -fstack-protector-strong -fno-plt -O2 -pipe -march=nocona -mtune=haswell -ftree-vectorize -fPIC -fstack-protector-strong -fno-plt -O2 -pipe -march=nocona -mtune=haswell -ftree-vectorize -fPIC -fstack-protector-strong -fno-plt -O2 -ffunction-sections -pipe -isystem /home/dwave/anaconda3/envs/forte/include -DNDEBUG -D_FORTIFY_SOURCE=2 -O2 -isystem /home/dwave/anaconda3/envs/forte/include -fPIC -I/home/dwave/anaconda3/envs/forte/include/python3.8 -c rcisd.c -o build/temp.linux-x86_64-3.8/rcisd.o -O3 -funroll-loops -Wunused-but-set-variable -lm -std=c11
+rcisd.c:16:26: error: 'comp_hrow_hf_cfunc' undeclared here (not in a function)
+         {"comp_hrow_hf", comp_hrow_hf_cfunc, METH_VARARGS|METH_KEYWORDS, " "},
+                          ^~~~~~~~~~~~~~~~~~
+rcisd.c:17:26: error: 'comp_hrow_ia_cfunc' undeclared here (not in a function); did you mean 'comp_hrow_hf_cfunc'?
+         {"comp_hrow_ia", comp_hrow_ia_cfunc, METH_VARARGS|METH_KEYWORDS, " "},
+                          ^~~~~~~~~~~~~~~~~~
+                          comp_hrow_hf_cfunc
+rcisd.c:18:28: error: 'comp_hrow_iiaa_cfunc' undeclared here (not in a function); did you mean 'comp_hrow_ia_cfunc'?
+         {"comp_hrow_iiaa", comp_hrow_iiaa_cfunc, METH_VARARGS|METH_KEYWORDS, " "},
+                            ^~~~~~~~~~~~~~~~~~~~
+                            comp_hrow_ia_cfunc
+rcisd.c:19:28: error: 'comp_hrow_iiab_cfunc' undeclared here (not in a function); did you mean 'comp_hrow_iiaa_cfunc'?
+         {"comp_hrow_iiab", comp_hrow_iiab_cfunc, METH_VARARGS|METH_KEYWORDS, " "},
+                            ^~~~~~~~~~~~~~~~~~~~
+                            comp_hrow_iiaa_cfunc
+rcisd.c:20:28: error: 'comp_hrow_ijaa_cfunc' undeclared here (not in a function); did you mean 'comp_hrow_iiaa_cfunc'?
+         {"comp_hrow_ijaa", comp_hrow_ijaa_cfunc, METH_VARARGS|METH_KEYWORDS, " "},
+                            ^~~~~~~~~~~~~~~~~~~~
+                            comp_hrow_iiaa_cfunc
+rcisd.c:21:30: error: 'comp_hrow_ijab_a_cfunc' undeclared here (not in a function); did you mean 'comp_hrow_ijaa_cfunc'?
+         {"comp_hrow_ijab_a", comp_hrow_ijab_a_cfunc, METH_VARARGS|METH_KEYWORDS, " "},
+                              ^~~~~~~~~~~~~~~~~~~~~~
+                              comp_hrow_ijaa_cfunc
+rcisd.c:22:30: error: 'comp_hrow_ijab_b_cfunc' undeclared here (not in a function); did you mean 'comp_hrow_ijab_a_cfunc'?
+         {"comp_hrow_ijab_b", comp_hrow_ijab_b_cfunc, METH_VARARGS|METH_KEYWORDS, " "},
+                              ^~~~~~~~~~~~~~~~~~~~~~
+                              comp_hrow_ijab_a_cfunc
+rcisd.c:23:28: error: 'comp_oeprop_hf_cfunc' undeclared here (not in a function); did you mean 'comp_hrow_hf_cfunc'?
+         {"comp_oeprop_hf", comp_oeprop_hf_cfunc, METH_VARARGS|METH_KEYWORDS, " "},
+                            ^~~~~~~~~~~~~~~~~~~~
+                            comp_hrow_hf_cfunc
+rcisd.c:24:28: error: 'comp_oeprop_ia_cfunc' undeclared here (not in a function); did you mean 'comp_oeprop_hf_cfunc'?
+         {"comp_oeprop_ia", comp_oeprop_ia_cfunc, METH_VARARGS|METH_KEYWORDS, " "},
+                            ^~~~~~~~~~~~~~~~~~~~
+                            comp_oeprop_hf_cfunc
+rcisd.c:25:30: error: 'comp_oeprop_iiaa_cfunc' undeclared here (not in a function); did you mean 'comp_oeprop_ia_cfunc'?
+         {"comp_oeprop_iiaa", comp_oeprop_iiaa_cfunc, METH_VARARGS|METH_KEYWORDS, " "},
+                              ^~~~~~~~~~~~~~~~~~~~~~
+                              comp_oeprop_ia_cfunc
+rcisd.c:26:30: error: 'comp_oeprop_iiab_cfunc' undeclared here (not in a function); did you mean 'comp_oeprop_iiaa_cfunc'?
+         {"comp_oeprop_iiab", comp_oeprop_iiab_cfunc, METH_VARARGS|METH_KEYWORDS, " "},
+                              ^~~~~~~~~~~~~~~~~~~~~~
+                              comp_oeprop_iiaa_cfunc
+rcisd.c:27:30: error: 'comp_oeprop_ijaa_cfunc' undeclared here (not in a function); did you mean 'comp_oeprop_iiaa_cfunc'?
+         {"comp_oeprop_ijaa", comp_oeprop_ijaa_cfunc, METH_VARARGS|METH_KEYWORDS, " "},
+                              ^~~~~~~~~~~~~~~~~~~~~~
+                              comp_oeprop_iiaa_cfunc
+rcisd.c:28:32: error: 'comp_oeprop_ijab_a_cfunc' undeclared here (not in a function); did you mean 'comp_oeprop_ijaa_cfunc'?
+         {"comp_oeprop_ijab_a", comp_oeprop_ijab_a_cfunc, METH_VARARGS|METH_KEYWORDS, " "},
+                                ^~~~~~~~~~~~~~~~~~~~~~~~
+                                comp_oeprop_ijaa_cfunc
+rcisd.c:29:32: error: 'comp_oeprop_ijab_b_cfunc' undeclared here (not in a function); did you mean 'comp_oeprop_ijab_a_cfunc'?
+         {"comp_oeprop_ijab_b", comp_oeprop_ijab_b_cfunc, METH_VARARGS|METH_KEYWORDS, " "},
+                                ^~~~~~~~~~~~~~~~~~~~~~~~
+                                comp_oeprop_ijab_a_cfunc
+rcisd.c:30:21: error: expected '}' before numeric constant
+         {NULL, NULL 0, NULL}    /* Sentinel */
+                     ^
+rcisd.c:36:9: error: 'rcisd_doc' undeclared here (not in a function); did you mean 'rcisd_methods'?
+         rcisd_doc,      /* module documentation, may be NULL*/
+         ^~~~~~~~~
+         rcisd_methods
+rcisd.c:36:9: warning: initialization from incompatible pointer type [-Wincompatible-pointer-types]
+rcisd.c:36:9: note: (near initialization for 'librcisd.m_doc')
+rcisd.c:36:9: error: initializer element is not constant
+rcisd.c:36:9: note: (near initialization for 'librcisd.m_doc')
+rcisd.c: In function 'comp_hrow_hf_cfunc':
+rcisd.c:134:16: warning: return from incompatible pointer type [-Wincompatible-pointer-types]
+         return row;
+                ^~~
+rcisd.c:134:16: warning: function returns address of local variable [-Wreturn-local-addr]
+rcisd.c:73:14: warning: unused variable 'full_cis' [-Wunused-variable]
+         bool full_cis = options[1];
+              ^~~~~~~~
+rcisd.c:68:17: warning: unused variable 'mo_eps' [-Wunused-variable]
+         double(*mo_eps) = (double(*))mo_eps_in;
+                 ^~~~~~
+rcisd.c:59:28: warning: unused variable 'b' [-Wunused-variable]
+         int i, j, k, l, a, b, c, d;
+                            ^
+rcisd.c:59:25: warning: unused variable 'a' [-Wunused-variable]
+         int i, j, k, l, a, b, c, d;
+                         ^
+rcisd.c:59:16: warning: unused variable 'j' [-Wunused-variable]
+         int i, j, k, l, a, b, c, d;
+                ^
+rcisd.c:59:13: warning: unused variable 'i' [-Wunused-variable]
+         int i, j, k, l, a, b, c, d;
+             ^
+rcisd.c: In function 'comp_hrow_ia_cfunc':
+rcisd.c:241:16: warning: return from incompatible pointer type [-Wincompatible-pointer-types]
+         return row;
+                ^~~
+rcisd.c:241:16: warning: function returns address of local variable [-Wreturn-local-addr]
+rcisd.c:156:14: warning: unused variable 'doubles' [-Wunused-variable]
+         bool doubles = options[2];
+              ^~~~~~~
+rcisd.c:155:14: warning: unused variable 'full_cis' [-Wunused-variable]
+         bool full_cis = options[1];
+              ^~~~~~~~
+rcisd.c:141:28: warning: variable 'b' set but not used [-Wunused-but-set-variable]
+         int i, j, k, l, a, b, c, d;
+                            ^
+rcisd.c:141:16: warning: variable 'j' set but not used [-Wunused-but-set-variable]
+         int i, j, k, l, a, b, c, d;
+                ^
+rcisd.c: In function 'comp_hrow_iiaa_cfunc':
+rcisd.c:362:16: warning: return from incompatible pointer type [-Wincompatible-pointer-types]
+         return row;
+                ^~~
+rcisd.c:362:16: warning: function returns address of local variable [-Wreturn-local-addr]
+rcisd.c:263:14: warning: unused variable 'doubles' [-Wunused-variable]
+         bool doubles = options[2];
+              ^~~~~~~
+rcisd.c:262:14: warning: unused variable 'full_cis' [-Wunused-variable]
+         bool full_cis = options[1];
+              ^~~~~~~~
+rcisd.c:248:28: warning: variable 'b' set but not used [-Wunused-but-set-variable]
+         int i, j, k, l, a, b, c, d;
+                            ^
+rcisd.c:248:16: warning: variable 'j' set but not used [-Wunused-but-set-variable]
+         int i, j, k, l, a, b, c, d;
+                ^
+rcisd.c: In function 'comp_hrow_iiab_cfunc':
+rcisd.c:497:16: warning: return from incompatible pointer type [-Wincompatible-pointer-types]
+         return row;
+                ^~~
+rcisd.c:497:16: warning: function returns address of local variable [-Wreturn-local-addr]
+rcisd.c:379:14: warning: unused variable 'doubles' [-Wunused-variable]
+         bool doubles = options[2];
+              ^~~~~~~
+rcisd.c:378:14: warning: unused variable 'full_cis' [-Wunused-variable]
+         bool full_cis = options[1];
+              ^~~~~~~~
+rcisd.c:369:16: warning: variable 'j' set but not used [-Wunused-but-set-variable]
+         int i, j, k, l, a, b, c, d;
+                ^
+rcisd.c: In function 'comp_hrow_ijaa_cfunc':
+rcisd.c:631:16: warning: return from incompatible pointer type [-Wincompatible-pointer-types]
+         return row;
+                ^~~
+rcisd.c:631:16: warning: function returns address of local variable [-Wreturn-local-addr]
+rcisd.c:515:14: warning: unused variable 'doubles' [-Wunused-variable]
+         bool doubles = options[2];
+              ^~~~~~~
+rcisd.c:514:14: warning: unused variable 'full_cis' [-Wunused-variable]
+         bool full_cis = options[1];
+              ^~~~~~~~
+rcisd.c:504:28: warning: variable 'b' set but not used [-Wunused-but-set-variable]
+         int i, j, k, l, a, b, c, d;
+                            ^
+rcisd.c: In function 'comp_hrow_ijab_a_cfunc':
+rcisd.c:791:16: warning: return from incompatible pointer type [-Wincompatible-pointer-types]
+         return row;
+                ^~~
+rcisd.c:791:16: warning: function returns address of local variable [-Wreturn-local-addr]
+rcisd.c:649:14: warning: unused variable 'doubles' [-Wunused-variable]
+         bool doubles = options[2];
+              ^~~~~~~
+rcisd.c:648:14: warning: unused variable 'full_cis' [-Wunused-variable]
+         bool full_cis = options[1];
+              ^~~~~~~~
+rcisd.c: In function 'comp_hrow_ijab_b_cfunc':
+rcisd.c:954:16: warning: return from incompatible pointer type [-Wincompatible-pointer-types]
+         return row;
+                ^~~
+rcisd.c:954:16: warning: function returns address of local variable [-Wreturn-local-addr]
+rcisd.c:809:14: warning: unused variable 'doubles' [-Wunused-variable]
+         bool doubles = options[2];
+              ^~~~~~~
+rcisd.c:808:14: warning: unused variable 'full_cis' [-Wunused-variable]
+         bool full_cis = options[1];
+              ^~~~~~~~
+rcisd.c: In function 'comp_oeprop_hf_cfunc':
+rcisd.c:1037:16: warning: return from incompatible pointer type [-Wincompatible-pointer-types]
+         return row;
+                ^~~
+rcisd.c:1037:16: warning: function returns address of local variable [-Wreturn-local-addr]
+rcisd.c:970:14: warning: unused variable 'full_cis' [-Wunused-variable]
+         bool full_cis = options[1];
+              ^~~~~~~~
+rcisd.c:961:34: warning: variable 'd' set but not used [-Wunused-but-set-variable]
+         int i, j, k, l, a, b, c, d;
+                                  ^
+rcisd.c:961:28: warning: variable 'b' set but not used [-Wunused-but-set-variable]
+         int i, j, k, l, a, b, c, d;
+                            ^
+rcisd.c:961:25: warning: variable 'a' set but not used [-Wunused-but-set-variable]
+         int i, j, k, l, a, b, c, d;
+                         ^
+rcisd.c:961:22: warning: variable 'l' set but not used [-Wunused-but-set-variable]
+         int i, j, k, l, a, b, c, d;
+                      ^
+rcisd.c:961:16: warning: variable 'j' set but not used [-Wunused-but-set-variable]
+         int i, j, k, l, a, b, c, d;
+                ^
+rcisd.c:961:13: warning: variable 'i' set but not used [-Wunused-but-set-variable]
+         int i, j, k, l, a, b, c, d;
+             ^
+rcisd.c: In function 'comp_oeprop_ia_cfunc':
+rcisd.c:1154:16: warning: return from incompatible pointer type [-Wincompatible-pointer-types]
+         return row;
+                ^~~
+rcisd.c:1154:16: warning: function returns address of local variable [-Wreturn-local-addr]
+rcisd.c:1053:14: warning: unused variable 'full_cis' [-Wunused-variable]
+         bool full_cis = options[1];
+              ^~~~~~~~
+rcisd.c:1044:28: warning: variable 'b' set but not used [-Wunused-but-set-variable]
+         int i, j, k, l, a, b, c, d;
+                            ^
+rcisd.c:1044:16: warning: variable 'j' set but not used [-Wunused-but-set-variable]
+         int i, j, k, l, a, b, c, d;
+                ^
+rcisd.c: In function 'comp_oeprop_iiaa_cfunc':
+rcisd.c:1265:16: warning: return from incompatible pointer type [-Wincompatible-pointer-types]
+         return row;
+                ^~~
+rcisd.c:1265:16: warning: function returns address of local variable [-Wreturn-local-addr]
+rcisd.c:1170:14: warning: unused variable 'full_cis' [-Wunused-variable]
+         bool full_cis = options[1];
+              ^~~~~~~~
+rcisd.c:1161:28: warning: variable 'b' set but not used [-Wunused-but-set-variable]
+         int i, j, k, l, a, b, c, d;
+                            ^
+rcisd.c:1161:16: warning: variable 'j' set but not used [-Wunused-but-set-variable]
+         int i, j, k, l, a, b, c, d;
+                ^
+rcisd.c: In function 'comp_oeprop_iiab_cfunc':
+rcisd.c:1379:16: warning: return from incompatible pointer type [-Wincompatible-pointer-types]
+         return row;
+                ^~~
+rcisd.c:1379:16: warning: function returns address of local variable [-Wreturn-local-addr]
+rcisd.c:1281:14: warning: unused variable 'full_cis' [-Wunused-variable]
+         bool full_cis = options[1];
+              ^~~~~~~~
+rcisd.c:1272:16: warning: variable 'j' set but not used [-Wunused-but-set-variable]
+         int i, j, k, l, a, b, c, d;
+                ^
+rcisd.c: In function 'comp_oeprop_ijaa_cfunc':
+rcisd.c:1493:16: warning: return from incompatible pointer type [-Wincompatible-pointer-types]
+         return row;
+                ^~~
+rcisd.c:1493:16: warning: function returns address of local variable [-Wreturn-local-addr]
+rcisd.c:1395:14: warning: unused variable 'full_cis' [-Wunused-variable]
+         bool full_cis = options[1];
+              ^~~~~~~~
+rcisd.c:1386:28: warning: variable 'b' set but not used [-Wunused-but-set-variable]
+         int i, j, k, l, a, b, c, d;
+                            ^
+rcisd.c: In function 'comp_oeprop_ijab_a_cfunc':
+rcisd.c:1611:16: warning: return from incompatible pointer type [-Wincompatible-pointer-types]
+         return row;
+                ^~~
+rcisd.c:1611:16: warning: function returns address of local variable [-Wreturn-local-addr]
+rcisd.c:1509:14: warning: unused variable 'full_cis' [-Wunused-variable]
+         bool full_cis = options[1];
+              ^~~~~~~~
+rcisd.c: In function 'comp_oeprop_ijab_b_cfunc':
+rcisd.c:1731:16: warning: return from incompatible pointer type [-Wincompatible-pointer-types]
+         return row;
+                ^~~
+rcisd.c:1731:16: warning: function returns address of local variable [-Wreturn-local-addr]
+rcisd.c:1627:14: warning: unused variable 'full_cis' [-Wunused-variable]
+         bool full_cis = options[1];
+              ^~~~~~~~
+At top level:
+rcisd.c:1615:1: warning: 'comp_oeprop_ijab_b_cfunc' defined but not used [-Wunused-function]
+ comp_oeprop_ijab_b_cfunc(void *mo_oeprop_in, int nmo, double mo_oeprop_trace, void *csfs_in,
+ ^~~~~~~~~~~~~~~~~~~~~~~~
+rcisd.c:1497:1: warning: 'comp_oeprop_ijab_a_cfunc' defined but not used [-Wunused-function]
+ comp_oeprop_ijab_a_cfunc(void *mo_oeprop_in, int nmo, double mo_oeprop_trace, void *csfs_in,
+ ^~~~~~~~~~~~~~~~~~~~~~~~
+rcisd.c:1383:1: warning: 'comp_oeprop_ijaa_cfunc' defined but not used [-Wunused-function]
+ comp_oeprop_ijaa_cfunc(void *mo_oeprop_in, int nmo, double mo_oeprop_trace, void *csfs_in,
+ ^~~~~~~~~~~~~~~~~~~~~~
+rcisd.c:1269:1: warning: 'comp_oeprop_iiab_cfunc' defined but not used [-Wunused-function]
+ comp_oeprop_iiab_cfunc(void *mo_oeprop_in, int nmo, double mo_oeprop_trace, void *csfs_in,
+ ^~~~~~~~~~~~~~~~~~~~~~
+rcisd.c:1158:1: warning: 'comp_oeprop_iiaa_cfunc' defined but not used [-Wunused-function]
+ comp_oeprop_iiaa_cfunc(void *mo_oeprop_in, int nmo, double mo_oeprop_trace, void *csfs_in,
+ ^~~~~~~~~~~~~~~~~~~~~~
+rcisd.c:1041:1: warning: 'comp_oeprop_ia_cfunc' defined but not used [-Wunused-function]
+ comp_oeprop_ia_cfunc(void *mo_oeprop_in, int nmo, double mo_oeprop_trace, void *csfs_in,
+ ^~~~~~~~~~~~~~~~~~~~
+rcisd.c:958:1: warning: 'comp_oeprop_hf_cfunc' defined but not used [-Wunused-function]
+ comp_oeprop_hf_cfunc(void *mo_oeprop_in, int nmo, double mo_oeprop_trace, void *csfs_in,
+ ^~~~~~~~~~~~~~~~~~~~
+rcisd.c:795:1: warning: 'comp_hrow_ijab_b_cfunc' defined but not used [-Wunused-function]
+ comp_hrow_ijab_b_cfunc(void *mo_eps_in, void *mo_eris_in, int nmo, double scf_energy,
+ ^~~~~~~~~~~~~~~~~~~~~~
+rcisd.c:635:1: warning: 'comp_hrow_ijab_a_cfunc' defined but not used [-Wunused-function]
+ comp_hrow_ijab_a_cfunc(void *mo_eps_in, void *mo_eris_in, int nmo, double scf_energy,
+ ^~~~~~~~~~~~~~~~~~~~~~
+rcisd.c:501:1: warning: 'comp_hrow_ijaa_cfunc' defined but not used [-Wunused-function]
+ comp_hrow_ijaa_cfunc(void *mo_eps_in, void *mo_eris_in, int nmo, double scf_energy,
+ ^~~~~~~~~~~~~~~~~~~~
+rcisd.c:366:1: warning: 'comp_hrow_iiab_cfunc' defined but not used [-Wunused-function]
+ comp_hrow_iiab_cfunc(void *mo_eps_in, void *mo_eris_in, int nmo, double scf_energy,
+ ^~~~~~~~~~~~~~~~~~~~
+rcisd.c:245:1: warning: 'comp_hrow_iiaa_cfunc' defined but not used [-Wunused-function]
+ comp_hrow_iiaa_cfunc(void *mo_eps_in, void *mo_eris_in, int nmo, double scf_energy,
+ ^~~~~~~~~~~~~~~~~~~~
+rcisd.c:138:1: warning: 'comp_hrow_ia_cfunc' defined but not used [-Wunused-function]
+ comp_hrow_ia_cfunc(void *mo_eps_in, void *mo_eris_in, int nmo, double scf_energy,
+ ^~~~~~~~~~~~~~~~~~
+rcisd.c:55:1: warning: 'comp_hrow_hf_cfunc' defined but not used [-Wunused-function]
+ comp_hrow_hf_cfunc(void *mo_eps_in, void *mo_eris_in, int nmo, double scf_energy,
+ ^~~~~~~~~~~~~~~~~~
+error: command '/home/dwave/anaconda3/envs/forte/bin/x86_64-conda-linux-gnu-cc' failed with exit status 1

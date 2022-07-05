@@ -1,8 +1,12 @@
-
 /* 
  *
  * author: Sai Vijay Mocherla <vijaysai.mocherla@gmail.com>
  */
+
+// TO-DO: 
+//   - complete parsing routines for functions    
+//   - change typedef's for arrays, bools, to NPY_ types   
+// 
 
 #include <stdlib.h>
 #include <stdio.h>
@@ -12,38 +16,77 @@
 // #include <rcisd.h>
 // Declaring math functions
 double sqrt(double); 
-
+#define PY_SSIZE_T_CLEAN
+// Declaring functions
+static PyObject * 
+comp_hrow_hf(PyObject *self, PyObject *args, PyObject *kwds);
+static PyObject * 
+comp_hrow_ia(PyObject *self, PyObject *args, PyObject *kwds);
+static PyObject * 
+comp_hrow_iiaa(PyObject *self, PyObject *args, PyObject *kwds);
+static PyObject * 
+comp_hrow_iiab(PyObject *self, PyObject *args, PyObject *kwds);
+static PyObject * 
+comp_hrow_ijaa(PyObject *self, PyObject *args, PyObject *kwds);
+static PyObject * 
+comp_hrow_ijab_a(PyObject *self, PyObject *args, PyObject *kwds);
+static PyObject * 
+comp_hrow_ijab_b(PyObject *self, PyObject *args, PyObject *kwds);
+static PyObject * 
+comp_oeprop_hf(PyObject *self, PyObject *args, PyObject *kwds);
+static PyObject * 
+comp_oeprop_ia(PyObject *self, PyObject *args, PyObject *kwds);
+static PyObject * 
+comp_oeprop_iiaa(PyObject *self, PyObject *args, PyObject *kwds);
+static PyObject * 
+comp_oeprop_iiab(PyObject *self, PyObject *args, PyObject *kwds);
+static PyObject * 
+comp_oeprop_ijaa(PyObject *self, PyObject *args, PyObject *kwds);
+static PyObject * 
+comp_oeprop_ijab_a(PyObject *self, PyObject *args, PyObject *kwds);
+static PyObject * 
+comp_oeprop_ijab_b(PyObject *self, PyObject *args, PyObject *kwds);
 static PyMethodDef rcisd_methods[] = {
-{comp_hrow_hf, comp_hrow_hf_cfunc, METH_VARARGS|METH_KEYWORDS, Doc string},
-{comp_hrow_ia, comp_hrow_ia_cfunc, METH_VARARGS|METH_KEYWORDS, Doc string},
-{comp_hrow_iiaa, comp_hrow_iiaa_cfunc, METH_VARARGS|METH_KEYWORDS, Doc string},
-{comp_hrow_iiab, comp_hrow_iiab_cfunc, METH_VARARGS|METH_KEYWORDS, Doc string},
-{comp_hrow_ijaa, comp_hrow_ijaa_cfunc, METH_VARARGS|METH_KEYWORDS, Doc string},
-{comp_hrow_ijab_a, comp_hrow_ijab_a_cfunc, METH_VARARGS|METH_KEYWORDS, Doc string},
-{comp_hrow_ijab_b, comp_hrow_ijab_b_cfunc, METH_VARARGS|METH_KEYWORDS, Doc string},
-{comp_oeprop_hf, comp_oeprop_hf_cfunc, METH_VARARGS|METH_KEYWORDS, Doc string},
-{comp_oeprop_ia, comp_oeprop_ia_cfunc, METH_VARARGS|METH_KEYWORDS, Doc string},
-{comp_oeprop_iiaa, comp_oeprop_iiaa_cfunc, METH_VARARGS|METH_KEYWORDS, Doc string},
-{comp_oeprop_iiab, comp_oeprop_iiab_cfunc, METH_VARARGS|METH_KEYWORDS, Doc string},
-{comp_oeprop_ijaa, comp_oeprop_ijaa_cfunc, METH_VARARGS|METH_KEYWORDS, Doc string},
-{comp_oeprop_ijab_a, comp_oeprop_ijab_a_cfunc, METH_VARARGS|METH_KEYWORDS, Doc string},
-{comp_oeprop_ijab_b, comp_oeprop_ijab_b_cfunc, METH_VARARGS|METH_KEYWORDS, Doc string},
-{NULL, NULL 0, NULL}
-}
+        {"comp_hrow_hf", comp_hrow_hf_cfunc, METH_VARARGS|METH_KEYWORDS, " "},
+        {"comp_hrow_ia", comp_hrow_ia_cfunc, METH_VARARGS|METH_KEYWORDS, " "},
+        {"comp_hrow_iiaa", comp_hrow_iiaa_cfunc, METH_VARARGS|METH_KEYWORDS, " "},
+        {"comp_hrow_iiab", comp_hrow_iiab_cfunc, METH_VARARGS|METH_KEYWORDS, " "},
+        {"comp_hrow_ijaa", comp_hrow_ijaa_cfunc, METH_VARARGS|METH_KEYWORDS, " "},
+        {"comp_hrow_ijab_a", comp_hrow_ijab_a_cfunc, METH_VARARGS|METH_KEYWORDS, " "},
+        {"comp_hrow_ijab_b", comp_hrow_ijab_b_cfunc, METH_VARARGS|METH_KEYWORDS, " "},
+        {"comp_oeprop_hf", comp_oeprop_hf_cfunc, METH_VARARGS|METH_KEYWORDS, " "},
+        {"comp_oeprop_ia", comp_oeprop_ia_cfunc, METH_VARARGS|METH_KEYWORDS, " "},
+        {"comp_oeprop_iiaa", comp_oeprop_iiaa_cfunc, METH_VARARGS|METH_KEYWORDS, " "},
+        {"comp_oeprop_iiab", comp_oeprop_iiab_cfunc, METH_VARARGS|METH_KEYWORDS, " "},
+        {"comp_oeprop_ijaa", comp_oeprop_ijaa_cfunc, METH_VARARGS|METH_KEYWORDS, " "},
+        {"comp_oeprop_ijab_a", comp_oeprop_ijab_a_cfunc, METH_VARARGS|METH_KEYWORDS, " "},
+        {"comp_oeprop_ijab_b", comp_oeprop_ijab_b_cfunc, METH_VARARGS|METH_KEYWORDS, " "},
+        {NULL, NULL 0, NULL}    /* Sentinel */
+};
 
-PyMODINIT_FUNC init rcisd(void){
-        (void)Py_InitModule(rcisd, rcisd_methods);
-        import_array();
-}
+static struct PyModuleDef librcisd = {
+        PyModuleDef_HEAD_INIT,
+        "rcisd",        /* name of module */
+        rcisd_doc,      /* module documentation, may be NULL*/
+        -1,             /* size of per-interpreter state of the module,
+                        or -1 if the module keeps state in global variables. */
+        rcisd_methods
+};
+
+PyMODINIT_FUNC 
+PyInit_rcisd(void)
+{
+        return PyModule_Create(&librcisd);
+};
 
 
 int main(void){
   /*  Nothing here for now.*/
         return 0;
-}
+};
 
 static PyObject*
-comp_hrow_hf(void *mo_eps_in, void *mo_eris_in, int nmo, double scf_energy,
+comp_hrow_hf_cfunc(void *mo_eps_in, void *mo_eris_in, int nmo, double scf_energy,
                 void *csfs_in, int *num_csfs, bool* options, int p)
 {
         // declaring variables
@@ -123,10 +166,10 @@ comp_hrow_hf(void *mo_eps_in, void *mo_eris_in, int nmo, double scf_energy,
             }
         }
         return row;
-}
+};
 
 static PyObject*
-comp_hrow_ia(void *mo_eps_in, void *mo_eris_in, int nmo, double scf_energy,
+comp_hrow_ia_cfunc(void *mo_eps_in, void *mo_eris_in, int nmo, double scf_energy,
                      void *csfs_in, int *num_csfs, bool* options, int p)
 {
         int i, j, k, l, a, b, c, d;
@@ -230,10 +273,10 @@ comp_hrow_ia(void *mo_eps_in, void *mo_eris_in, int nmo, double scf_energy,
                 q += n_ijab_b;
         }
         return row; 
-}
+};
 
 static PyObject*
-comp_hrow_iiaa(void *mo_eps_in, void *mo_eris_in, int nmo, double scf_energy,
+comp_hrow_iiaa_cfunc(void *mo_eps_in, void *mo_eris_in, int nmo, double scf_energy,
                        void *csfs_in, int *num_csfs, bool* options, int p)
 {
         int i, j, k, l, a, b, c, d;
@@ -351,10 +394,10 @@ comp_hrow_iiaa(void *mo_eps_in, void *mo_eris_in, int nmo, double scf_energy,
                 q += n_ijab_b;
         }
         return row;
-}
+};
 
 static PyObject*
-comp_hrow_iiab(void *mo_eps_in, void *mo_eris_in, int nmo, double scf_energy,
+comp_hrow_iiab_cfunc(void *mo_eps_in, void *mo_eris_in, int nmo, double scf_energy,
                        void *csfs_in, int *num_csfs, bool* options, int p)
 {
         int i, j, k, l, a, b, c, d;
@@ -486,10 +529,10 @@ comp_hrow_iiab(void *mo_eps_in, void *mo_eris_in, int nmo, double scf_energy,
                 q += n_ijab_b;
         }
         return row;
-}
+};
 
 static PyObject*
-comp_hrow_ijaa(void *mo_eps_in, void *mo_eris_in, int nmo, double scf_energy,
+comp_hrow_ijaa_cfunc(void *mo_eps_in, void *mo_eris_in, int nmo, double scf_energy,
                        void *csfs_in, int *num_csfs, bool* options, int p)
 {
         int i, j, k, l, a, b, c, d;
@@ -620,10 +663,10 @@ comp_hrow_ijaa(void *mo_eps_in, void *mo_eris_in, int nmo, double scf_energy,
                 q += n_ijab_b;
         }
         return row;
-}
+};
 
 static PyObject*
-comp_hrow_ijab_a(void *mo_eps_in, void *mo_eris_in, int nmo, double scf_energy,
+comp_hrow_ijab_a_cfunc(void *mo_eps_in, void *mo_eris_in, int nmo, double scf_energy,
                        void *csfs_in, int *num_csfs, bool* options, int p)
 {
         int i, j, k, l, a, b, c, d;
@@ -780,10 +823,10 @@ comp_hrow_ijab_a(void *mo_eps_in, void *mo_eris_in, int nmo, double scf_energy,
                 q += n_ijab_b;
         }
         return row;
-}
+};
 
 static PyObject*
-comp_hrow_ijab_b(void *mo_eps_in, void *mo_eris_in, int nmo, double scf_energy,
+comp_hrow_ijab_b_cfunc(void *mo_eps_in, void *mo_eris_in, int nmo, double scf_energy,
                          void *csfs_in, int *num_csfs, bool* options, int p)
 {
         int i, j, k, l, a, b, c, d;
@@ -943,10 +986,10 @@ comp_hrow_ijab_b(void *mo_eps_in, void *mo_eris_in, int nmo, double scf_energy,
                 q += n_ijab_b;
         }
         return row;
-}
+};
 
 static PyObject*
-comp_oeprop_hf(void *mo_oeprop_in, int nmo, double mo_oeprop_trace, void *csfs_in, 
+comp_oeprop_hf_cfunc(void *mo_oeprop_in, int nmo, double mo_oeprop_trace, void *csfs_in, 
                         int *num_csfs, bool *options, int p)
 {
         int i, j, k, l, a, b, c, d;
@@ -1026,10 +1069,10 @@ comp_oeprop_hf(void *mo_oeprop_in, int nmo, double mo_oeprop_trace, void *csfs_i
                 } 
         }
         return row;
-}
+};
 
 static PyObject*
-comp_oeprop_ia(void *mo_oeprop_in, int nmo, double mo_oeprop_trace, void *csfs_in,
+comp_oeprop_ia_cfunc(void *mo_oeprop_in, int nmo, double mo_oeprop_trace, void *csfs_in,
              int *num_csfs, bool *options, int p)
 {
         int i, j, k, l, a, b, c, d;
@@ -1143,10 +1186,10 @@ comp_oeprop_ia(void *mo_oeprop_in, int nmo, double mo_oeprop_trace, void *csfs_i
                 }
         }
         return row;
-}
+};
 
 static PyObject*
-comp_oeprop_iiaa(void *mo_oeprop_in, int nmo, double mo_oeprop_trace, void *csfs_in,
+comp_oeprop_iiaa_cfunc(void *mo_oeprop_in, int nmo, double mo_oeprop_trace, void *csfs_in,
              int *num_csfs, bool *options, int p)
 {
         int i, j, k, l, a, b, c, d;
@@ -1254,10 +1297,10 @@ comp_oeprop_iiaa(void *mo_oeprop_in, int nmo, double mo_oeprop_trace, void *csfs
                 }
         }
         return row;
-}
+};
 
 static PyObject*
-comp_oeprop_iiab(void *mo_oeprop_in, int nmo, double mo_oeprop_trace, void *csfs_in,
+comp_oeprop_iiab_cfunc(void *mo_oeprop_in, int nmo, double mo_oeprop_trace, void *csfs_in,
              int *num_csfs, bool *options, int p)
 {
         int i, j, k, l, a, b, c, d;
@@ -1368,10 +1411,10 @@ comp_oeprop_iiab(void *mo_oeprop_in, int nmo, double mo_oeprop_trace, void *csfs
                 }
         }
         return row;
-}
+};
 
 static PyObject*
-comp_oeprop_ijaa(void *mo_oeprop_in, int nmo, double mo_oeprop_trace, void *csfs_in,
+comp_oeprop_ijaa_cfunc(void *mo_oeprop_in, int nmo, double mo_oeprop_trace, void *csfs_in,
              int *num_csfs, bool *options, int p)
 {
         int i, j, k, l, a, b, c, d;
@@ -1482,10 +1525,10 @@ comp_oeprop_ijaa(void *mo_oeprop_in, int nmo, double mo_oeprop_trace, void *csfs
                 }
         }
         return row;
-}
+};
 
 static PyObject*
-comp_oeprop_ijab_a(void *mo_oeprop_in, int nmo, double mo_oeprop_trace, void *csfs_in,
+comp_oeprop_ijab_a_cfunc(void *mo_oeprop_in, int nmo, double mo_oeprop_trace, void *csfs_in,
              int *num_csfs, bool *options, int p)
 {
         int i, j, k, l, a, b, c, d;
@@ -1600,10 +1643,10 @@ comp_oeprop_ijab_a(void *mo_oeprop_in, int nmo, double mo_oeprop_trace, void *cs
                 }
         }
         return row;
-}
+};
 
 static PyObject*
-comp_oeprop_ijab_b(void *mo_oeprop_in, int nmo, double mo_oeprop_trace, void *csfs_in,
+comp_oeprop_ijab_b_cfunc(void *mo_oeprop_in, int nmo, double mo_oeprop_trace, void *csfs_in,
              int *num_csfs, bool *options, int p)
 {
         int i, j, k, l, a, b, c, d;
@@ -1720,4 +1763,4 @@ comp_oeprop_ijab_b(void *mo_oeprop_in, int nmo, double mo_oeprop_trace, void *cs
                 }
         }
         return row;
-}
+};
