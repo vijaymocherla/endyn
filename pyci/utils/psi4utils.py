@@ -27,7 +27,7 @@ class psi4utils:
         self.numpy_memory = 2 # numpy memory
         self.options_dict = { 'basis': basis,
                             'reference' : 'rhf',
-                            'scf_type' : 'direct',
+                            'scf_type' : 'pk',
                             'e_convergence' : 1e-12,
                             'd_convergence' : 1e-10}            
         psi4.set_options(self.options_dict)               
