@@ -156,12 +156,18 @@ class AOint(psi4utils):
     def get_ao_oeints(self):
         """ Returns S, T, V in AO basis
         """
-        self.save_ao_oeints()
-        S = np.load(self.scratch+'ao_oeints.npz')['overlap_aoints']
-        T = np.load(self.scratch+'ao_oeints.npz')['kinetic_aoints']
-        V = np.load(self.scratch+'ao_oeints.npz')['potential_aoints']
-        return S, T, V
+        ao_oeints = np.load(self.scratch+'ao_oeints.npz')
+        ao_overlap = ao_oeints['overlap_aoints']
+        ao_kinetic = ao_oeints['kinetic_aoints']
+        ao_potential = ao_oeints['potential_aoints']
+        return ao_overlap, ao_kinetic, ao_potential
     
+    def get_ao_erints(self):
+        """ Returns ERIs in AO basis
+        """
+        ao_eris = np.load(self.scratch + 'ao_erints.npz')['electron_repulsion_aoints']
+        return ao_eris
+
     def save_ao_erints(self): 
         """Saves 2-electron repulsion integrals in AO basis as a .npz file.
            For example, you can load the saved integrals as follows:
@@ -193,6 +199,15 @@ class AOint(psi4utils):
                 dpz_aoints=dpz_aoints)
         return 1
 
+    def get_ao_dpints(self):
+        """ Returns dipole integrals in AO basis
+        """
+        ao_dipoles_data = np.load(self.scratch+'ao_dpints.npz')
+        ao_dpx = ao_dipoles_data['dpx_aoints']
+        ao_dpy = ao_dipoles_data['dpy_aoints']
+        ao_dpz = ao_dipoles_data['dpz_aoints']
+        return ao_dpx, ao_dpy, ao_dpz
+
     def save_ao_qdints(self):
         """Saves dipole integrals in AO basis as a .npz file.
            For example, you can load the saved integrals as follows:
@@ -218,6 +233,15 @@ class AOint(psi4utils):
                 qdzz_aoints=qdzz_aoints)
         return 1
 
+    def get_ao_qdints(self):
+        ao_dipoles_data = np.load(self.scratch+'ao_qdints.npz')
+        ao_qdxx = ao_dipoles_data['qdxx_aoints']
+        ao_qdxy = ao_dipoles_data['qdxy_aoints']
+        ao_qdxz = ao_dipoles_data['qdxz_aoints']
+        ao_qdyy = ao_dipoles_data['qdyy_aoints']
+        ao_qdyz = ao_dipoles_data['qdyz_aoints']
+        ao_qdzz = ao_dipoles_data['qdzz_aoints']
+        return ao_qdxx, ao_qdxy, ao_qdxz, ao_qdyy, ao_qdyz, ao_qdzz, 
 
     def save_all_aoints(self):
         self.save_ao_erints()

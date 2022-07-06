@@ -111,15 +111,22 @@ main(int argc, char *argv[])
         fprintf(stderr, "Error: could not import module 'rcisd'\n");
     }
 
-    ...
-
     PyMem_RawFree(program);
     return 0;
 };
 
 static PyObject*
-comp_hrow_hf_cfunc(PyObject *self, PyObject *args, PyObject *kwds)
+comp_hrow_hf_cfunc(PyObject *self, PyObject *args, PyObject *kwargs)
 {
+        
+        static char *kwlist[] = {"singles", "full_cis", "doubles", 
+                                "doubles_iiaa", "doubles_iiab",
+                                "doubles_ijaa", "doubles_ijab_A",
+                                "doubles_ijab_B", NULL
+                                };
+        if (!PyArg_ParseTupleAndKeywords(args, kwargs, "S|i", kwlist, &))
+                return NULL;
+
         // declaring variables
         int i, j, k, l, a, b, c, d;
         int q  = 0; 
