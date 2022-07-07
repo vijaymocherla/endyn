@@ -24,7 +24,7 @@ from .csf import (
 from .rcisd import(
     generate_csfs,
     comp_hcisd,
-    comp_hcisd_cfunc,
     comp_oeprop,
-    comp_oeprop_cfunc
+    # comp_hcisd_cfunc,
+    # comp_oeprop_cfunc
 )

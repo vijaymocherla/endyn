@@ -7,11 +7,6 @@
 import numpy as np
 import scipy.constants as const
 
-const.value('vacuum electric permittivity')
-const.value('atomic unit of permittivity')
-const.value('atomic mass unit-inverse meter relationship')
-const.value('atomic unit of time')
-const.value('atomic unit of electric field')
 
 c = const.value('speed of light in vacuum')
 
@@ -24,3 +19,9 @@ def freq_to_wavelength(freq):
 def wavelength_to_freq(wavelength):
     freq = 2*np.pi*c/wavelength * 1/(1e15*fs_to_au)
     return freq
+
+# const.value('atomic unit of time')
+# const.value('vacuum electric permittivity')
+# const.value('atomic unit of permittivity')
+# const.value('atomic mass unit-inverse meter relationship')
+# const.value('atomic unit of electric field')

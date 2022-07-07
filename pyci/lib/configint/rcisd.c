@@ -19,33 +19,33 @@ double sqrt(double);
 #define PY_SSIZE_T_CLEAN
 // Declaring functions
 static PyObject * 
-comp_hrow_hf_cfunc(PyObject *self, PyObject *args, PyObject *kwds);
+comp_hrow_hf_cfunc(PyObject *self, PyObject *args, PyObject *kwargs);
 static PyObject * 
-comp_hrow_ia_cfunc(PyObject *self, PyObject *args, PyObject *kwds);
+comp_hrow_ia_cfunc(PyObject *self, PyObject *args, PyObject *kwargs);
 static PyObject * 
-comp_hrow_iiaa_cfunc(PyObject *self, PyObject *args, PyObject *kwds);
+comp_hrow_iiaa_cfunc(PyObject *self, PyObject *args, PyObject *kwargs);
 static PyObject * 
-comp_hrow_iiab_cfunc(PyObject *self, PyObject *args, PyObject *kwds);
+comp_hrow_iiab_cfunc(PyObject *self, PyObject *args, PyObject *kwargs);
 static PyObject * 
-comp_hrow_ijaa_cfunc(PyObject *self, PyObject *args, PyObject *kwds);
+comp_hrow_ijaa_cfunc(PyObject *self, PyObject *args, PyObject *kwargs);
 static PyObject * 
-comp_hrow_ijab_a_cfunc(PyObject *self, PyObject *args, PyObject *kwds);
+comp_hrow_ijab_a_cfunc(PyObject *self, PyObject *args, PyObject *kwargs);
 static PyObject * 
-comp_hrow_ijab_b_cfunc(PyObject *self, PyObject *args, PyObject *kwds);
+comp_hrow_ijab_b_cfunc(PyObject *self, PyObject *args, PyObject *kwargs);
 static PyObject * 
-comp_oeprop_hf_cfunc(PyObject *self, PyObject *args, PyObject *kwds);
+comp_oeprop_hf_cfunc(PyObject *self, PyObject *args, PyObject *kwargs);
 static PyObject * 
-comp_oeprop_ia_cfunc(PyObject *self, PyObject *args, PyObject *kwds);
+comp_oeprop_ia_cfunc(PyObject *self, PyObject *args, PyObject *kwargs);
 static PyObject * 
-comp_oeprop_iiaa_cfunc(PyObject *self, PyObject *args, PyObject *kwds);
+comp_oeprop_iiaa_cfunc(PyObject *self, PyObject *args, PyObject *kwargs);
 static PyObject * 
-comp_oeprop_iiab_cfunc(PyObject *self, PyObject *args, PyObject *kwds);
+comp_oeprop_iiab_cfunc(PyObject *self, PyObject *args, PyObject *kwargs);
 static PyObject * 
-comp_oeprop_ijaa_cfunc(PyObject *self, PyObject *args, PyObject *kwds);
+comp_oeprop_ijaa_cfunc(PyObject *self, PyObject *args, PyObject *kwargs);
 static PyObject * 
-comp_oeprop_ijab_a_cfunc(PyObject *self, PyObject *args, PyObject *kwds);
+comp_oeprop_ijab_a_cfunc(PyObject *self, PyObject *args, PyObject *kwargs);
 static PyObject * 
-comp_oeprop_ijab_b_cfunc(PyObject *self, PyObject *args, PyObject *kwds);
+comp_oeprop_ijab_b_cfunc(PyObject *self, PyObject *args, PyObject *kwargs);
 static PyMethodDef rcisd_methods[] = {
         {"comp_hrow_hf", comp_hrow_hf_cfunc, METH_VARARGS|METH_KEYWORDS, " "},
         {"comp_hrow_ia", comp_hrow_ia_cfunc, METH_VARARGS|METH_KEYWORDS, " "},
@@ -207,7 +207,7 @@ comp_hrow_hf_cfunc(PyObject *self, PyObject *args, PyObject *kwargs)
 };
 
 static PyObject*
-comp_hrow_ia_cfunc(PyObject *self, PyObject *args, PyObject *kwds)
+comp_hrow_ia_cfunc(PyObject *self, PyObject *args, PyObject *kwargs)
 {
         int i, j, k, l, a, b, c, d;
         int q  = 0; 
@@ -313,7 +313,7 @@ comp_hrow_ia_cfunc(PyObject *self, PyObject *args, PyObject *kwds)
 };
 
 static PyObject*
-comp_hrow_iiaa_cfunc(PyObject *self, PyObject *args, PyObject *kwds)
+comp_hrow_iiaa_cfunc(PyObject *self, PyObject *args, PyObject *kwargs)
 {
         int i, j, k, l, a, b, c, d;
         int q  = 0; 
@@ -433,7 +433,7 @@ comp_hrow_iiaa_cfunc(PyObject *self, PyObject *args, PyObject *kwds)
 };
 
 static PyObject*
-comp_hrow_iiab_cfunc(PyObject *self, PyObject *args, PyObject *kwds)
+comp_hrow_iiab_cfunc(PyObject *self, PyObject *args, PyObject *kwargs)
 {
         int i, j, k, l, a, b, c, d;
         int q  = 0; 
@@ -567,7 +567,7 @@ comp_hrow_iiab_cfunc(PyObject *self, PyObject *args, PyObject *kwds)
 };
 
 static PyObject*
-comp_hrow_ijaa_cfunc(PyObject *self, PyObject *args, PyObject *kwds)
+comp_hrow_ijaa_cfunc(PyObject *self, PyObject *args, PyObject *kwargs)
 {
         int i, j, k, l, a, b, c, d;
         int q  = 0; 
@@ -700,7 +700,7 @@ comp_hrow_ijaa_cfunc(PyObject *self, PyObject *args, PyObject *kwds)
 };
 
 static PyObject*
-comp_hrow_ijab_a_cfunc(PyObject *self, PyObject *args, PyObject *kwds)
+comp_hrow_ijab_a_cfunc(PyObject *self, PyObject *args, PyObject *kwargs)
 {
         int i, j, k, l, a, b, c, d;
         int q  = 0; 
@@ -859,7 +859,7 @@ comp_hrow_ijab_a_cfunc(PyObject *self, PyObject *args, PyObject *kwds)
 };
 
 static PyObject*
-comp_hrow_ijab_b_cfunc(PyObject *self, PyObject *args, PyObject *kwds)
+comp_hrow_ijab_b_cfunc(PyObject *self, PyObject *args, PyObject *kwargs)
 {
         int i, j, k, l, a, b, c, d;
         int q  = 0; 
@@ -1021,7 +1021,7 @@ comp_hrow_ijab_b_cfunc(PyObject *self, PyObject *args, PyObject *kwds)
 };
 
 static PyObject*
-comp_oeprop_hf_cfunc(PyObject *self, PyObject *args, PyObject *kwds)
+comp_oeprop_hf_cfunc(PyObject *self, PyObject *args, PyObject *kwargs)
 {
         int i, j, k, l, a, b, c, d;
         int q  = 0; 
@@ -1103,7 +1103,7 @@ comp_oeprop_hf_cfunc(PyObject *self, PyObject *args, PyObject *kwds)
 };
 
 static PyObject*
-comp_oeprop_ia_cfunc(PyObject *self, PyObject *args, PyObject *kwds)
+comp_oeprop_ia_cfunc(PyObject *self, PyObject *args, PyObject *kwargs)
 {
         int i, j, k, l, a, b, c, d;
         int q = 0;
@@ -1219,7 +1219,7 @@ comp_oeprop_ia_cfunc(PyObject *self, PyObject *args, PyObject *kwds)
 };
 
 static PyObject*
-comp_oeprop_iiaa_cfunc(PyObject *self, PyObject *args, PyObject *kwds)
+comp_oeprop_iiaa_cfunc(PyObject *self, PyObject *args, PyObject *kwargs)
 {
         int i, j, k, l, a, b, c, d;
         int q = 0;
@@ -1329,7 +1329,7 @@ comp_oeprop_iiaa_cfunc(PyObject *self, PyObject *args, PyObject *kwds)
 };
 
 static PyObject*
-comp_oeprop_iiab_cfunc(PyObject *self, PyObject *args, PyObject *kwds)
+comp_oeprop_iiab_cfunc(PyObject *self, PyObject *args, PyObject *kwargs)
 {
         int i, j, k, l, a, b, c, d;
         int q = 0;
@@ -1442,7 +1442,7 @@ comp_oeprop_iiab_cfunc(PyObject *self, PyObject *args, PyObject *kwds)
 };
 
 static PyObject*
-comp_oeprop_ijaa_cfunc(PyObject *self, PyObject *args, PyObject *kwds)
+comp_oeprop_ijaa_cfunc(PyObject *self, PyObject *args, PyObject *kwargs)
 {
         int i, j, k, l, a, b, c, d;
         int q = 0;
@@ -1555,7 +1555,7 @@ comp_oeprop_ijaa_cfunc(PyObject *self, PyObject *args, PyObject *kwds)
 };
 
 static PyObject*
-comp_oeprop_ijab_a_cfunc(PyObject *self, PyObject *args, PyObject *kwds)
+comp_oeprop_ijab_a_cfunc(PyObject *self, PyObject *args, PyObject *kwargs)
 {
         int i, j, k, l, a, b, c, d;
         int q = 0;
@@ -1672,7 +1672,7 @@ comp_oeprop_ijab_a_cfunc(PyObject *self, PyObject *args, PyObject *kwds)
 };
 
 static PyObject*
-comp_oeprop_ijab_b_cfunc(PyObject *self, PyObject *args, PyObject *kwds)
+comp_oeprop_ijab_b_cfunc(PyObject *self, PyObject *args, PyObject *kwargs)
 {
         int i, j, k, l, a, b, c, d;
         int q = 0;

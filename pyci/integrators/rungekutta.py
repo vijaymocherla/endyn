@@ -1,6 +1,12 @@
+#!/usr/bin/env python
+#
+#   Author: Sai Vijay Mocherla <vijaysai.mocherla@gmail.com>
+#
+import csv
 import numpy as np 
 from time import perf_counter
 from opt_einsum import contract
+from pyci.utils import units
 
 class RK4(object):
     """Fixed step-size implementation of fourth order runge-kutta 
@@ -9,28 +15,52 @@ class RK4(object):
         self.func = func
         self.y0 = np.array(y0, dtype=np.cdouble)
         self.t0, self.tf, self.dt = time_params
-        self.y_list: list = [self.y0]
-        self.t_list: list = [self.t0]
 
     def _rk4_step(self, yi, ti):
-        k1 = contract('ij,i', self.func(ti), yi, optimize=True)
-        k2 = contract('ij,i', self.func(ti), yi+((self.dt/2.0) * k1), optimize=True)
-        k3 = contract('ij,i', self.func(ti), yi+((self.dt/2.0) * k2), optimize=True)
-        k4 = contract('ij,i', self.func(ti), yi+(self.dt * k3), optimize=True) 
+        k1 = contract('ij,i ->i', self.func(ti), yi, optimize=True)
+        k2 = contract('ij,i ->i', self.func(ti), yi+((self.dt/2.0) * k1), optimize=True)
+        k3 = contract('ij,i ->i', self.func(ti), yi+((self.dt/2.0) * k2), optimize=True)
+        k4 = contract('ij,i ->i', self.func(ti), yi+(self.dt * k3), optimize=True) 
         yn = yi + ((self.dt/6.0) * (k1 + 2.0*k2 + 2.0*k3 + k4))
         tn = ti + self.dt
         return(yn, tn)
 
-    def _time_propagation(self, check_norm=False):
+    def _time_propagation(self, ops_list=[], ops_headers=[], print_nstep= 1, outfile='tdprop.txt'):
         yi, ti = self.y0, self.t0
-        i = int(0)
+        iterval = int(0)
+        fobj= open(outfile, 'w', buffering=1)
+        ncols = 2 + len(ops_list)
+        fobj.write((" {:16} "*(ncols)+"\n").format('time_fs', 'norm', *ops_headers))
+        RK4._calc_expectations(ops_list, yi, ti, fobj, ncols)
+        y_list = []
+        t_list = []
         start = perf_counter()
         while ti <= self.tf:
+            if iterval == print_nstep:
+                iterval = int(0)
+                RK4._calc_expectations(ops_list, yi, ti, fobj, ncols)
+                t_list.append(ti)
+                y_list.append(yi)
             yi, ti = self._rk4_step(yi, ti)
-            self.y_list.append(yi)
-            self.t_list.append(ti)
-            i += int(1)
+            iterval += int(1)
+        fobj.close()
         stop = perf_counter()
-        print( 'Time taken %3.3f seconds' % (stop-start))    
-        return self.y_list, self.t_list   
- 
+        y_array = np.array(y_list)
+        t_array = np.array(t_list) 
+        np.savez('wfn_log.npz', t_log=t_array, psi_log=y_array )
+        print('Time taken %3.3f seconds' % (stop-start))    
+        return 0 
+    
+    @staticmethod
+    def _calc_expectations(ops_list, yi, ti, fobj, ncols):
+        ops_expectations = []
+        norm = abs(np.sum(np.conjugate(yi.T) * yi))
+        for operator in ops_list:
+            expectation = abs(contract("i,ij,j->", np.conjugate(yi.T), operator, yi, optimize=True))
+            ops_expectations.append(expectation)
+        ti_fs = ti / units.fs_to_au
+        fobj.write((" {:<8.16f} "*(ncols)+"\n").format(ti_fs, norm, *ops_expectations))
+        return 0
+    
+    def write_row():
+        return 0

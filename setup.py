@@ -14,15 +14,10 @@ __version__ = ''
 exec(open('pyci/__init__.py').read())
 
 EXT_MODULES = [
-            Extension("pyci.configint.cy.rcisd_core",
-                  sources=["pyci/configint/cy/rcisd_core.pyx"],
-                  include_dirs = [numpy.get_include(),scipy.get_include()],
-                  extra_compile_args = ["-O3", "-funroll-loops"],), 
-
-            Extension("pyci.lib.configint.rcisd",
-                  sources=["pyci/lib/configint/rcisd.c"],
-                  language="C",
-                  extra_compile_args = ["-O3", "-funroll-loops", "-Wunused-but-set-variable", "-lm", "-std=c11"],)
+            # Extension("pyci.lib.configint.rcisd",
+            #       sources=["pyci/lib/configint/rcisd.c"],
+            #       language="C",
+            #       extra_compile_args = ["-O3", "-funroll-loops", "-Wunused-but-set-variable", "-lm", "-std=c11"],)
 ]
 
 # Package setup commands 
