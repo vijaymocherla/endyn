@@ -27,12 +27,13 @@ class RK4(object):
         return(yn, tn)
 
     def _time_propagation(self, ops_list=[], ops_headers=[], 
-                        print_nstep= 1, outfile='tdprop.txt'):
+                        print_nstep= 1, outfile='tdprop.txt',
+                        save_wfn=False):
         yi, ti = self.y0, self.t0
         iterval = int(0)
         fobj= open(outfile, 'w', buffering=10)
         ncols = 2 + len(ops_list)
-        fobj.write((" {:>16} "*(ncols)+"\n").format('time_fs', 'norm', *ops_headers))
+        fobj.write((" {:>24} "*(ncols)+"\n").format('time_fs', 'norm', *ops_headers))
         RK4._calc_expectations(ops_list, yi, ti, fobj, ncols)
         y_list = []
         t_list = []
@@ -41,15 +42,17 @@ class RK4(object):
             if iterval == print_nstep:
                 iterval = int(0)
                 RK4._calc_expectations(ops_list, yi, ti, fobj, ncols)
-                t_list.append(ti)
-                y_list.append(yi)
+                if save_wfn:
+                    t_list.append(ti)
+                    y_list.append(yi)
             yi, ti = self._rk4_step(yi, ti)
             iterval += int(1)
         fobj.close()
         stop = perf_counter()
-        y_array = np.array(y_list, dtype=np.cdouble)
-        t_array = np.array(t_list, dtype=np.float64) 
-        np.savez('wfn_log.npz', t_log=t_array, psi_log=y_array )
+        if save_wfn:
+            y_array = np.array(y_list, dtype=np.cdouble)
+            t_array = np.array(t_list, dtype=np.float64) 
+            np.savez('wfn_log.npz', t_log=t_array, psi_log=y_array )
         print('Time taken %3.3f seconds' % (stop-start))    
         return 0 
         

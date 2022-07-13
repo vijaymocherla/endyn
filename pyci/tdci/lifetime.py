@@ -37,7 +37,7 @@ class heuristic:
                             for idx, csf in enumerate(self.csfs)])    
         return lifetime
 
-    def cmplx_energies(self, params):
+    def cmplx_energies(self, params, use_d2=False):
         E0, w0, IP = params
         Ecut = IP + 3.17*(E0/(4*w0))**2
         d1, d2 = E0/w0**2, 0.1
@@ -46,10 +46,14 @@ class heuristic:
         for idx, Ei in enumerate(self.eigvals):
             if Ei >= threshold:   
                 if Ei > Ecut:
-                    cmplx_energies.append(Ei - 0.5j*self.lifetime(idx, d2))
+                    if use_d2:
+                        cmplx_energies.append(Ei - 0.5j*self.lifetime(idx, d2))
+                    else:
+                        cmplx_energies.append(Ei - 0.5j*self.lifetime(idx, d1))
+
                 else:    
                     cmplx_energies.append(Ei - 0.5j*self.lifetime(idx, d1))
             else:
                 cmplx_energies.append(Ei)
-        return cmplx_energies
+        return np.array(cmplx_energies, dtype=np.cdouble)
 
