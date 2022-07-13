@@ -9,12 +9,13 @@ References:
 [1] Woźniak, A. P., Przybytek, M., Lewenstein, M., et al.
 J. Chem. Phys. 156, 174106 (2022); https://doi.org/10.1063/5.0087384
 """
+import os
 import numpy as np
 from functools import partial
 from pyci.utils.multproc import pool_jobs
 # import pyci.lib.configint.rcisd as lib_rcisd
 
-# input : eps, Ca, mo_oeints, mo_eris
+# input : eps, Ca, mo_oeints, mo_erints
 # methods : 
 #   1. Setup CI calculation options: singles, doubles, full_cis and active space.
 #   2. Calculate operators in CSF basis using explicit formulaes from ref[1]
@@ -25,6 +26,8 @@ from pyci.utils.multproc import pool_jobs
 #   - Cythonize comp_row functions() and import to use parallisation funcs 
 #   - Caculate 1-RDM from a state in CSF basis
 #
+
+OMP_NUM_THREADS = int(os.getenv('OMP_NUM_THREADS'))
 
 def generate_csfs(orbinfo, active_space, options):
     nocc, nmo = orbinfo
@@ -65,7 +68,7 @@ def generate_csfs(orbinfo, active_space, options):
             num_csfs[6] = len(D_ijab_B)
     return csfs, num_csfs
 
-def comp_hrow_hf(mo_eps, mo_eris, scf_energy, csfs, num_csfs, options):
+def comp_hrow_hf(mo_eps, mo_erints, scf_energy, csfs, num_csfs, options):
     N = sum(num_csfs)
     E0 = scf_energy
     row = np.zeros(N, dtype=np.float64)
@@ -85,36 +88,36 @@ def comp_hrow_hf(mo_eps, mo_eris, scf_energy, csfs, num_csfs, options):
             if options['doubles_iiaa']:
                 for right_ex in csfs[Q:Q+n_iiaa]:
                     k,l,c,d = right_ex
-                    row[Q] = mo_eris[c,k,c,k]
+                    row[Q] = mo_erints[c,k,c,k]
                     Q += 1
             if options['doubles_iiab']:
                 for right_ex in csfs[Q:Q+n_iiab]:
                     k,l,c,d = right_ex
-                    row[Q] = np.sqrt(2)*mo_eris[c,k,d,k]
+                    row[Q] = np.sqrt(2)*mo_erints[c,k,d,k]
                     Q += 1 
             if options['doubles_ijaa']:            
                 for right_ex in csfs[Q:Q+n_ijaa]:
                     k,l,c,d = right_ex
-                    row[Q] = np.sqrt(2)*mo_eris[c,k,c,l]
+                    row[Q] = np.sqrt(2)*mo_erints[c,k,c,l]
                     Q += 1
             if options['doubles_ijab_A']:
                 for right_ex in csfs[Q:Q+n_ijab_A]:
                     # A 
                     k,l,c,d = right_ex
-                    row[Q] = np.sqrt(3)*(mo_eris[c,k,d,l] - mo_eris[c,l,d,k])
+                    row[Q] = np.sqrt(3)*(mo_erints[c,k,d,l] - mo_erints[c,l,d,k])
                     Q += 1
             if options['doubles_ijab_B']:
                 for  right_ex in csfs[Q:Q+n_ijab_B]:
                     # B 
                     k,l,c,d = right_ex
-                    row[Q] = mo_eris[c,k,d,l] + mo_eris[c,l,d,k]
+                    row[Q] = mo_erints[c,k,d,l] + mo_erints[c,l,d,k]
                     Q += 1
         return row
     except :
         raise Exception("Something went wrong while computing row %i"%(0))
         
 # calculate rows for singles csf
-def comp_hrow_ia(mo_eps, mo_eris, scf_energy, csfs, num_csfs, options, P):
+def comp_hrow_ia(mo_eps, mo_erints, scf_energy, csfs, num_csfs, options, P):
     N = sum(num_csfs)
     E0 = scf_energy
     row = np.zeros(N, dtype=np.float64)
@@ -126,7 +129,7 @@ def comp_hrow_ia(mo_eps, mo_eris, scf_energy, csfs, num_csfs, options, P):
         for right_ex in csfs[Q:Q+n_ia]:
             k,l,c,d = right_ex
             row[Q] = ((i==k)*(a==c)*(E0 + mo_eps[a] - mo_eps[i])
-                                +2*mo_eris[a,i,c,k] - mo_eris[c,a,k,i]) 
+                                +2*mo_erints[a,i,c,k] - mo_erints[c,a,k,i]) 
             Q += 1
         if options['doubles']:
             # then do doubles
@@ -138,60 +141,60 @@ def comp_hrow_ia(mo_eps, mo_eris, scf_energy, csfs, num_csfs, options, P):
             if options['doubles_iiaa']:
                 for right_ex in csfs[Q:Q+n_iiaa]:
                     k,l,c,d = right_ex
-                    row[Q] = np.sqrt(2) * ((i==k)*mo_eris[c,a,c,i]
-                                         - (a==c)*mo_eris[k,a,k,i])
+                    row[Q] = np.sqrt(2) * ((i==k)*mo_erints[c,a,c,i]
+                                         - (a==c)*mo_erints[k,a,k,i])
                     Q += 1
             if options['doubles_iiab']:
                 for right_ex in csfs[Q:Q+n_iiab]:
                     k,l,c,d = right_ex
-                    row[Q] =  ((i==k)*(mo_eris[d,a,c,i] + mo_eris[c,a,d,i])
-                                    - (a==c)*mo_eris[k,d,k,i]
-                                    - (a==d)*mo_eris[k,c,k,i])
+                    row[Q] =  ((i==k)*(mo_erints[d,a,c,i] + mo_erints[c,a,d,i])
+                                    - (a==c)*mo_erints[k,d,k,i]
+                                    - (a==d)*mo_erints[k,c,k,i])
                     Q += 1
             if options['doubles_ijaa']:
                 for right_ex in csfs[Q:Q+n_ijaa]:
                     k,l,c,d = right_ex
-                    row[Q] = ((i==k)*mo_eris[c,a,c,l]
-                                + (i==l)*mo_eris[c,a,c,k]
-                                - (a==c)*(mo_eris[a,l,k,i] + mo_eris[a,k,l,i]))
+                    row[Q] = ((i==k)*mo_erints[c,a,c,l]
+                                + (i==l)*mo_erints[c,a,c,k]
+                                - (a==c)*(mo_erints[a,l,k,i] + mo_erints[a,k,l,i]))
                     Q += 1
             if options['doubles_ijab_A']:        
                 for right_ex in csfs[Q:Q+n_ijab_A]:
                     # A 
                     k,l,c,d = right_ex
-                    row[Q] = np.sqrt(1.5) * ((i==k)*(mo_eris[a,c,d,l] - mo_eris[a,d,c,l])
-                                           - (i==l)*(mo_eris[a,c,d,k] - mo_eris[a,d,c,k])
-                                           + (a==c)*(mo_eris[d,k,l,i] - mo_eris[d,l,k,i])
-                                           - (a==d)*(mo_eris[c,k,l,i] - mo_eris[c,l,k,i]))
+                    row[Q] = np.sqrt(1.5) * ((i==k)*(mo_erints[a,c,d,l] - mo_erints[a,d,c,l])
+                                           - (i==l)*(mo_erints[a,c,d,k] - mo_erints[a,d,c,k])
+                                           + (a==c)*(mo_erints[d,k,l,i] - mo_erints[d,l,k,i])
+                                           - (a==d)*(mo_erints[c,k,l,i] - mo_erints[c,l,k,i]))
                     Q += 1
             if options['doubles_ijab_B']:
                 for  right_ex in csfs[Q:Q+n_ijab_B]:
                     # B 
                     k,l,c,d = right_ex
-                    row[Q] = np.sqrt(0.5) * ((i==k)*(mo_eris[a,c,d,l] + mo_eris[a,d,c,l])
-                                           + (i==l)*(mo_eris[a,c,d,k] + mo_eris[a,d,c,k])
-                                           - (a==c)*(mo_eris[d,k,l,i] + mo_eris[d,l,k,i])
-                                           - (a==d)*(mo_eris[c,k,l,i] + mo_eris[c,l,k,i]))
+                    row[Q] = np.sqrt(0.5) * ((i==k)*(mo_erints[a,c,d,l] + mo_erints[a,d,c,l])
+                                           + (i==l)*(mo_erints[a,c,d,k] + mo_erints[a,d,c,k])
+                                           - (a==c)*(mo_erints[d,k,l,i] + mo_erints[d,l,k,i])
+                                           - (a==d)*(mo_erints[c,k,l,i] + mo_erints[c,l,k,i]))
                     Q += 1
         return row
     except:
         raise Exception("Something went wrong while computing row %i" % (P))
         
 # calculate rows for doubles csf
-def comp_hrow_iiaa(mo_eps, mo_eris, scf_energy, csfs, num_csfs, options, P):
+def comp_hrow_iiaa(mo_eps, mo_erints, scf_energy, csfs, num_csfs, options, P):
     N = sum(num_csfs)
     E0 = scf_energy
     row = np.zeros(N, dtype=np.float64)
     i,j,a,b = csfs[P]
     try:
-        row[0] = mo_eris[a,i,a,i]
+        row[0] = mo_erints[a,i,a,i]
         Q = 1
         if options['singles']:
             n_ia = num_csfs[1]    
             for right_ex in csfs[Q:Q+n_ia]:
                 k,l,c,d = right_ex
-                row[Q] = np.sqrt(2) * ((k==i)*mo_eris[a,c,a,k]
-                                    - (c==a)*mo_eris[i,c,i,k])
+                row[Q] = np.sqrt(2) * ((k==i)*mo_erints[a,c,a,k]
+                                    - (c==a)*mo_erints[i,c,i,k])
                 Q += 1
         n_iiaa = num_csfs[2]
         n_iiab = num_csfs[3]
@@ -202,61 +205,61 @@ def comp_hrow_iiaa(mo_eps, mo_eris, scf_energy, csfs, num_csfs, options, P):
             for right_ex in csfs[Q:Q+n_iiaa]:
                 k,l,c,d = right_ex
                 row[Q] = ((i==k)*(a==c) *(E0 - 2*mo_eps[i] + 2*mo_eps[a] 
-                                        - 4*mo_eris[a,a,i,i] + 2*mo_eris[a,i,a,i]) 
-                            + (i==k)*mo_eris[c,a,c,a]
-                            + (a==c)*mo_eris[k,i,k,i])
+                                        - 4*mo_erints[a,a,i,i] + 2*mo_erints[a,i,a,i]) 
+                            + (i==k)*mo_erints[c,a,c,a]
+                            + (a==c)*mo_erints[k,i,k,i])
                 Q += 1
         if options['doubles_iiab']:
             for right_ex in csfs[Q:Q+n_iiab]:
                 k,l,c,d = right_ex
-                row[Q] = np.sqrt(2)*( (i==k)*(a==c)*(mo_eris[a,i,d,i] - 2*mo_eris[a,d,i,i])
-                                    + (i==k)*(a==d)*(mo_eris[a,i,c,i] - 2*mo_eris[a,c,i,i])
-                                    + (i==k)*mo_eris[a,d,a,c])
+                row[Q] = np.sqrt(2)*( (i==k)*(a==c)*(mo_erints[a,i,d,i] - 2*mo_erints[a,d,i,i])
+                                    + (i==k)*(a==d)*(mo_erints[a,i,c,i] - 2*mo_erints[a,c,i,i])
+                                    + (i==k)*mo_erints[a,d,a,c])
                 Q += 1
         if options['doubles_ijaa']: 
             for right_ex in csfs[Q:Q+n_ijaa]:
                 k,l,c,d = right_ex
-                row[Q] = np.sqrt(2)*( (i==k)*(a==c)*(mo_eris[a,i,a,l] - 2*mo_eris[a,a,l,i])
-                                    + (i==l)*(a==c)*(mo_eris[a,i,a,k] - 2*mo_eris[a,a,k,i])
-                                    + (a==c)*mo_eris[k,i,l,i])
+                row[Q] = np.sqrt(2)*( (i==k)*(a==c)*(mo_erints[a,i,a,l] - 2*mo_erints[a,a,l,i])
+                                    + (i==l)*(a==c)*(mo_erints[a,i,a,k] - 2*mo_erints[a,a,k,i])
+                                    + (a==c)*mo_erints[k,i,l,i])
                 Q += 1
         if options['doubles_ijab_A']:
             for right_ex in csfs[Q:Q+n_ijab_A]:
                 # A 
                 k,l,c,d = right_ex
-                row[Q] = np.sqrt(3)*( (i==k)*(a==c)*mo_eris[a,i,d,l]
-                                    - (i==k)*(a==d)*mo_eris[a,i,c,l]
-                                    - (i==l)*(a==c)*mo_eris[a,i,d,k]
-                                    + (i==l)*(a==d)*mo_eris[a,i,c,k])
+                row[Q] = np.sqrt(3)*( (i==k)*(a==c)*mo_erints[a,i,d,l]
+                                    - (i==k)*(a==d)*mo_erints[a,i,c,l]
+                                    - (i==l)*(a==c)*mo_erints[a,i,d,k]
+                                    + (i==l)*(a==d)*mo_erints[a,i,c,k])
                 Q += 1
         if options['doubles_ijab_B']:
             for  right_ex in csfs[Q:Q+n_ijab_B]:
                 # B 
                 k,l,c,d = right_ex
-                row[Q] = ((i==k)*(a==c)*(mo_eris[a,i,d,l] - 2*mo_eris[a,d,l,i])
-                        + (i==k)*(a==d)*(mo_eris[a,i,c,l] - 2*mo_eris[a,c,l,i])
-                        + (i==l)*(a==c)*(mo_eris[a,i,d,k] - 2*mo_eris[a,d,k,i])
-                        + (i==l)*(a==d)*(mo_eris[a,i,c,k] - 2*mo_eris[a,c,k,i]))
+                row[Q] = ((i==k)*(a==c)*(mo_erints[a,i,d,l] - 2*mo_erints[a,d,l,i])
+                        + (i==k)*(a==d)*(mo_erints[a,i,c,l] - 2*mo_erints[a,c,l,i])
+                        + (i==l)*(a==c)*(mo_erints[a,i,d,k] - 2*mo_erints[a,d,k,i])
+                        + (i==l)*(a==d)*(mo_erints[a,i,c,k] - 2*mo_erints[a,c,k,i]))
                 Q += 1
         return row
     except:
         raise Exception("Something went wrong while computing row %i" % (P))
         
-def comp_hrow_iiab(mo_eps, mo_eris, scf_energy, csfs, num_csfs, options, P):
+def comp_hrow_iiab(mo_eps, mo_erints, scf_energy, csfs, num_csfs, options, P):
     N = sum(num_csfs)
     E0 = scf_energy
     row = np.zeros(N, dtype=np.float64)
     i,j,a,b = csfs[P]
     try :
-        row[0] = np.sqrt(2)*mo_eris[a,i,b,i]
+        row[0] = np.sqrt(2)*mo_erints[a,i,b,i]
         Q = 1
         if options['singles']:
             n_ia = num_csfs[1]    
             for right_ex in csfs[Q:Q+n_ia]:
                 k,l,c,d = right_ex
-                row[Q] = ((k==i)*(mo_eris[b,c,a,k] + mo_eris[a,c,b,k])
-                                - (c==a)*mo_eris[i,b,i,k]
-                                - (c==b)*mo_eris[i,a,i,k])
+                row[Q] = ((k==i)*(mo_erints[b,c,a,k] + mo_erints[a,c,b,k])
+                                - (c==a)*mo_erints[i,b,i,k]
+                                - (c==b)*mo_erints[i,a,i,k])
                 Q += 1
         n_iiaa = num_csfs[2]
         n_iiab = num_csfs[3]
@@ -266,75 +269,75 @@ def comp_hrow_iiab(mo_eps, mo_eris, scf_energy, csfs, num_csfs, options, P):
         if options['doubles_iiaa']:
             for right_ex in csfs[Q:Q+n_iiaa]:
                 k,l,c,d = right_ex
-                row[Q] = np.sqrt(2)*(((k==i)*(c==a)*(mo_eris[c,k,b,k] - 2*mo_eris[c,b,k,k]))
-                            + (k==i)*(c==b)*(mo_eris[c,k,a,k] - 2*mo_eris[c,a,k,k])
-                            + (k==i)*mo_eris[c,b,c,a])  
+                row[Q] = np.sqrt(2)*(((k==i)*(c==a)*(mo_erints[c,k,b,k] - 2*mo_erints[c,b,k,k]))
+                            + (k==i)*(c==b)*(mo_erints[c,k,a,k] - 2*mo_erints[c,a,k,k])
+                            + (k==i)*mo_erints[c,b,c,a])  
                 Q += 1
         if options['doubles_iiab']:                
             for right_ex in csfs[Q:Q+n_iiab]:
                 k,l,c,d = right_ex
                 row[Q] = ((i==k)*(a==c)*(b==d)*(E0 - 2*mo_eps[k] + mo_eps[c] + mo_eps[d])
-                            + (k==i)*(c==a)*(mo_eris[d,k,b,k] - 2*mo_eris[d,b,k,k])
-                            + (k==i)*(c==b)*(mo_eris[d,k,a,k] - 2*mo_eris[d,a,k,k])
-                            + (k==i)*(d==a)*(mo_eris[c,k,b,k] - 2*mo_eris[c,b,k,k])
-                            + (k==i)*(d==b)*(mo_eris[c,k,a,k] - 2*mo_eris[c,a,k,k])
-                            + (k==i)*(mo_eris[c,a,d,b] + mo_eris[c,b,d,a])
-                            + (c==a)*(d==b)*(mo_eris[i,k,i,k]))
+                            + (k==i)*(c==a)*(mo_erints[d,k,b,k] - 2*mo_erints[d,b,k,k])
+                            + (k==i)*(c==b)*(mo_erints[d,k,a,k] - 2*mo_erints[d,a,k,k])
+                            + (k==i)*(d==a)*(mo_erints[c,k,b,k] - 2*mo_erints[c,b,k,k])
+                            + (k==i)*(d==b)*(mo_erints[c,k,a,k] - 2*mo_erints[c,a,k,k])
+                            + (k==i)*(mo_erints[c,a,d,b] + mo_erints[c,b,d,a])
+                            + (c==a)*(d==b)*(mo_erints[i,k,i,k]))
                 Q += 1
         if options['doubles_ijaa']: 
             for right_ex in csfs[Q:Q+n_ijaa]:
                 k,l,c,d = right_ex
-                row[Q] =   ((i==k)*(a==c)*(mo_eris[a,l,b,i] - 2*mo_eris[a,b,l,i])
-                        +(i==k)*(b==c)*(mo_eris[b,l,a,i] - 2*mo_eris[b,a,l,i])
-                        +(i==l)*(a==c)*(mo_eris[a,k,b,i] - 2*mo_eris[a,b,k,i])
-                        +(i==l)*(b==c)*(mo_eris[b,k,a,i] - 2*mo_eris[b,a,k,i]))
+                row[Q] =   ((i==k)*(a==c)*(mo_erints[a,l,b,i] - 2*mo_erints[a,b,l,i])
+                        +(i==k)*(b==c)*(mo_erints[b,l,a,i] - 2*mo_erints[b,a,l,i])
+                        +(i==l)*(a==c)*(mo_erints[a,k,b,i] - 2*mo_erints[a,b,k,i])
+                        +(i==l)*(b==c)*(mo_erints[b,k,a,i] - 2*mo_erints[b,a,k,i]))
                 Q += 1
         if options['doubles_ijab_A']:
             for right_ex in csfs[Q:Q+n_ijab_A]:
                 # A 
                 k,l,c,d = right_ex
-                row[Q] = np.sqrt(1.5)*  ((i==k)*(a==c)*mo_eris[b,i,d,l] 
-                                    - (i==k)*(a==d)*mo_eris[b,i,c,l]
-                                    + (i==k)*(b==c)*mo_eris[a,i,d,l]
-                                    - (i==k)*(b==d)*mo_eris[a,i,c,l]
-                                    - (i==l)*(a==c)*mo_eris[b,i,d,k]
-                                    + (i==l)*(a==d)*mo_eris[b,i,c,k]
-                                    - (i==l)*(b==c)*mo_eris[a,i,d,k]
-                                    + (i==l)*(b==d)*mo_eris[a,i,c,k])
+                row[Q] = np.sqrt(1.5)*  ((i==k)*(a==c)*mo_erints[b,i,d,l] 
+                                    - (i==k)*(a==d)*mo_erints[b,i,c,l]
+                                    + (i==k)*(b==c)*mo_erints[a,i,d,l]
+                                    - (i==k)*(b==d)*mo_erints[a,i,c,l]
+                                    - (i==l)*(a==c)*mo_erints[b,i,d,k]
+                                    + (i==l)*(a==d)*mo_erints[b,i,c,k]
+                                    - (i==l)*(b==c)*mo_erints[a,i,d,k]
+                                    + (i==l)*(b==d)*mo_erints[a,i,c,k])
                 Q += 1
         if options['doubles_ijab_B']:
             for  right_ex in csfs[Q:Q+n_ijab_B]:
                 # B 
                 k,l,c,d = right_ex
-                row[Q] = np.sqrt(0.5)*((i==k)*(a==c)*(mo_eris[b,i,d,l]- 2*mo_eris[b,d,l,i])
-                                        +(i==k)*(a==d)*(mo_eris[b,i,c,l]- 2*mo_eris[b,c,l,i])
-                                        +(i==k)*(b==c)*(mo_eris[a,i,d,l]- 2*mo_eris[a,d,l,i])
-                                        +(i==k)*(b==d)*(mo_eris[a,i,c,l]- 2*mo_eris[a,c,l,i])
-                                        +(i==l)*(a==c)*(mo_eris[b,i,d,k]- 2*mo_eris[b,d,k,i])
-                                        +(i==l)*(a==d)*(mo_eris[b,i,c,k]- 2*mo_eris[b,c,k,i])
-                                        +(i==l)*(b==c)*(mo_eris[a,i,d,k]- 2*mo_eris[a,d,k,i])
-                                        +(i==l)*(b==d)*(mo_eris[a,i,c,k]- 2*mo_eris[a,c,k,i])
-                                        +(a==c)*(b==d)*2*mo_eris[k,i,l,i])
+                row[Q] = np.sqrt(0.5)*((i==k)*(a==c)*(mo_erints[b,i,d,l]- 2*mo_erints[b,d,l,i])
+                                        +(i==k)*(a==d)*(mo_erints[b,i,c,l]- 2*mo_erints[b,c,l,i])
+                                        +(i==k)*(b==c)*(mo_erints[a,i,d,l]- 2*mo_erints[a,d,l,i])
+                                        +(i==k)*(b==d)*(mo_erints[a,i,c,l]- 2*mo_erints[a,c,l,i])
+                                        +(i==l)*(a==c)*(mo_erints[b,i,d,k]- 2*mo_erints[b,d,k,i])
+                                        +(i==l)*(a==d)*(mo_erints[b,i,c,k]- 2*mo_erints[b,c,k,i])
+                                        +(i==l)*(b==c)*(mo_erints[a,i,d,k]- 2*mo_erints[a,d,k,i])
+                                        +(i==l)*(b==d)*(mo_erints[a,i,c,k]- 2*mo_erints[a,c,k,i])
+                                        +(a==c)*(b==d)*2*mo_erints[k,i,l,i])
                 Q += 1
         return row
     except:
         raise Exception("Something went wrong while computing row %i" % (P))
         
-def comp_hrow_ijaa(mo_eps, mo_eris, scf_energy, csfs, num_csfs, options, P):
+def comp_hrow_ijaa(mo_eps, mo_erints, scf_energy, csfs, num_csfs, options, P):
     N = sum(num_csfs)
     E0 = scf_energy
     row = np.zeros(N, dtype=np.float64)
     i,j,a,b = csfs[P]
     try:
-        row[0] = np.sqrt(2)*mo_eris[a,i,a,j]
+        row[0] = np.sqrt(2)*mo_erints[a,i,a,j]
         Q = 1
         if options['singles']:
             n_ia = num_csfs[1]    
             for right_ex in csfs[Q:Q+n_ia]:
                 k,l,c,d = right_ex
-                row[Q] =((k==i)*mo_eris[a,c,a,j]
-                       + (k==j)*mo_eris[a,c,a,i]
-                       - (c==a)*(mo_eris[c,j,i,k] + mo_eris[c,i,j,k]))
+                row[Q] =((k==i)*mo_erints[a,c,a,j]
+                       + (k==j)*mo_erints[a,c,a,i]
+                       - (c==a)*(mo_erints[c,j,i,k] + mo_erints[c,i,j,k]))
                 Q += 1
         n_iiaa = num_csfs[2]
         n_iiab = num_csfs[3]
@@ -344,76 +347,76 @@ def comp_hrow_ijaa(mo_eps, mo_eris, scf_energy, csfs, num_csfs, options, P):
         if options['doubles_iiaa']:
             for right_ex in csfs[Q:Q+n_iiaa]:
                 k,l,c,d = right_ex
-                row[Q] =  np.sqrt(2)*(((k==i)*(c==a)*(mo_eris[c,k,c,j]- 2*mo_eris[c,c,j,k]))
-                                     + (k==j)*(c==a)*(mo_eris[c,k,c,i] - 2*mo_eris[c,c,i,k])
-                                     + (c==a)*mo_eris[i,k,j,k])
+                row[Q] =  np.sqrt(2)*(((k==i)*(c==a)*(mo_erints[c,k,c,j]- 2*mo_erints[c,c,j,k]))
+                                     + (k==j)*(c==a)*(mo_erints[c,k,c,i] - 2*mo_erints[c,c,i,k])
+                                     + (c==a)*mo_erints[i,k,j,k])
                 Q += 1
         if options['doubles_iiab']:
             for right_ex in csfs[Q:Q+n_iiab]:
                 k,l,c,d = right_ex
-                row[Q] =   ((k==i)*(c==a)*(mo_eris[c,j,d,k] - 2*mo_eris[c,d,j,k])
-                        +(k==i)*(d==a)*(mo_eris[d,j,c,k] - 2*mo_eris[d,c,j,k])
-                        +(k==j)*(c==a)*(mo_eris[c,i,d,k] - 2*mo_eris[c,d,i,k])
-                        +(k==j)*(d==a)*(mo_eris[d,i,c,k] - 2*mo_eris[d,c,i,k]))
+                row[Q] =   ((k==i)*(c==a)*(mo_erints[c,j,d,k] - 2*mo_erints[c,d,j,k])
+                        +(k==i)*(d==a)*(mo_erints[d,j,c,k] - 2*mo_erints[d,c,j,k])
+                        +(k==j)*(c==a)*(mo_erints[c,i,d,k] - 2*mo_erints[c,d,i,k])
+                        +(k==j)*(d==a)*(mo_erints[d,i,c,k] - 2*mo_erints[d,c,i,k]))
                 Q += 1
         if options['doubles_ijaa']: 
             for right_ex in csfs[Q:Q+n_ijaa]:
                 k,l,c,d = right_ex
                 row[Q] = ((i==k)*(j==l)*(a==c)*(E0-mo_eps[i]-mo_eps[j]+2*mo_eps[a])
-                        + (i==k)*(a==c)*(mo_eris[a,l,a,j] -2*mo_eris[a,a,l,j])
-                        + (i==l)*(a==c)*(mo_eris[a,k,a,j] -2*mo_eris[a,a,k,j])
-                        + (j==k)*(a==c)*(mo_eris[a,l,a,i] -2*mo_eris[a,a,l,i])
-                        + (j==l)*(a==c)*(mo_eris[a,k,a,i] -2*mo_eris[a,a,k,i])
-                        + (a==c)*(mo_eris[k,i,l,j] + mo_eris[l,i,k,j])
-                        + (i==k)*(j==l)*(mo_eris[c,a,c,a]))
+                        + (i==k)*(a==c)*(mo_erints[a,l,a,j] -2*mo_erints[a,a,l,j])
+                        + (i==l)*(a==c)*(mo_erints[a,k,a,j] -2*mo_erints[a,a,k,j])
+                        + (j==k)*(a==c)*(mo_erints[a,l,a,i] -2*mo_erints[a,a,l,i])
+                        + (j==l)*(a==c)*(mo_erints[a,k,a,i] -2*mo_erints[a,a,k,i])
+                        + (a==c)*(mo_erints[k,i,l,j] + mo_erints[l,i,k,j])
+                        + (i==k)*(j==l)*(mo_erints[c,a,c,a]))
                 Q += 1
         if options['doubles_ijab_A']:
             for right_ex in csfs[Q:Q+n_ijab_A]:
                 # A 
                 k,l,c,d = right_ex
-                row[Q] = np.sqrt(1.5)*((i==k)*(a==c)*(mo_eris[a,j,d,l])
-                                    - (i==k)*(a==d)*(mo_eris[a,j,c,l])
-                                    - (i==l)*(a==c)*(mo_eris[a,j,d,k])
-                                    + (i==l)*(a==d)*(mo_eris[a,j,c,k])
-                                    + (j==k)*(a==c)*(mo_eris[a,i,d,l])
-                                    - (j==k)*(a==d)*(mo_eris[a,i,c,l])
-                                    - (j==l)*(a==c)*(mo_eris[a,i,d,k])
-                                    + (j==l)*(a==d)*(mo_eris[a,i,c,k]))
+                row[Q] = np.sqrt(1.5)*((i==k)*(a==c)*(mo_erints[a,j,d,l])
+                                    - (i==k)*(a==d)*(mo_erints[a,j,c,l])
+                                    - (i==l)*(a==c)*(mo_erints[a,j,d,k])
+                                    + (i==l)*(a==d)*(mo_erints[a,j,c,k])
+                                    + (j==k)*(a==c)*(mo_erints[a,i,d,l])
+                                    - (j==k)*(a==d)*(mo_erints[a,i,c,l])
+                                    - (j==l)*(a==c)*(mo_erints[a,i,d,k])
+                                    + (j==l)*(a==d)*(mo_erints[a,i,c,k]))
                 Q += 1
         if options['doubles_ijab_B']:
             for  right_ex in csfs[Q:Q+n_ijab_B]:
                 # B 
                 k,l,c,d = right_ex
-                row[Q] = np.sqrt(0.5)*((i==k)*(a==c)*(mo_eris[a,j,d,l] -2*mo_eris[a,d,j,l])
-                                    + (i==k)*(a==d)*(mo_eris[a,j,c,l] -2*mo_eris[a,c,j,l])
-                                    + (i==l)*(a==c)*(mo_eris[a,j,d,k] -2*mo_eris[a,d,j,k])
-                                    + (i==l)*(a==d)*(mo_eris[a,j,c,k] -2*mo_eris[a,c,j,k])
-                                    + (j==k)*(a==c)*(mo_eris[a,i,d,l] -2*mo_eris[a,d,i,l])
-                                    + (j==k)*(a==d)*(mo_eris[a,i,c,l] -2*mo_eris[a,c,i,l])
-                                    + (j==l)*(a==c)*(mo_eris[a,i,d,k] -2*mo_eris[a,d,i,k])
-                                    + (j==l)*(a==d)*(mo_eris[a,i,c,k] -2*mo_eris[a,c,i,k])
-                                    + (i==k)*(j==l)*2*mo_eris[c,a,d,a])
+                row[Q] = np.sqrt(0.5)*((i==k)*(a==c)*(mo_erints[a,j,d,l] -2*mo_erints[a,d,j,l])
+                                    + (i==k)*(a==d)*(mo_erints[a,j,c,l] -2*mo_erints[a,c,j,l])
+                                    + (i==l)*(a==c)*(mo_erints[a,j,d,k] -2*mo_erints[a,d,j,k])
+                                    + (i==l)*(a==d)*(mo_erints[a,j,c,k] -2*mo_erints[a,c,j,k])
+                                    + (j==k)*(a==c)*(mo_erints[a,i,d,l] -2*mo_erints[a,d,i,l])
+                                    + (j==k)*(a==d)*(mo_erints[a,i,c,l] -2*mo_erints[a,c,i,l])
+                                    + (j==l)*(a==c)*(mo_erints[a,i,d,k] -2*mo_erints[a,d,i,k])
+                                    + (j==l)*(a==d)*(mo_erints[a,i,c,k] -2*mo_erints[a,c,i,k])
+                                    + (i==k)*(j==l)*2*mo_erints[c,a,d,a])
                 Q += 1
         return row
     except:
         raise Exception("Something went wrong while computing row %i" % (P))
         
-def comp_hrow_ijab_A(mo_eps, mo_eris, scf_energy, csfs, num_csfs, options, P):
+def comp_hrow_ijab_A(mo_eps, mo_erints, scf_energy, csfs, num_csfs, options, P):
     N = sum(num_csfs)
     E0 = scf_energy
     row = np.zeros(N, dtype=np.float64)
     i,j,a,b = csfs[P]
     try :
-        row[0] = np.sqrt(3)*(mo_eris[a,i,b,j] - mo_eris[a,j,b,i])
+        row[0] = np.sqrt(3)*(mo_erints[a,i,b,j] - mo_erints[a,j,b,i])
         Q = 1
         if options['singles']:
             n_ia = num_csfs[1]    
             for right_ex in csfs[Q:Q+n_ia]:
                 k,l,c,d = right_ex
-                row[Q] = np.sqrt(1.5) * ((k==i)*(mo_eris[c,a,b,j] - mo_eris[c,b,a,j])
-                                       - (k==j)*(mo_eris[c,a,b,i] - mo_eris[c,b,a,i])
-                                       + (c==a)*(mo_eris[b,i,j,k] - mo_eris[b,j,i,k])
-                                       - (c==b)*(mo_eris[a,i,j,k] - mo_eris[a,j,i,k]))
+                row[Q] = np.sqrt(1.5) * ((k==i)*(mo_erints[c,a,b,j] - mo_erints[c,b,a,j])
+                                       - (k==j)*(mo_erints[c,a,b,i] - mo_erints[c,b,a,i])
+                                       + (c==a)*(mo_erints[b,i,j,k] - mo_erints[b,j,i,k])
+                                       - (c==b)*(mo_erints[a,i,j,k] - mo_erints[a,j,i,k]))
                 Q += 1
         n_iiaa = num_csfs[2]
         n_iiab = num_csfs[3]
@@ -423,34 +426,34 @@ def comp_hrow_ijab_A(mo_eps, mo_eris, scf_energy, csfs, num_csfs, options, P):
         if options['doubles_iiaa']:
             for right_ex in csfs[Q:Q+n_iiaa]:
                 k,l,c,d = right_ex
-                row[Q] = np.sqrt(3)*( (k==i)*(c==a)*mo_eris[c,k,b,j]
-                                    - (k==i)*(c==b)*mo_eris[c,k,a,j]
-                                    - (k==j)*(c==a)*mo_eris[c,k,b,i]
-                                    + (k==j)*(c==b)*mo_eris[c,k,a,i])
+                row[Q] = np.sqrt(3)*( (k==i)*(c==a)*mo_erints[c,k,b,j]
+                                    - (k==i)*(c==b)*mo_erints[c,k,a,j]
+                                    - (k==j)*(c==a)*mo_erints[c,k,b,i]
+                                    + (k==j)*(c==b)*mo_erints[c,k,a,i])
                 Q += 1
         if options['doubles_iiab']:
             for right_ex in csfs[Q:Q+n_iiab]:
                 k,l,c,d = right_ex
-                row[Q] = np.sqrt(1.5) * ((k==i)*(c==a)*mo_eris[d,k,b,j] 
-                                    - (k==i)*(c==b)*mo_eris[d,k,a,j]
-                                    + (k==i)*(d==a)*mo_eris[c,k,b,j]
-                                    - (k==i)*(d==b)*mo_eris[c,k,a,j]
-                                    - (k==j)*(c==a)*mo_eris[d,k,b,i]
-                                    + (k==j)*(c==b)*mo_eris[d,k,a,i]
-                                    - (k==j)*(d==a)*mo_eris[c,k,b,i]
-                                    + (k==j)*(d==b)*mo_eris[c,k,a,i])
+                row[Q] = np.sqrt(1.5) * ((k==i)*(c==a)*mo_erints[d,k,b,j] 
+                                    - (k==i)*(c==b)*mo_erints[d,k,a,j]
+                                    + (k==i)*(d==a)*mo_erints[c,k,b,j]
+                                    - (k==i)*(d==b)*mo_erints[c,k,a,j]
+                                    - (k==j)*(c==a)*mo_erints[d,k,b,i]
+                                    + (k==j)*(c==b)*mo_erints[d,k,a,i]
+                                    - (k==j)*(d==a)*mo_erints[c,k,b,i]
+                                    + (k==j)*(d==b)*mo_erints[c,k,a,i])
                 Q += 1
         if options['doubles_ijaa']: 
             for right_ex in csfs[Q:Q+n_ijaa]:
                 k,l,c,d = right_ex
-                row[Q] = np.sqrt(1.5)*((k==i)*(c==a)*(mo_eris[c,l,b,j])
-                                    - (k==i)*(c==b)*(mo_eris[c,l,a,j])
-                                    - (k==j)*(c==a)*(mo_eris[c,l,b,i])
-                                    + (k==j)*(c==b)*(mo_eris[c,l,a,i])
-                                    + (l==i)*(c==a)*(mo_eris[c,k,b,j])
-                                    - (l==i)*(c==b)*(mo_eris[c,k,a,j])
-                                    - (l==j)*(c==a)*(mo_eris[c,k,b,i])
-                                    + (l==j)*(c==b)*(mo_eris[c,k,a,i]))
+                row[Q] = np.sqrt(1.5)*((k==i)*(c==a)*(mo_erints[c,l,b,j])
+                                    - (k==i)*(c==b)*(mo_erints[c,l,a,j])
+                                    - (k==j)*(c==a)*(mo_erints[c,l,b,i])
+                                    + (k==j)*(c==b)*(mo_erints[c,l,a,i])
+                                    + (l==i)*(c==a)*(mo_erints[c,k,b,j])
+                                    - (l==i)*(c==b)*(mo_erints[c,k,a,j])
+                                    - (l==j)*(c==a)*(mo_erints[c,k,b,i])
+                                    + (l==j)*(c==b)*(mo_erints[c,k,a,i]))
                 
                 Q += 1
         if options['doubles_ijab_A']:
@@ -458,66 +461,66 @@ def comp_hrow_ijab_A(mo_eps, mo_eris, scf_energy, csfs, num_csfs, options, P):
                 # A 
                 k,l,c,d = right_ex
                 row[Q] = ((i==k)*(j==l)*(a==c)*(b==d)*(E0-mo_eps[i]-mo_eps[j]+mo_eps[a]+mo_eps[b])
-                        +(i==k)*(a==c)*(1.5*mo_eris[b,j,d,l] - mo_eris[b,d,l,j])
-                        -(i==k)*(a==d)*(1.5*mo_eris[b,j,c,l] - mo_eris[b,c,l,j])
-                        -(i==k)*(b==c)*(1.5*mo_eris[a,j,d,l] - mo_eris[a,d,l,j])
-                        +(i==k)*(b==d)*(1.5*mo_eris[a,j,c,l] - mo_eris[a,c,l,j])
-                        -(i==l)*(a==c)*(1.5*mo_eris[b,j,d,k] - mo_eris[b,d,k,j])
-                        +(i==l)*(a==d)*(1.5*mo_eris[b,j,c,k] - mo_eris[b,c,k,j])
-                        +(i==l)*(b==c)*(1.5*mo_eris[a,j,d,k] - mo_eris[a,d,k,j])
-                        -(i==l)*(b==d)*(1.5*mo_eris[a,j,c,k] - mo_eris[a,c,k,j])
-                        -(j==k)*(a==c)*(1.5*mo_eris[b,i,d,l] - mo_eris[b,d,l,i])
-                        +(j==k)*(a==d)*(1.5*mo_eris[b,i,c,l] - mo_eris[b,c,l,i])
-                        +(j==k)*(b==c)*(1.5*mo_eris[a,i,d,l] - mo_eris[a,d,l,i])
-                        -(j==k)*(b==d)*(1.5*mo_eris[a,i,c,l] - mo_eris[a,c,l,i])
-                        +(j==l)*(a==c)*(1.5*mo_eris[b,i,d,k] - mo_eris[b,d,k,i])
-                        -(j==l)*(a==d)*(1.5*mo_eris[b,i,c,k] - mo_eris[b,c,k,i])
-                        -(j==l)*(b==c)*(1.5*mo_eris[a,i,d,k] - mo_eris[a,d,k,i])
-                        +(j==l)*(b==d)*(1.5*mo_eris[a,i,c,k] - mo_eris[a,c,k,i])
-                        +(i==k)*(j==l)*(mo_eris[a,c,d,b]- mo_eris[a,d,c,b])
-                        +(a==c)*(b==d)*(mo_eris[i,k,l,j]- mo_eris[i,l,k,j]))
+                        +(i==k)*(a==c)*(1.5*mo_erints[b,j,d,l] - mo_erints[b,d,l,j])
+                        -(i==k)*(a==d)*(1.5*mo_erints[b,j,c,l] - mo_erints[b,c,l,j])
+                        -(i==k)*(b==c)*(1.5*mo_erints[a,j,d,l] - mo_erints[a,d,l,j])
+                        +(i==k)*(b==d)*(1.5*mo_erints[a,j,c,l] - mo_erints[a,c,l,j])
+                        -(i==l)*(a==c)*(1.5*mo_erints[b,j,d,k] - mo_erints[b,d,k,j])
+                        +(i==l)*(a==d)*(1.5*mo_erints[b,j,c,k] - mo_erints[b,c,k,j])
+                        +(i==l)*(b==c)*(1.5*mo_erints[a,j,d,k] - mo_erints[a,d,k,j])
+                        -(i==l)*(b==d)*(1.5*mo_erints[a,j,c,k] - mo_erints[a,c,k,j])
+                        -(j==k)*(a==c)*(1.5*mo_erints[b,i,d,l] - mo_erints[b,d,l,i])
+                        +(j==k)*(a==d)*(1.5*mo_erints[b,i,c,l] - mo_erints[b,c,l,i])
+                        +(j==k)*(b==c)*(1.5*mo_erints[a,i,d,l] - mo_erints[a,d,l,i])
+                        -(j==k)*(b==d)*(1.5*mo_erints[a,i,c,l] - mo_erints[a,c,l,i])
+                        +(j==l)*(a==c)*(1.5*mo_erints[b,i,d,k] - mo_erints[b,d,k,i])
+                        -(j==l)*(a==d)*(1.5*mo_erints[b,i,c,k] - mo_erints[b,c,k,i])
+                        -(j==l)*(b==c)*(1.5*mo_erints[a,i,d,k] - mo_erints[a,d,k,i])
+                        +(j==l)*(b==d)*(1.5*mo_erints[a,i,c,k] - mo_erints[a,c,k,i])
+                        +(i==k)*(j==l)*(mo_erints[a,c,d,b]- mo_erints[a,d,c,b])
+                        +(a==c)*(b==d)*(mo_erints[i,k,l,j]- mo_erints[i,l,k,j]))
                 Q += 1
         if options['doubles_ijab_B']:
             for  right_ex in csfs[Q:Q+n_ijab_B]:
                 # B 
                 k,l,c,d = right_ex
-                row[Q] = np.sqrt(0.75)* ((i==k)*(a==c)*(mo_eris[b,j,d,l])
-                                        +(i==k)*(a==d)*(mo_eris[b,j,c,l])
-                                        -(i==k)*(b==c)*(mo_eris[a,j,d,l])
-                                        -(i==k)*(b==d)*(mo_eris[a,j,c,l])
-                                        +(i==l)*(a==c)*(mo_eris[b,j,d,k])
-                                        +(i==l)*(a==d)*(mo_eris[b,j,c,k])
-                                        -(i==l)*(b==c)*(mo_eris[a,j,d,k])
-                                        -(i==l)*(b==d)*(mo_eris[a,j,c,k])
-                                        -(j==k)*(a==c)*(mo_eris[b,i,d,l])
-                                        -(j==k)*(a==d)*(mo_eris[b,i,c,l])
-                                        +(j==k)*(b==c)*(mo_eris[a,i,d,l])
-                                        +(j==k)*(b==d)*(mo_eris[a,i,c,l])
-                                        -(j==l)*(a==c)*(mo_eris[b,i,d,k])
-                                        -(j==l)*(a==d)*(mo_eris[b,i,c,k])
-                                        +(j==l)*(b==c)*(mo_eris[a,i,d,k])
-                                        +(j==l)*(b==d)*(mo_eris[a,i,c,k]))
+                row[Q] = np.sqrt(0.75)* ((i==k)*(a==c)*(mo_erints[b,j,d,l])
+                                        +(i==k)*(a==d)*(mo_erints[b,j,c,l])
+                                        -(i==k)*(b==c)*(mo_erints[a,j,d,l])
+                                        -(i==k)*(b==d)*(mo_erints[a,j,c,l])
+                                        +(i==l)*(a==c)*(mo_erints[b,j,d,k])
+                                        +(i==l)*(a==d)*(mo_erints[b,j,c,k])
+                                        -(i==l)*(b==c)*(mo_erints[a,j,d,k])
+                                        -(i==l)*(b==d)*(mo_erints[a,j,c,k])
+                                        -(j==k)*(a==c)*(mo_erints[b,i,d,l])
+                                        -(j==k)*(a==d)*(mo_erints[b,i,c,l])
+                                        +(j==k)*(b==c)*(mo_erints[a,i,d,l])
+                                        +(j==k)*(b==d)*(mo_erints[a,i,c,l])
+                                        -(j==l)*(a==c)*(mo_erints[b,i,d,k])
+                                        -(j==l)*(a==d)*(mo_erints[b,i,c,k])
+                                        +(j==l)*(b==c)*(mo_erints[a,i,d,k])
+                                        +(j==l)*(b==d)*(mo_erints[a,i,c,k]))
                 Q += 1
         return row
     except:
         raise Exception("Something went wrong while computing row %i" % (P))
         
-def comp_hrow_ijab_B(mo_eps, mo_eris, scf_energy, csfs, num_csfs, options, P):
+def comp_hrow_ijab_B(mo_eps, mo_erints, scf_energy, csfs, num_csfs, options, P):
     N = sum(num_csfs)
     E0 = scf_energy
     row = np.zeros(N, dtype=np.float64)
     i,j,a,b = csfs[P]
     try:
-        row[0] = mo_eris[a,i,b,j] + mo_eris[a,j,b,i]
+        row[0] = mo_erints[a,i,b,j] + mo_erints[a,j,b,i]
         Q = 1
         if options['singles']:
             n_ia = num_csfs[1]    
             for right_ex in csfs[Q:Q+n_ia]:
                 k,l,c,d = right_ex
-                row[Q] = np.sqrt(0.5) * ((k==i)*(mo_eris[c,a,b,j] + mo_eris[c,b,a,j])
-                                       + (k==j)*(mo_eris[c,a,b,i] + mo_eris[c,b,a,i])
-                                       - (c==a)*(mo_eris[b,i,j,k] + mo_eris[b,j,i,k])
-                                       - (c==b)*(mo_eris[a,i,j,k] + mo_eris[a,j,i,k]))
+                row[Q] = np.sqrt(0.5) * ((k==i)*(mo_erints[c,a,b,j] + mo_erints[c,b,a,j])
+                                       + (k==j)*(mo_erints[c,a,b,i] + mo_erints[c,b,a,i])
+                                       - (c==a)*(mo_erints[b,i,j,k] + mo_erints[b,j,i,k])
+                                       - (c==b)*(mo_erints[a,i,j,k] + mo_erints[a,j,i,k]))
                 Q += 1
         n_iiaa = num_csfs[2]
         n_iiab = num_csfs[3]
@@ -527,99 +530,99 @@ def comp_hrow_ijab_B(mo_eps, mo_eris, scf_energy, csfs, num_csfs, options, P):
         if options['doubles_iiaa']:
             for right_ex in csfs[Q:Q+n_iiaa]:
                 k,l,c,d = right_ex
-                row[Q] = ((k==i)*(c==a)*(mo_eris[c,k,b,j] - 2*mo_eris[c,b,j,k])
-                        + (k==i)*(c==b)*(mo_eris[c,k,a,j] - 2*mo_eris[c,a,j,k])
-                        + (k==j)*(c==a)*(mo_eris[c,k,b,i] - 2*mo_eris[c,b,i,k])
-                        + (k==j)*(c==b)*(mo_eris[c,k,a,i] - 2*mo_eris[c,a,i,k]))
+                row[Q] = ((k==i)*(c==a)*(mo_erints[c,k,b,j] - 2*mo_erints[c,b,j,k])
+                        + (k==i)*(c==b)*(mo_erints[c,k,a,j] - 2*mo_erints[c,a,j,k])
+                        + (k==j)*(c==a)*(mo_erints[c,k,b,i] - 2*mo_erints[c,b,i,k])
+                        + (k==j)*(c==b)*(mo_erints[c,k,a,i] - 2*mo_erints[c,a,i,k]))
 
                 Q += 1
         if options['doubles_iiab']:
             for right_ex in csfs[Q:Q+n_iiab]:
                 k,l,c,d = right_ex
-                row[Q] = np.sqrt(0.5)*((k==i)*(c==a)*(mo_eris[d,k,b,j]- 2*mo_eris[d,b,j,k])
-                                    + (k==i)*(c==b)*(mo_eris[d,k,a,j]- 2*mo_eris[d,a,j,k])
-                                    + (k==i)*(d==a)*(mo_eris[c,k,b,j]- 2*mo_eris[c,b,j,k])
-                                    + (k==i)*(d==b)*(mo_eris[c,k,a,j]- 2*mo_eris[c,a,j,k])
-                                    + (k==j)*(c==a)*(mo_eris[d,k,b,i]- 2*mo_eris[d,b,i,k])
-                                    + (k==j)*(c==b)*(mo_eris[d,k,a,i]- 2*mo_eris[d,a,i,k])
-                                    + (k==j)*(d==a)*(mo_eris[c,k,b,i]- 2*mo_eris[c,b,i,k])
-                                    + (k==j)*(d==b)*(mo_eris[c,k,a,i]- 2*mo_eris[c,a,i,k])
-                                    + (c==a)*(d==b)*2*mo_eris[i,k,j,k])
+                row[Q] = np.sqrt(0.5)*((k==i)*(c==a)*(mo_erints[d,k,b,j]- 2*mo_erints[d,b,j,k])
+                                    + (k==i)*(c==b)*(mo_erints[d,k,a,j]- 2*mo_erints[d,a,j,k])
+                                    + (k==i)*(d==a)*(mo_erints[c,k,b,j]- 2*mo_erints[c,b,j,k])
+                                    + (k==i)*(d==b)*(mo_erints[c,k,a,j]- 2*mo_erints[c,a,j,k])
+                                    + (k==j)*(c==a)*(mo_erints[d,k,b,i]- 2*mo_erints[d,b,i,k])
+                                    + (k==j)*(c==b)*(mo_erints[d,k,a,i]- 2*mo_erints[d,a,i,k])
+                                    + (k==j)*(d==a)*(mo_erints[c,k,b,i]- 2*mo_erints[c,b,i,k])
+                                    + (k==j)*(d==b)*(mo_erints[c,k,a,i]- 2*mo_erints[c,a,i,k])
+                                    + (c==a)*(d==b)*2*mo_erints[i,k,j,k])
                 Q += 1
         if options['doubles_ijaa']: 
             for right_ex in csfs[Q:Q+n_ijaa]:
                 k,l,c,d = right_ex
-                row[Q] = np.sqrt(0.5)*((k==i)*(c==a)*(mo_eris[c,l,b,j] -2*mo_eris[c,b,l,j])
-                                    + (k==i)*(c==b)*(mo_eris[c,l,a,j] -2*mo_eris[c,a,l,j])
-                                    + (k==j)*(c==a)*(mo_eris[c,l,b,i] -2*mo_eris[c,b,l,i])
-                                    + (k==j)*(c==b)*(mo_eris[c,l,a,i] -2*mo_eris[c,a,l,i])
-                                    + (l==i)*(c==a)*(mo_eris[c,k,b,j] -2*mo_eris[c,b,k,j])
-                                    + (l==i)*(c==b)*(mo_eris[c,k,a,j] -2*mo_eris[c,a,k,j])
-                                    + (l==j)*(c==a)*(mo_eris[c,k,b,i] -2*mo_eris[c,b,k,i])
-                                    + (l==j)*(c==b)*(mo_eris[c,k,a,i] -2*mo_eris[c,a,k,i])
-                                    + (k==i)*(l==j)*2*mo_eris[a,c,b,c])
+                row[Q] = np.sqrt(0.5)*((k==i)*(c==a)*(mo_erints[c,l,b,j] -2*mo_erints[c,b,l,j])
+                                    + (k==i)*(c==b)*(mo_erints[c,l,a,j] -2*mo_erints[c,a,l,j])
+                                    + (k==j)*(c==a)*(mo_erints[c,l,b,i] -2*mo_erints[c,b,l,i])
+                                    + (k==j)*(c==b)*(mo_erints[c,l,a,i] -2*mo_erints[c,a,l,i])
+                                    + (l==i)*(c==a)*(mo_erints[c,k,b,j] -2*mo_erints[c,b,k,j])
+                                    + (l==i)*(c==b)*(mo_erints[c,k,a,j] -2*mo_erints[c,a,k,j])
+                                    + (l==j)*(c==a)*(mo_erints[c,k,b,i] -2*mo_erints[c,b,k,i])
+                                    + (l==j)*(c==b)*(mo_erints[c,k,a,i] -2*mo_erints[c,a,k,i])
+                                    + (k==i)*(l==j)*2*mo_erints[a,c,b,c])
                 Q += 1
         if options['doubles_ijab_A']:
             for right_ex in csfs[Q:Q+n_ijab_A]:
                 # A 
                 k,l,c,d = right_ex
-                row[Q] = np.sqrt(0.75)* ((k==i)*(c==a)*(mo_eris[d,l,b,j])
-                                        +(k==i)*(c==b)*(mo_eris[d,l,a,j])
-                                        -(k==i)*(d==a)*(mo_eris[c,l,b,j])
-                                        -(k==i)*(d==b)*(mo_eris[c,l,a,j])
-                                        +(k==j)*(c==a)*(mo_eris[d,l,b,i])
-                                        +(k==j)*(c==b)*(mo_eris[d,l,a,i])
-                                        -(k==j)*(d==a)*(mo_eris[c,l,b,i])
-                                        -(k==j)*(d==b)*(mo_eris[c,l,a,i])
-                                        -(l==i)*(c==a)*(mo_eris[d,k,b,j])
-                                        -(l==i)*(c==b)*(mo_eris[d,k,a,j])
-                                        +(l==i)*(d==a)*(mo_eris[c,k,b,j])
-                                        +(l==i)*(d==b)*(mo_eris[c,k,a,j])
-                                        -(l==j)*(c==a)*(mo_eris[d,k,b,i])
-                                        -(l==j)*(c==b)*(mo_eris[d,k,a,i])
-                                        +(l==j)*(d==a)*(mo_eris[c,k,b,i])
-                                        +(l==j)*(d==b)*(mo_eris[c,k,a,i]))
+                row[Q] = np.sqrt(0.75)* ((k==i)*(c==a)*(mo_erints[d,l,b,j])
+                                        +(k==i)*(c==b)*(mo_erints[d,l,a,j])
+                                        -(k==i)*(d==a)*(mo_erints[c,l,b,j])
+                                        -(k==i)*(d==b)*(mo_erints[c,l,a,j])
+                                        +(k==j)*(c==a)*(mo_erints[d,l,b,i])
+                                        +(k==j)*(c==b)*(mo_erints[d,l,a,i])
+                                        -(k==j)*(d==a)*(mo_erints[c,l,b,i])
+                                        -(k==j)*(d==b)*(mo_erints[c,l,a,i])
+                                        -(l==i)*(c==a)*(mo_erints[d,k,b,j])
+                                        -(l==i)*(c==b)*(mo_erints[d,k,a,j])
+                                        +(l==i)*(d==a)*(mo_erints[c,k,b,j])
+                                        +(l==i)*(d==b)*(mo_erints[c,k,a,j])
+                                        -(l==j)*(c==a)*(mo_erints[d,k,b,i])
+                                        -(l==j)*(c==b)*(mo_erints[d,k,a,i])
+                                        +(l==j)*(d==a)*(mo_erints[c,k,b,i])
+                                        +(l==j)*(d==b)*(mo_erints[c,k,a,i]))
                 Q += 1
         if options['doubles_ijab_B']:
             for  right_ex in csfs[Q:Q+n_ijab_B]:
                 # B 
                 k,l,c,d = right_ex
                 row[Q] = ((i==k)*(j==l)*(a==c)*(b==d)*(E0-mo_eps[i]-mo_eps[j]+mo_eps[a]+mo_eps[b])
-                        +(i==k)*(a==c)*(0.5*mo_eris[b,j,d,l] - mo_eris[b,d,l,j])
-                        +(i==k)*(a==d)*(0.5*mo_eris[b,j,c,l] - mo_eris[b,c,l,j])
-                        +(i==k)*(b==c)*(0.5*mo_eris[a,j,d,l] - mo_eris[a,d,l,j])
-                        +(i==k)*(b==d)*(0.5*mo_eris[a,j,c,l] - mo_eris[a,c,l,j])
-                        +(i==l)*(a==c)*(0.5*mo_eris[b,j,d,k] - mo_eris[b,d,j,k])
-                        +(i==l)*(a==d)*(0.5*mo_eris[b,j,c,k] - mo_eris[b,c,k,j])
-                        +(i==l)*(b==c)*(0.5*mo_eris[a,j,d,k] - mo_eris[a,d,k,j])
-                        +(i==l)*(b==d)*(0.5*mo_eris[a,j,c,k] - mo_eris[a,c,k,j])
-                        +(j==k)*(a==c)*(0.5*mo_eris[b,i,d,l] - mo_eris[b,d,l,i])
-                        +(j==k)*(a==d)*(0.5*mo_eris[b,i,c,l] - mo_eris[b,c,l,i])
-                        +(j==k)*(b==c)*(0.5*mo_eris[a,i,d,l] - mo_eris[a,d,l,i])
-                        +(j==k)*(b==d)*(0.5*mo_eris[a,i,c,l] - mo_eris[a,c,l,i])
-                        +(j==l)*(a==c)*(0.5*mo_eris[b,i,d,k] - mo_eris[b,d,k,i])
-                        +(j==l)*(a==d)*(0.5*mo_eris[b,i,c,k] - mo_eris[b,c,k,i])
-                        +(j==l)*(b==c)*(0.5*mo_eris[a,i,d,k] - mo_eris[a,d,k,i])
-                        +(j==l)*(b==d)*(0.5*mo_eris[a,i,c,k] - mo_eris[a,c,k,i])
-                        +(i==k)*(j==l)*(mo_eris[a,c,d,b] + mo_eris[a,d,c,b])
-                        +(a==c)*(b==d)*(mo_eris[i,k,j,l] + mo_eris[i,l,k,j]))
+                        +(i==k)*(a==c)*(0.5*mo_erints[b,j,d,l] - mo_erints[b,d,l,j])
+                        +(i==k)*(a==d)*(0.5*mo_erints[b,j,c,l] - mo_erints[b,c,l,j])
+                        +(i==k)*(b==c)*(0.5*mo_erints[a,j,d,l] - mo_erints[a,d,l,j])
+                        +(i==k)*(b==d)*(0.5*mo_erints[a,j,c,l] - mo_erints[a,c,l,j])
+                        +(i==l)*(a==c)*(0.5*mo_erints[b,j,d,k] - mo_erints[b,d,j,k])
+                        +(i==l)*(a==d)*(0.5*mo_erints[b,j,c,k] - mo_erints[b,c,k,j])
+                        +(i==l)*(b==c)*(0.5*mo_erints[a,j,d,k] - mo_erints[a,d,k,j])
+                        +(i==l)*(b==d)*(0.5*mo_erints[a,j,c,k] - mo_erints[a,c,k,j])
+                        +(j==k)*(a==c)*(0.5*mo_erints[b,i,d,l] - mo_erints[b,d,l,i])
+                        +(j==k)*(a==d)*(0.5*mo_erints[b,i,c,l] - mo_erints[b,c,l,i])
+                        +(j==k)*(b==c)*(0.5*mo_erints[a,i,d,l] - mo_erints[a,d,l,i])
+                        +(j==k)*(b==d)*(0.5*mo_erints[a,i,c,l] - mo_erints[a,c,l,i])
+                        +(j==l)*(a==c)*(0.5*mo_erints[b,i,d,k] - mo_erints[b,d,k,i])
+                        +(j==l)*(a==d)*(0.5*mo_erints[b,i,c,k] - mo_erints[b,c,k,i])
+                        +(j==l)*(b==c)*(0.5*mo_erints[a,i,d,k] - mo_erints[a,d,k,i])
+                        +(j==l)*(b==d)*(0.5*mo_erints[a,i,c,k] - mo_erints[a,c,k,i])
+                        +(i==k)*(j==l)*(mo_erints[a,c,d,b] + mo_erints[a,d,c,b])
+                        +(a==c)*(b==d)*(mo_erints[i,k,j,l] + mo_erints[i,l,k,j]))
                 Q += 1
         return row
     except:
         raise Exception("Something went wrong while computing row %i" % (P))
         
-def comp_hcisd(mo_eps, mo_eris, scf_energy, orbinfo, active_space, options, ncore=4):
+def comp_hcisd(mo_eps, mo_erints, scf_energy, orbinfo, active_space, options, ncore=OMP_NUM_THREADS):
     csfs, num_csfs = generate_csfs(orbinfo, active_space, options)
     N = sum(num_csfs)
     # optimizing num_cores assigned
     hcisd = []
     P = 0
-    row_hf = comp_hrow_hf(mo_eps, mo_eris, scf_energy, csfs, num_csfs, options)
+    row_hf = comp_hrow_hf(mo_eps, mo_erints, scf_energy, csfs, num_csfs, options)
     hcisd += [row_hf]
     P += 1
     if options['singles']:
         n_ia = num_csfs[1]
-        pfunc_hrow_ia = partial(comp_hrow_ia, mo_eps, mo_eris, scf_energy, csfs, num_csfs, options)
+        pfunc_hrow_ia = partial(comp_hrow_ia, mo_eps, mo_erints, scf_energy, csfs, num_csfs, options)
         Plist_ia = list(range(P,P+n_ia))
         rows_ia = pool_jobs(pfunc_hrow_ia, Plist_ia, ncore=ncore)
         hcisd += rows_ia
@@ -627,35 +630,35 @@ def comp_hcisd(mo_eps, mo_eris, scf_energy, orbinfo, active_space, options, ncor
     if options['doubles']:
         if options['doubles_iiaa']:
             n_iiaa = num_csfs[2]
-            pfunc_hrow_iiaa = partial(comp_hrow_iiaa, mo_eps, mo_eris, scf_energy, csfs, num_csfs, options)
+            pfunc_hrow_iiaa = partial(comp_hrow_iiaa, mo_eps, mo_erints, scf_energy, csfs, num_csfs, options)
             Plist_iiaa = list(range(P,P+n_iiaa))
             rows_iiaa = pool_jobs(pfunc_hrow_iiaa, Plist_iiaa, ncore=ncore)
             hcisd += rows_iiaa
             P += n_iiaa
         if options['doubles_iiab']:        
             n_iiab = num_csfs[3]
-            pfunc_hrow_iiab = partial(comp_hrow_iiab, mo_eps, mo_eris, scf_energy, csfs, num_csfs, options)
+            pfunc_hrow_iiab = partial(comp_hrow_iiab, mo_eps, mo_erints, scf_energy, csfs, num_csfs, options)
             Plist_iiab = list(range(P,P+n_iiab))
             rows_iiab = pool_jobs(pfunc_hrow_iiab, Plist_iiab, ncore=ncore)
             hcisd += rows_iiab
             P += n_iiab
         if options['doubles_ijaa']:
             n_ijaa = num_csfs[4]
-            pfunc_hrow_ijaa = partial(comp_hrow_ijaa, mo_eps, mo_eris, scf_energy, csfs, num_csfs, options)
+            pfunc_hrow_ijaa = partial(comp_hrow_ijaa, mo_eps, mo_erints, scf_energy, csfs, num_csfs, options)
             Plist_ijaa = list(range(P,P+n_ijaa))
             rows_ijaa = pool_jobs(pfunc_hrow_ijaa, Plist_ijaa, ncore=ncore)
             hcisd += rows_ijaa
             P += n_ijaa
         if options['doubles_ijab_A']:
             n_ijab_A = num_csfs[5]
-            pfunc_hrow_ijab_A = partial(comp_hrow_ijab_A, mo_eps, mo_eris, scf_energy, csfs, num_csfs, options)
+            pfunc_hrow_ijab_A = partial(comp_hrow_ijab_A, mo_eps, mo_erints, scf_energy, csfs, num_csfs, options)
             Plist_ijab_A = list(range(P,P+n_ijab_A))
             rows_ijab_A = pool_jobs(pfunc_hrow_ijab_A, Plist_ijab_A, ncore=ncore)
             hcisd += rows_ijab_A
             P += n_ijab_A
         if options['doubles_ijab_B']:        
             n_ijab_B = num_csfs[6]
-            pfunc_hrow_ijab_B = partial(comp_hrow_ijab_B, mo_eps, mo_eris, scf_energy, csfs, num_csfs, options)
+            pfunc_hrow_ijab_B = partial(comp_hrow_ijab_B, mo_eps, mo_erints, scf_energy, csfs, num_csfs, options)
             Plist_ijab_B = list(range(P,P+n_ijab_B))
             rows_ijab_B = pool_jobs(pfunc_hrow_ijab_B, Plist_ijab_B, ncore=ncore)
             hcisd += rows_ijab_B
@@ -988,7 +991,7 @@ def comp_oeprop_ijab_B(mo_oeprop, mo_oeprop_trace, csfs, num_csfs, options, P):
     except:
         raise Exception("Something went wronh while computing row %i"%(P))
     
-def comp_oeprop(mo_oeprop, orbinfo, active_space, options, ncore=4):
+def comp_oeprop(mo_oeprop, orbinfo, active_space, options, ncore=OMP_NUM_THREADS):
     csfs, num_csfs = generate_csfs(orbinfo, active_space, options)
     nocc, nmo = orbinfo
     N = sum(num_csfs)
@@ -1046,18 +1049,18 @@ def comp_oeprop(mo_oeprop, orbinfo, active_space, options, ncore=4):
     csf_oeprop = np.array(csf_oeprop, dtype=np.float64)
     return csf_oeprop
 
-# def cfunc_comp_hcisd(mo_eps, mo_eris, scf_energy, orbinfo, active_space, options, ncore=4):
+# def cfunc_comp_hcisd(mo_eps, mo_erints, scf_energy, orbinfo, active_space, options, ncore=OMP_NUM_THREADS):
 #     csfs, num_csfs = generate_csfs(orbinfo, active_space, options)
 #     N = sum(num_csfs)
 #     # optimizing num_cores assigned
 #     hcisd = []
 #     P = 0
-#     row_hf = lib_rcisd.comp_hrow_hf(mo_eps, mo_eris, scf_energy, csfs, num_csfs, options)
+#     row_hf = lib_rcisd.comp_hrow_hf(mo_eps, mo_erints, scf_energy, csfs, num_csfs, options)
 #     hcisd += [row_hf]
 #     P += 1
 #     if options['singles']:
 #         n_ia = num_csfs[1]
-#         pfunc_hrow_ia = partial(lib_rcisd.comp_hrow_ia, mo_eps, mo_eris, scf_energy, csfs, num_csfs, options)
+#         pfunc_hrow_ia = partial(lib_rcisd.comp_hrow_ia, mo_eps, mo_erints, scf_energy, csfs, num_csfs, options)
 #         Plist_ia = list(range(P,P+n_ia))
 #         rows_ia = pool_jobs(pfunc_hrow_ia, Plist_ia, ncore=ncore)
 #         hcisd += rows_ia
@@ -1065,35 +1068,35 @@ def comp_oeprop(mo_oeprop, orbinfo, active_space, options, ncore=4):
 #     if options['doubles']:
 #         if options['doubles_iiaa']:
 #             n_iiaa = num_csfs[2]
-#             pfunc_hrow_iiaa = partial(lib_rcisd.comp_hrow_iiaa, mo_eps, mo_eris, scf_energy, csfs, num_csfs, options)
+#             pfunc_hrow_iiaa = partial(lib_rcisd.comp_hrow_iiaa, mo_eps, mo_erints, scf_energy, csfs, num_csfs, options)
 #             Plist_iiaa = list(range(P,P+n_iiaa))
 #             rows_iiaa = pool_jobs(pfunc_hrow_iiaa, Plist_iiaa, ncore=ncore)
 #             hcisd += rows_iiaa
 #             P += n_iiaa
 #         if options['doubles_iiab']:        
 #             n_iiab = num_csfs[3]
-#             pfunc_hrow_iiab = partial(lib_rcisd.comp_hrow_iiab, mo_eps, mo_eris, scf_energy, csfs, num_csfs, options)
+#             pfunc_hrow_iiab = partial(lib_rcisd.comp_hrow_iiab, mo_eps, mo_erints, scf_energy, csfs, num_csfs, options)
 #             Plist_iiab = list(range(P,P+n_iiab))
 #             rows_iiab = pool_jobs(pfunc_hrow_iiab, Plist_iiab, ncore=ncore)
 #             hcisd += rows_iiab
 #             P += n_iiab
 #         if options['doubles_ijaa']:
 #             n_ijaa = num_csfs[4]
-#             pfunc_hrow_ijaa = partial(lib_rcisd.comp_hrow_ijaa, mo_eps, mo_eris, scf_energy, csfs, num_csfs, options)
+#             pfunc_hrow_ijaa = partial(lib_rcisd.comp_hrow_ijaa, mo_eps, mo_erints, scf_energy, csfs, num_csfs, options)
 #             Plist_ijaa = list(range(P,P+n_ijaa))
 #             rows_ijaa = pool_jobs(pfunc_hrow_ijaa, Plist_ijaa, ncore=ncore)
 #             hcisd += rows_ijaa
 #             P += n_ijaa
 #         if options['doubles_ijab_A']:
 #             n_ijab_A = num_csfs[5]
-#             pfunc_hrow_ijab_A = partial(lib_rcisd.comp_hrow_ijab_A, mo_eps, mo_eris, scf_energy, csfs, num_csfs, options)
+#             pfunc_hrow_ijab_A = partial(lib_rcisd.comp_hrow_ijab_A, mo_eps, mo_erints, scf_energy, csfs, num_csfs, options)
 #             Plist_ijab_A = list(range(P,P+n_ijab_A))
 #             rows_ijab_A = pool_jobs(pfunc_hrow_ijab_A, Plist_ijab_A, ncore=ncore)
 #             hcisd += rows_ijab_A
 #             P += n_ijab_A
 #         if options['doubles_ijab_B']:        
 #             n_ijab_B = num_csfs[6]
-#             pfunc_hrow_ijab_B = partial(lib_rcisd.comp_hrow_ijab_B, mo_eps, mo_eris, scf_energy, csfs, num_csfs, options)
+#             pfunc_hrow_ijab_B = partial(lib_rcisd.comp_hrow_ijab_B, mo_eps, mo_erints, scf_energy, csfs, num_csfs, options)
 #             Plist_ijab_B = list(range(P,P+n_ijab_B))
 #             rows_ijab_B = pool_jobs(pfunc_hrow_ijab_B, Plist_ijab_B, ncore=ncore)
 #             hcisd += rows_ijab_B
@@ -1103,7 +1106,7 @@ def comp_oeprop(mo_oeprop, orbinfo, active_space, options, ncore=4):
 #     hcisd = np.array(hcisd)
 #     return hcisd
 
-# def cfunc_comp_oeprop(mo_oeprop, orbinfo, active_space, options, ncore=4):
+# def cfunc_comp_oeprop(mo_oeprop, orbinfo, active_space, options, ncore=OMP_NUM_THREADS):
 #     csfs, num_csfs = generate_csfs(orbinfo, active_space, options)
 #     nocc, nmo = orbinfo
 #     N = sum(num_csfs)
@@ -1160,3 +1163,58 @@ def comp_oeprop(mo_oeprop, orbinfo, active_space, options, ncore=4):
 #         raise Exception("Error: posval not equal to CSFs")
 #     csf_oeprop = np.array(csf_oeprop, dtype=np.float64)
 #     return csf_oeprop
+
+from pyci.utils import molecule
+from scipy.sparse.linalg import eigsh
+from scipy.linalg.lapack import dsyev
+
+class CISD(molecule):
+    options = { 'singles' : True,
+                'full_cis' : True,
+                'doubles' : True,
+                'doubles_iiaa' : True,
+                'doubles_iiab' : True,
+                'doubles_ijaa' : True,
+                'doubles_ijab_A' : True,
+                'doubles_ijab_B' : True}
+    
+    def __init__(self, options, ncore=OMP_NUM_THREADS, optimize=False):
+        mol = molecule
+        for key in options.keys():
+            self.options[key] = options[key]
+        self.csfs, self.num_csfs = generate_csfs(mol.orbinfo, 
+                                                mol.active_space, 
+                                                self.options)
+        ndim = sum(self.num_csfs)
+        if optimize:
+            if ndim < 1500:
+                ncore = 1
+            elif ndim < 3000:
+                ncore = 2
+            elif ndim < 6000:
+                ncore = 4
+            elif ndim < 12000:
+                ncore = 8
+            elif ndim < 24000:
+                ncore = 11
+            else:
+                ncore = 22
+                
+        self.HCISD = comp_hcisd(mol.mo_eps[0], mol.mo_erints, mol.scf_energy,
+                                mol.orbinfo, mol.active_space,
+                                self.options, ncore)
+    
+    def energy(self, return_wfn=False): 
+        HCISD0 = self.HCISD - molecule.scf_energy*np.eye(sum(self.num_csfs)) 
+        energy, wfn = eigsh(HCISD0, k=1, which='SM')
+        energy += molecule.scf_energy
+        if return_wfn:
+            return energy, wfn
+        else:
+            return energy
+    
+    def get_eigen(self):
+        HCISD0 = self.HCISD - molecule.scf_energy*np.eye(sum(self.num_csfs)) 
+        vals, vecs = dsyev(self.HCSID0)
+        vals = vals + molecule.scf_energy
+        return vals, vecs

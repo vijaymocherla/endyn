@@ -3,7 +3,7 @@
 # Author : Sai Vijay Mocherla <vijaysai.mocherla@gmail.com>
 #
 #   TO-DO:
-#       1. check and maks sure eris in all funcs are in chemists notation.
+#       1. check and maks sure erints in all funcs are in chemists notation.
 #       2. Simplify tensor computations further to reduce computational overhead
 #       3. clean up API 
 """ CIS(D) Spin MO version
@@ -16,12 +16,12 @@ import numpy as np
 class CIS_D:
     """ A class to compute perturbative corrections from doubles(D) for enegies from configuration interation singles(CIS).
     """
-    def __init__(self, cis_eigvals, cis_eigvecs, mo_eps, mo_so_eris, orbinfo):
+    def __init__(self, cis_eigvals, cis_eigvecs, mo_eps, mo_so_erints, orbinfo):
         """input args :
             cis_eigvals: eigenvalues of the CIS hamiltonian,
             cis_eigvecs: eigenvectors of the CIS hamiltonian,
             mo_eps: energies of the Molecular Orbitals(MOs) used for CI calculation
-            mo_so_eris: electron repulsion integrals tensor in SO basis using chemists notation.
+            mo_so_erints: electron repulsion integrals tensor in SO basis using chemists notation.
             orbinfo: a tuple of the form (nocc, nvir, nmo)
             nocc: no. of occupied orbitals
             nvir: no. of virtual orbitals
@@ -36,7 +36,7 @@ class CIS_D:
         self.ecis = cis_eigvals
         self.ccis = cis_eigvecs[1:, :]
         self.delta = self.comp_delta(mo_eps)
-        self.g_tensor = mo_so_eris - mo_so_eris.transpose(0, 1, 3, 2)
+        self.g_tensor = mo_so_erints - mo_so_erints.transpose(0, 1, 3, 2)
         self.w_tensor = - self.g_tensor[self.nel:, self.nel:, :self.nel, :self.nel]/self.delta  # g_vvoo / delta[vvoo]
         
     def comp_delta(self, mo_eps):

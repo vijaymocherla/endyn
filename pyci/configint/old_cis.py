@@ -9,19 +9,19 @@ from itertools import product
 from multiprocessing import Pool
 
 
-def comp_cis_hamiltonian(mo_eps, mo_eris, orbinfo, parallelised=False, ncore=1):
+def comp_cis_hamiltonian(mo_eps, mo_erints, orbinfo, parallelised=False, ncore=1):
     """Computes the configuration-interaction singles(CIS) hamiltonian in the
     spin-adapted singlet determinant basis.
     ! Note: The Hamiltonian needs scaled to SCF ground state energy, therefore 
     the eigen values need to be scaled back.
     --------------------------------------------------------------------------
     mo_eps : array of molecular orbtial(MO) energies from SCF calculations.
-    mo_eris : 4-d array of 2e- integrals using chemists notation in MO basis.
+    mo_erints : 4-d array of 2e- integrals using chemists notation in MO basis.
     orbinfo : (nocc, nvir, nmo) tuple to pass orbital information.
     ---------------------------------------------------------------------------
     """
     if parallelised:
-        multp_obj = multp_cis(orbinfo, mo_eps, mo_eris)
+        multp_obj = multp_cis(orbinfo, mo_eps, mo_erints)
         HCIS = multp_obj.comp_hcis(ncore)
     else:    
         nocc, nmo = orbinfo
@@ -34,21 +34,21 @@ def comp_cis_hamiltonian(mo_eps, mo_eris, orbinfo, parallelised=False, ncore=1):
             for Q, R_ex in enumerate(excitation_singles):
                 b, s = R_ex
                 HCIS[P+1, Q+1] = (((mo_eps[r] - mo_eps[a]) * (a == b) * (r == s))
-                                - mo_eris[r, s, b, a]
-                                + (2 * mo_eris[r, a, b, s]))
+                                - mo_erints[r, s, b, a]
+                                + (2 * mo_erints[r, a, b, s]))
     return HCIS
 
 
 
 class multp_cis:
-    def __init__(self, orbinfo, mo_eps, mo_eris):
+    def __init__(self, orbinfo, mo_eps, mo_erints):
         """Parallelised implementation to get the HCIS Matrix
         """
         nocc, nmo = orbinfo
         nvir = nmo-nocc
         self.excitation_singles = list(product(range(nocc), range(nocc, nmo)))
         self.nDets = (nocc * nvir) + 1
-        self.mo_eris = mo_eris
+        self.mo_erints = mo_erints
         self.mo_eps = mo_eps
 
     def comp_cis_mat_row(self, P):
@@ -58,7 +58,7 @@ class multp_cis:
             for Q, R_ex in enumerate(self.excitation_singles):
                 b, s = R_ex
                 row[Q+1] = (((self.mo_eps[r] - self.mo_eps[a]) * (a == b) * (r == s))
-                            + 2*self.mo_eris[r, a, b, s] - self.mo_eris[r, s, b, a])
+                            + 2*self.mo_erints[r, a, b, s] - self.mo_erints[r, s, b, a])
             return row, 1
         except :
             raise Exception("Something went wrong while computing row %i" % (P+1))
