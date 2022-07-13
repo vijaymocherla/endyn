@@ -17,29 +17,43 @@ class psi4utils:
     """Helper class to get AO integrals and other abinitio data from PSI4 
        for time-dependent configuration interaction(TDCI) calculations.
     """
-    def __init__(self, basis, molfile, psi4mem='2 Gb', wd='./'):
-        self.scratch = scratch = wd+'.scratch/'
+    def __init__(self, basis, molfile, 
+             wd='./', psi4mem='2 Gb', numpymem=2,
+            custom_basis=False, basis_dict=None):
+        self.scratch = wd+'.scratch/'
         if not os.path.isdir(self.scratch):
             os.system('mkdir '+wd+'.scratch')
         psi4.core.clean()
-        psi4.core.set_output_file(scratch+'psi4_output.dat', False) # psi4 output
+        psi4.core.set_output_file(self.scratch+'psi4_output.dat', False) # psi4 output
         psi4.set_memory(psi4mem) # psi4 memory 
-        self.numpy_memory = 2 # numpy memory
-        self.options_dict = { 'basis': basis,
+        self.numpy_memory = numpymem # numpy memory
+        self.mol = psi4.geometry(psi4utils.get_mol_str(molfile))
+        if custom_basis:
+            basis = 'userdef'
+            if basis_dict == None:
+                raise Exception("custom_basis set as True, but no valid basis_dict was passed!")
+            else:
+                psi4utils.set_custombasis(basis_dict)
+        self.options_dict = {'basis': basis,
                             'reference' : 'rhf',
                             'scf_type' : 'pk',
                             'e_convergence' : 1e-12,
                             'd_convergence' : 1e-10}            
         psi4.set_options(self.options_dict)               
-        self.mol = psi4.geometry(psi4utils.get_mol_str(molfile))
         self.wfn = psi4.core.Wavefunction.build(self.mol, psi4.core.get_global_option('basis'))
         if self.wfn.basisset().has_puream():
             self.options_dict['puream'] = 'true'
             psi4.set_options(self.options_dict)
             self.wfn = psi4.core.Wavefunction.build(self.mol, psi4.core.get_global_option('basis'))   
         self.mints = psi4.core.MintsHelper(self.wfn.basisset())
-
     
+    def set_custombasis(basis_dict):        
+        def basisspec_psi4_yo__mybasis(mol, role):
+            basstrings = {}
+            mol.set_basis_all_atoms("ALLATOMS",)
+            basstrings['allatoms'] = basis_dict['basstring']
+            return basstrings
+        psi4.qcdb.libmintsbasisset.basishorde['USERDEF'] = basisspec_psi4_yo__mybasis
 
     @staticmethod    
     def get_mol_str(molfile):
@@ -107,7 +121,7 @@ class psi4utils:
     
     @staticmethod
     def eri_mo2so(mo_erints):
-        # TO-DO : code mo to so transform for eris (current implementation is bad)
+        # TO-DO : code mo to so transform for erints (current implementation is bad)
         print("!!!Warning: Using unstable MO to SO transform eri_mo2so(), instead use eri_mo2so_psi4()\n")
         dim = mo_erints.shape[0]
         mo_so_eri=np.zeros((dim*2,dim*2,dim*2,dim*2), np.float64)
@@ -130,8 +144,10 @@ class psi4utils:
 class AOint(psi4utils):
     """A module to get AO integrals using psi4
     """
-    def __init__(self, basis, molfile, psi4mem='2 Gb', scratch='./'):
-        psi4utils.__init__(self, basis, molfile, psi4mem, scratch)
+    def __init__(self, basis, molfile, 
+             wd='./', psi4mem='2 Gb', numpymem=2,
+            custom_basis=False, basis_dict=None):
+        psi4utils.__init__(self, basis, molfile, wd, psi4mem, numpymem, custom_basis, basis_dict)
         
     def save_ao_oeints(self):
         """Saves S, T and V integrals in AO basis as a .npz file.
@@ -163,10 +179,10 @@ class AOint(psi4utils):
         return ao_overlap, ao_kinetic, ao_potential
     
     def get_ao_erints(self):
-        """ Returns ERIs in AO basis
+        """ Returns erints in AO basis
         """
-        ao_eris = np.load(self.scratch + 'ao_erints.npz')['electron_repulsion_aoints']
-        return ao_eris
+        ao_erints = np.load(self.scratch + 'ao_erints.npz')['electron_repulsion_aoints']
+        return ao_erints
 
     def save_ao_erints(self): 
         """Saves 2-electron repulsion integrals in AO basis as a .npz file.
@@ -241,7 +257,7 @@ class AOint(psi4utils):
         ao_qdyy = ao_dipoles_data['qdyy_aoints']
         ao_qdyz = ao_dipoles_data['qdyz_aoints']
         ao_qdzz = ao_dipoles_data['qdzz_aoints']
-        return ao_qdxx, ao_qdxy, ao_qdxz, ao_qdyy, ao_qdyz, ao_qdzz, 
+        return ao_qdxx, ao_qdxy, ao_qdxz, ao_qdyy, ao_qdyz, ao_qdzz 
 
     def save_all_aoints(self):
         self.save_ao_erints()
@@ -270,3 +286,48 @@ class AOint(psi4utils):
         eps_b = np.array(self.scf_wfn.epsilon_b_subset('AO', 'ALL'), dtype=np.float64)
         np.savez(self.scratch+'mo_scf_info.npz', eps_a=eps_a, Ca=Ca, eps_b=eps_b, Cb=Cb)
         return 1
+
+    def get_mo_info(self):
+        eps_a = np.load(self.scratch+'mo_scf_info.npz')['eps_a']
+        eps_b = np.load(self.scratch+'mo_scf_info.npz')['eps_b']
+        Ca = np.load(self.scratch+'mo_scf_info.npz')['Ca'] 
+        Cb = np.load(self.scratch+'mo_scf_info.npz')['Cb']
+        return (Ca, Cb), (eps_a, eps_b) 
+
+class molecule(object):
+    def __init__(self, basis, molfile, wd='./', 
+                 psi4mem='2 Gb', numpymem=2, 
+                 custom_basis=False, basis_dict=None,
+                 store_wfn=False, properties=[]):
+        aoint = AOint(basis, molfile, wd, psi4mem, 
+                    numpymem, custom_basis, basis_dict)
+        aoint.save_all_aoints()
+        aoint.save_mo_info()
+        self.mo_eps, self.mo_coeff = aoint.get_mo_info()
+        Ca = self.mo_coeff[0]
+        nbf, nmo, nso, na, nb, nocc, nvirt = aoint.get_orb_info(aoint.wfn)        
+        self.scf_energy = aoint.scf_energy
+        self.orbinfo = (nocc, nmo)
+        self.active_space = (nocc,nvirt)
+        if store_wfn:
+            self.wfn = aoint.wfn
+        ao_erints = aoint.get_ao_erints()
+        self.mo_erints = aoint.eri_ao2mo(Ca, ao_erints, greedy=True)
+        del ao_erints
+        if 'dipoles' in properties:
+            ao_dpx, ao_dpy, ao_dpz = aoint.get_ao_dpints()
+            self.mo_dpx = aoint.matrix_ao2mo(Ca, ao_dpx)
+            self.mo_dpy = aoint.matrix_ao2mo(Ca, ao_dpy)
+            self.mo_dpz = aoint.matrix_ao2mo(Ca, ao_dpz)
+            del ao_dpx, ao_dpy, ao_dpz
+        if 'quadrupoles' in properties:
+            (ao_qdxx, ao_qdxy, ao_qdxz, 
+             ao_qdyy, ao_qdyz, ao_qdzz) = aoint.get_ao_qdints()
+            self.mo_qdxx = aoint.matrix_ao2mo(Ca, ao_qdxx)
+            self.mo_qdxy = aoint.matrix_ao2mo(Ca, ao_qdxy)
+            self.mo_qdxz = aoint.matrix_ao2mo(Ca, ao_qdxz)
+            self.mo_qdyy = aoint.matrix_ao2mo(Ca, ao_qdyy)
+            self.mo_qdyz = aoint.matrix_ao2mo(Ca, ao_qdyz)
+            self.mo_qdzz = aoint.matrix_ao2mo(Ca, ao_qdzz)
+            del ao_qdxx, ao_qdxy, ao_qdxz, ao_qdyy, ao_qdyz, ao_qdzz
+        
