@@ -1186,23 +1186,24 @@ class CISD(molecule):
                                                 mol.active_space, 
                                                 self.options)
         ndim = sum(self.num_csfs)
+        self.ncore = ncore
         if optimize:
             if ndim < 1500:
-                ncore = 1
+                self.ncore = 1
             elif ndim < 3000:
-                ncore = 2
+                self.ncore = 2
             elif ndim < 6000:
-                ncore = 4
+                self.ncore = 4
             elif ndim < 12000:
-                ncore = 8
+                self.ncore = 8
             elif ndim < 24000:
-                ncore = 11
+                self.ncore = 11
             else:
-                ncore = 22
+                self.ncore = 22
                 
         self.HCISD = comp_hcisd(mol.mo_eps[0], mol.mo_erints, mol.scf_energy,
                                 mol.orbinfo, mol.active_space,
-                                self.options, ncore)
+                                self.options, ncore=self.ncore)
     
     def energy(self, return_wfn=False): 
         HCISD0 = self.HCISD - molecule.scf_energy*np.eye(sum(self.num_csfs)) 
@@ -1218,3 +1219,33 @@ class CISD(molecule):
         vals, vecs = dsyev(self.HCSID0)
         vals = vals + molecule.scf_energy
         return vals, vecs
+    
+    def get_dipoles(self):
+        mol = molecule
+        if 'dipoles' not in molecule.properties:
+            raise Exception("dipoles are not in the list of properties to be computed.")
+        csf_dpx  = comp_oeprop(mol.mo_dpx, mol.orbinfo, mol.active_space, 
+                    self.options, ncore=self.ncore)
+        csf_dpy  = comp_oeprop(mol.mo_dpy, mol.orbinfo, mol.active_space, 
+                    self.options, ncore=self.ncore)
+        csf_dpz  = comp_oeprop(mol.mo_dpz, mol.orbinfo, mol.active_space, 
+                    self.options, ncore=self.ncore)
+        return csf_dpx, csf_dpy, csf_dpz
+
+    def get_quadrupoles(self):
+        mol = molecule
+        if 'quadrupoles' not in molecule.properties:
+            raise Exception("quadrupoles are not in the list of properties to be computed.")
+        csf_qdxx  = comp_oeprop(mol.mo_qdxx, mol.orbinfo, mol.active_space, 
+                    self.options, ncore=self.ncore)
+        csf_qdxy  = comp_oeprop(mol.mo_qdxy, mol.orbinfo, mol.active_space, 
+                    self.options, ncore=self.ncore)
+        csf_qdxz  = comp_oeprop(mol.mo_qdxz, mol.orbinfo, mol.active_space, 
+                    self.options, ncore=self.ncore)
+        csf_qdyy  = comp_oeprop(mol.mo_qdyy, mol.orbinfo, mol.active_space, 
+                    self.options, ncore=self.ncore)
+        csf_qdyz = comp_oeprop(mol.mo_qdyz, mol.orbinfo, mol.active_space, 
+                    self.options, ncore=self.ncore)
+        csf_qdzz = comp_oeprop(mol.mo_qdzz, mol.orbinfo, mol.active_space, 
+                    self.options, ncore=self.ncore)
+        return csf_qdxx, csf_qdxy, csf_qdxz, csf_qdyy, csf_qdyz, csf_qdzz

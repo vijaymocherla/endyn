@@ -314,13 +314,14 @@ class molecule(object):
         ao_erints = aoint.get_ao_erints()
         self.mo_erints = aoint.eri_ao2mo(Ca, ao_erints, greedy=True)
         del ao_erints
-        if 'dipoles' in properties:
+        self.properties = properties
+        if 'dipoles' in self.properties:
             ao_dpx, ao_dpy, ao_dpz = aoint.get_ao_dpints()
             self.mo_dpx = aoint.matrix_ao2mo(Ca, ao_dpx)
             self.mo_dpy = aoint.matrix_ao2mo(Ca, ao_dpy)
             self.mo_dpz = aoint.matrix_ao2mo(Ca, ao_dpz)
             del ao_dpx, ao_dpy, ao_dpz
-        if 'quadrupoles' in properties:
+        if 'quadrupoles' in self.properties:
             (ao_qdxx, ao_qdxy, ao_qdxz, 
              ao_qdyy, ao_qdyz, ao_qdzz) = aoint.get_ao_qdints()
             self.mo_qdxx = aoint.matrix_ao2mo(Ca, ao_qdxx)
