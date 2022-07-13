@@ -85,7 +85,7 @@ def comp_hrow_hf(mo_eps, mo_eris, scf_energy, csfs, num_csfs, options):
             if options['doubles_iiaa']:
                 for right_ex in csfs[Q:Q+n_iiaa]:
                     k,l,c,d = right_ex
-                    row[Q] = mo_eris[k,l,k,l]
+                    row[Q] = mo_eris[c,k,c,k]
                     Q += 1
             if options['doubles_iiab']:
                 for right_ex in csfs[Q:Q+n_iiab]:
@@ -273,13 +273,13 @@ def comp_hrow_iiab(mo_eps, mo_eris, scf_energy, csfs, num_csfs, options, P):
         if options['doubles_iiab']:                
             for right_ex in csfs[Q:Q+n_iiab]:
                 k,l,c,d = right_ex
-                row[Q] = ((i==k)*(a==c)*(b==d)*(E0 - 2*mo_eps[i] + mo_eps[a] + mo_eps[b])
-                            + (i==k)*(a==c)*(mo_eris[b,i,d,i] - 2*mo_eris[b,d,i,i])
-                            + (i==k)*(a==d)*(mo_eris[b,i,c,i] - 2*mo_eris[b,c,i,i])
-                            + (i==k)*(b==c)*(mo_eris[a,i,d,i] - 2*mo_eris[a,d,i,i])
-                            + (i==k)*(b==d)*(mo_eris[a,i,c,i] - 2*mo_eris[a,c,i,i])
-                            + (i==k)*(mo_eris[a,c,b,d] + mo_eris[a,d,b,c])
-                            + (a==c)*(b==d)*(mo_eris[k,i,k,i]))
+                row[Q] = ((i==k)*(a==c)*(b==d)*(E0 - 2*mo_eps[k] + mo_eps[c] + mo_eps[d])
+                            + (k==i)*(c==a)*(mo_eris[d,k,b,k] - 2*mo_eris[d,b,k,k])
+                            + (k==i)*(c==b)*(mo_eris[d,k,a,k] - 2*mo_eris[d,a,k,k])
+                            + (k==i)*(d==a)*(mo_eris[c,k,b,k] - 2*mo_eris[c,b,k,k])
+                            + (k==i)*(d==b)*(mo_eris[c,k,a,k] - 2*mo_eris[c,a,k,k])
+                            + (k==i)*(mo_eris[c,a,d,b] + mo_eris[c,b,d,a])
+                            + (c==a)*(d==b)*(mo_eris[i,k,i,k]))
                 Q += 1
         if options['doubles_ijaa']: 
             for right_ex in csfs[Q:Q+n_ijaa]:

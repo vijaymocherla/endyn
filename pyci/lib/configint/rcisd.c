@@ -163,7 +163,7 @@ comp_hrow_hf_cfunc(PyObject *self, PyObject *args, PyObject *kwargs)
                     l = csfs[idx][1];
                     c = csfs[idx][2];
                     d = csfs[idx][3];
-                    row[idx] = mo_eris[k][l][k][l];
+                    row[idx] = mo_eris[c][k][c][k];
                 }
             }
             if (doubles_iiab){
