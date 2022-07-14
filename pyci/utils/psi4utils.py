@@ -292,7 +292,7 @@ class AOint(psi4utils):
         eps_b = np.load(self.scratch+'mo_scf_info.npz')['eps_b']
         Ca = np.load(self.scratch+'mo_scf_info.npz')['Ca'] 
         Cb = np.load(self.scratch+'mo_scf_info.npz')['Cb']
-        return (Ca, Cb), (eps_a, eps_b) 
+        return (eps_a, eps_b), (Ca, Cb) 
 
 class molecule(object):
     def __init__(self, basis, molfile, wd='./', 

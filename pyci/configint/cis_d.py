@@ -2,12 +2,15 @@
 #
 # Author : Sai Vijay Mocherla <vijaysai.mocherla@gmail.com>
 #
+""" CIS(D) Spin MO version
+"""
 #   TO-DO:
 #       1. check and maks sure erints in all funcs are in chemists notation.
 #       2. Simplify tensor computations further to reduce computational overhead
 #       3. clean up API 
-""" CIS(D) Spin MO version
-"""
+#       4. compare with functional code in fast_cis_d.py and write class.
+#
+# 
 from multiprocessing import Pool
 from itertools import product
 from opt_einsum import contract 

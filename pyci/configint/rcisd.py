@@ -26,8 +26,8 @@ from pyci.utils.multproc import pool_jobs
 #   - Cythonize comp_row functions() and import to use parallisation funcs 
 #   - Caculate 1-RDM from a state in CSF basis
 #
-
-OMP_NUM_THREADS = int(os.getenv('OMP_NUM_THREADS'))
+OMP_NUM_THREADS = int(2)
+# OMP_NUM_THREADS = int(os.getenv('OMP_NUM_THREADS'))
 
 def generate_csfs(orbinfo, active_space, options):
     nocc, nmo = orbinfo
@@ -1164,11 +1164,10 @@ def comp_oeprop(mo_oeprop, orbinfo, active_space, options, ncore=OMP_NUM_THREADS
 #     csf_oeprop = np.array(csf_oeprop, dtype=np.float64)
 #     return csf_oeprop
 
-from pyci.utils import molecule
 from scipy.sparse.linalg import eigsh
 from scipy.linalg.lapack import dsyev
 
-class CISD(molecule):
+class CISD(object):
     options = { 'singles' : True,
                 'full_cis' : True,
                 'doubles' : True,
@@ -1178,8 +1177,8 @@ class CISD(molecule):
                 'doubles_ijab_A' : True,
                 'doubles_ijab_B' : True}
     
-    def __init__(self, options, ncore=OMP_NUM_THREADS, optimize=False):
-        mol = molecule
+    def __init__(self, molecule, options={}, ncore=OMP_NUM_THREADS, optimize=False):
+        self.mol = mol = molecule
         for key in options.keys():
             self.options[key] = options[key]
         self.csfs, self.num_csfs = generate_csfs(mol.orbinfo, 
@@ -1206,23 +1205,25 @@ class CISD(molecule):
                                 self.options, ncore=self.ncore)
     
     def energy(self, return_wfn=False): 
-        HCISD0 = self.HCISD - molecule.scf_energy*np.eye(sum(self.num_csfs)) 
+        HCISD0 = self.HCISD - self.mol.scf_energy*np.eye(sum(self.num_csfs)) 
         energy, wfn = eigsh(HCISD0, k=1, which='SM')
-        energy += molecule.scf_energy
+        energy += self.mol.scf_energy
+        energy = energy[0]
         if return_wfn:
             return energy, wfn
         else:
             return energy
     
     def get_eigen(self):
-        HCISD0 = self.HCISD - molecule.scf_energy*np.eye(sum(self.num_csfs)) 
-        vals, vecs = dsyev(self.HCSID0)
-        vals = vals + molecule.scf_energy
+        HCISD0 = self.HCISD - self.mol.scf_energy*np.eye(sum(self.num_csfs)) 
+        sol = dsyev(HCISD0)
+        vals, vecs = sol[0], sol[1]
+        vals = vals + self.mol.scf_energy
         return vals, vecs
     
     def get_dipoles(self):
-        mol = molecule
-        if 'dipoles' not in molecule.properties:
+        mol = self.mol
+        if 'dipoles' not in self.mol.properties:
             raise Exception("dipoles are not in the list of properties to be computed.")
         csf_dpx  = comp_oeprop(mol.mo_dpx, mol.orbinfo, mol.active_space, 
                     self.options, ncore=self.ncore)
@@ -1233,8 +1234,8 @@ class CISD(molecule):
         return csf_dpx, csf_dpy, csf_dpz
 
     def get_quadrupoles(self):
-        mol = molecule
-        if 'quadrupoles' not in molecule.properties:
+        mol = self.mol
+        if 'quadrupoles' not in self.mol.properties:
             raise Exception("quadrupoles are not in the list of properties to be computed.")
         csf_qdxx  = comp_oeprop(mol.mo_qdxx, mol.orbinfo, mol.active_space, 
                     self.options, ncore=self.ncore)
