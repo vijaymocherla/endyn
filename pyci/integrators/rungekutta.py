@@ -33,7 +33,7 @@ class RK4(object):
         iterval = int(0)
         fobj= open(outfile, 'w', buffering=10)
         ncols = 2 + len(ops_list)
-        fobj.write((" {:>24} "*(ncols)+"\n").format('time_fs', 'norm', *ops_headers))
+        fobj.write((" {:>20} "*(ncols)+"\n").format('time_fs', 'norm', *ops_headers))
         RK4._calc_expectations(ops_list, yi, ti, fobj, ncols)
         y_list = []
         t_list = []

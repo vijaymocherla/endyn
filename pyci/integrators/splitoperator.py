@@ -48,7 +48,7 @@ class SplitOperator(object):
         iterval = int(0)
         fobj= open(outfile, 'w', buffering=10)
         ncols = 2 + len(ops_list)
-        fobj.write((" {:>24} "*(ncols)+"\n").format('time_fs', 'norm', *ops_headers))
+        fobj.write((" {:>20} "*(ncols)+"\n").format('time_fs', 'norm', *ops_headers))
         self._calc_expectations(ops_list, yi_eig, ti, fobj, ncols)
         start = perf_counter()
         y_list = []

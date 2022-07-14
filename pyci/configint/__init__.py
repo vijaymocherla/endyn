@@ -1,5 +1,6 @@
-import cis_d
-from rcisd import CISD
+from pyci.configint.rcisd import CISD
+# from pyci.configint.cis_d import CIS_D
+
 # from rcisd import(
 #     # generate_csfs,
 #     # comp_hcisd,

@@ -4,4 +4,6 @@ from pyci.tdci.excite import (
     gaussian_pulse) 
 
 from pyci.tdci.lifetime import (
-    heuristic) 
+    heuristic)
+
+from pyci.tdci import analysis 
