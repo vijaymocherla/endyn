@@ -23,7 +23,7 @@ void rk4dumb(float vstart[], int nvar, float x1, float x2, int nstep,
         for (k = 1; k <=nstep; k++) {
             (*derivs)(x, v, dv);
             rk4(v, dv, nvar, x, h, vout, derivs);
-            if ((float)(x+h) == x) nrerror("Stpe size too small in routine rkdumb");
+            if ((float)(x+h) == x) nrerror("Step size too small in routine rkdumb");
             x += h;
             xx[k+1] = x;
             for (i = 1; i <= nvar; i++) {

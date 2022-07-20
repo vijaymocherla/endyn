@@ -9,3 +9,11 @@ calculations.
 import numpy as np
 
 
+# TO-DO 
+#   - tdci job class with different method options
+#   - improve integration with 
+#           + excite
+#           + lifetime 
+#           + rotational
+#   - clean up the API
+# #

@@ -12,6 +12,14 @@ c = const.value('speed of light in vacuum')
 
 fs_to_au = 41.341374575751
 
+def watt_per_cm2_to_au(I):
+        eps0 = const.value('vacuum electric permittivity')
+        c = const.value('speed of light in vacuum')
+        I = I*1e4 # I in W/cm-2 * 1e4 
+        E0 = np.sqrt(I/(0.5*eps0*c)) /const.value('atomic unit of electric field')
+        # print('E0 : {E0:10.16f}'.format(E0=E0))
+        return E0
+
 def freq_to_wavelength(freq):
     wavelength = 2*np.pi*c/freq * 1/(1e15*fs_to_au)
     return wavelength

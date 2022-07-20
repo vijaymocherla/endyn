@@ -9,7 +9,7 @@ multiprocessing library natively available in python.
 from multiprocessing import Pool
 
 # use better func name
-def pool_jobs(pfunc, arglist, ncore=4):
+def pool_jobs(pfunc, arglist, ncore):
     with Pool(processes=ncore) as pool:
         async_object = pool.map_async(pfunc, arglist)
         data = async_object.get()
