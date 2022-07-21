@@ -13,11 +13,13 @@ import scipy
 __version__ = ''
 exec(open('pyci/__init__.py').read())
 
-EXT_MODULES = [
-            # Extension("pyci.lib.configint.rcisd",
-            #       sources=["pyci/lib/configint/rcisd.c"],
-            #       language="C",
-            #       extra_compile_args = ["-O3", "-funroll-loops", "-Wunused-but-set-variable", "-lm", "-std=c11"],)
+EXT_MODULES = [ 
+                  Extension("pyci.lib.integrators.rungekutta", 
+                        sources=["pyci/lib/integrators/rungekutta.pyx"]),
+                  # Extension("pyci.lib.configint.rcisd",
+                  #       sources=["pyci/lib/configint/rcisd.c"],
+                  #       language="C",
+                  #       extra_compile_args = ["-O3", "-funroll-loops", "-Wunused-but-set-variable", "-lm", "-std=c11"],)
 ]
 
 # Package setup commands 

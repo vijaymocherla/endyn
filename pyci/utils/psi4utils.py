@@ -17,14 +17,15 @@ class psi4utils:
     """Helper class to get AO integrals and other abinitio data from PSI4 
        for time-dependent configuration interaction(TDCI) calculations.
     """
-    def __init__(self, basis, molfile, 
-             wd='./', psi4mem='2 Gb', numpymem=2,
+    def __init__(self, basis, molfile,wd='./', 
+            ncore=2, psi4mem='2 Gb', numpymem=2,
             custom_basis=False, basis_dict=None):
         self.scratch = wd+'.scratch/'
         if not os.path.isdir(self.scratch):
             os.system('mkdir '+wd+'.scratch')
         psi4.core.clean()
         psi4.core.set_output_file(self.scratch+'psi4_output.dat', False) # psi4 output
+        psi4.core.set_num_threads(ncore)
         psi4.set_memory(psi4mem) # psi4 memory 
         self.numpy_memory = numpymem # numpy memory
         self.mol = psi4.geometry(psi4utils.get_mol_str(molfile))
@@ -47,6 +48,7 @@ class psi4utils:
             self.wfn = psi4.core.Wavefunction.build(self.mol, psi4.core.get_global_option('basis'))   
         self.mints = psi4.core.MintsHelper(self.wfn.basisset())
     
+    @staticmethod
     def set_custombasis(basis_dict):        
         def basisspec_psi4_yo__mybasis(mol, role):
             basstrings = {}
@@ -144,10 +146,10 @@ class psi4utils:
 class AOint(psi4utils):
     """A module to get AO integrals using psi4
     """
-    def __init__(self, basis, molfile, 
-             wd='./', psi4mem='2 Gb', numpymem=2,
+    def __init__(self, basis, molfile,wd='./', 
+            ncore=2, psi4mem='2 Gb', numpymem=2,
             custom_basis=False, basis_dict=None):
-        psi4utils.__init__(self, basis, molfile, wd, psi4mem, numpymem, custom_basis, basis_dict)
+        psi4utils.__init__(self, basis, molfile, wd, ncore, psi4mem, numpymem, custom_basis, basis_dict)
         
     def save_ao_oeints(self):
         """Saves S, T and V integrals in AO basis as a .npz file.
@@ -296,10 +298,10 @@ class AOint(psi4utils):
 
 class molecule(object):
     def __init__(self, basis, molfile, wd='./', 
-                 psi4mem='2 Gb', numpymem=2, 
+                 ncore=2, psi4mem='2 Gb', numpymem=2, 
                  custom_basis=False, basis_dict=None,
                  store_wfn=False, properties=[]):
-        aoint = AOint(basis, molfile, wd, psi4mem, 
+        aoint = AOint(basis, molfile, wd, ncore, psi4mem, 
                     numpymem, custom_basis, basis_dict)
         aoint.save_all_aoints()
         aoint.save_mo_info()
