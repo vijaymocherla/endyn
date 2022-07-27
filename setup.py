@@ -16,6 +16,8 @@ exec(open('pyci/__init__.py').read())
 EXT_MODULES = [ 
                   Extension("pyci.lib.integrators.rungekutta", 
                         sources=["pyci/lib/integrators/rungekutta.pyx"]),
+                  Extension("pyci.lib.integrators.splitoperator", 
+                        sources=["pyci/lib/integrators/splitoperator.pyx"]),
                   # Extension("pyci.lib.configint.rcisd",
                   #       sources=["pyci/lib/configint/rcisd.c"],
                   #       language="C",

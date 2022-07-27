@@ -12,6 +12,9 @@ import psi4
 import numpy as np
 from opt_einsum import contract
 import os 
+from scipy.linalg import blas
+
+ALPHA = 1.0
 
 class psi4utils:
     """Helper class to get AO integrals and other abinitio data from PSI4 
@@ -106,11 +109,11 @@ class psi4utils:
             # TODO Check precision issues involved if greedy=True
             print("!!!Warning: Using greedy eri_ao2mo transform\n")
             size = Ca.shape[0]
-            mo_erints = np.dot(Ca.T, ao_erints.reshape(size, -1))
-            mo_erints = np.dot(mo_erints.reshape(-1, size), Ca)
+            mo_erints = blas.dgemm(ALPHA, Ca.T, ao_erints.reshape(size, -1).T, trans_b=True)
+            mo_erints = blas.dgemm(ALPHA, mo_erints.reshape(-1, size), Ca.T, trans_b=True)
             mo_erints = mo_erints.reshape(size, size, size, size).transpose(1, 0, 3, 2)
-            mo_erints = np.dot(Ca.T, mo_erints.reshape(size, -1))
-            mo_erints = np.dot(mo_erints.reshape(-1, size), Ca)
+            mo_erints = blas.dgemm(ALPHA, Ca.T, mo_erints.reshape(size, -1).T, trans_b=True)
+            mo_erints = blas.dgemm(ALPHA, mo_erints.reshape(-1, size), Ca.T, trans_b=True)
             mo_erints = mo_erints.reshape(size, size, size, size).transpose(1, 0, 3, 2)
         else:
             mo_erints = contract('pqrs,pI,qJ,rK,sL->IJKL', ao_erints, Ca, Ca, Ca, Ca, optimize=True)
@@ -314,7 +317,7 @@ class molecule(object):
         if store_wfn:
             self.wfn = aoint.wfn
         ao_erints = aoint.get_ao_erints()
-        self.mo_erints = aoint.eri_ao2mo(Ca, ao_erints, greedy=True)
+        self.mo_erints = aoint.eri_ao2mo(Ca, ao_erints, greedy=False)
         del ao_erints
         self.properties = properties
         if 'dipoles' in self.properties:
