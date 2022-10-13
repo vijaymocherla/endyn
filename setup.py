@@ -16,10 +16,12 @@ exec(open('pyci/__init__.py').read())
 EXT_MODULES = [ 
                   Extension("pyci.lib.integrators.rungekutta", 
                         sources=["pyci/lib/integrators/rungekutta.pyx"]),
-                  # Extension("pyci.lib.configint.rcisd",
-                  #       sources=["pyci/lib/configint/rcisd.c"],
-                  #       language="C",
-                  #       extra_compile_args = ["-O3", "-funroll-loops", "-Wunused-but-set-variable", "-lm", "-std=c11"],)
+                  Extension("pyci.lib.integrators.splitoperator", 
+                        sources=["pyci/lib/integrators/splitoperator.pyx"]),
+                  Extension("pyci.lib.configint.rcisd",
+                         sources=["pyci/lib/configint/rcisd.c"],
+                         language="C",
+                         extra_compile_args = ["-O3", "-funroll-loops", "-Wunused-but-set-variable", "-lm", "-std=c11"],)
 ]
 
 # Package setup commands 

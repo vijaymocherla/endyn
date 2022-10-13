@@ -7,10 +7,10 @@ A module with functions to analyse output from tdci.py
 """
 import numpy as np
 import matplotlib.pyplot as plt
-import matplotlib as mpl
 from numpy import fft
 from pyci.utils.units import fs_to_au
 # some matplolib settings to get production level plots
+import matplotlib as mpl
 mpl.rc('text', usetex=True) # Switches 'ON' LaTex, comment out to switch 'OFF'
 mpl.rc('font', family='sans-serif', serif='Computer Modern')
 mpl.rc('font', size=14)
@@ -25,7 +25,7 @@ def get_prop_data(filename):
     # Fx, Fy, Fz = prop_data[:, 7], prop_data[:, 8], prop_data[:, 9]
     dipoles = (X,Y,Z)
     # fields = (Fx, Fy, Fz)
-    return time_fs, dipoles, energy, norm
+    return time_fs, norm, dipoles, energy
 
 def calc_moments(time_fs, observable):
     time = time_fs * fs_to_au
@@ -33,33 +33,26 @@ def calc_moments(time_fs, observable):
     acceleration = np.gradient(velocity, time)
     return velocity, acceleration
 
-def calc_fft(time_fs, observable, dt_fs=1e-4, return_moments=False,
-             velocity=[0], acceleration=[0]):
+def calc_fft(time_fs, observable, dt_fs=1e-4):
     dt_fs = time_fs[2]-time_fs[1]
     dt = dt_fs * fs_to_au
     time = time_fs * fs_to_au
     freq = 2*np.pi*fft.fftfreq(len(time), dt) 
     obs_fft = fft.fft(observable)
-    if return_moments:
-        obs_vel_fft = fft.fft(velocity)
-        obs_acc_fft = fft.fft(acceleration)
-        return freq, obs_fft, obs_vel_fft, obs_acc_fft
-    else:
-        return freq, obs_fft
+    return freq, obs_fft
 
-def calc_Gobs(time_fs, observable, 
-              return_moments=False, obs_vel=[0], obs_acc=[0], dt_fs=1e-4):
-    freq, obs_fft, obs_vel_fft, obs_acc_fft = calc_fft(time_fs, observable, dt_fs=dt_fs,
-                                                       return_moments=True,
-                                                       velocity=obs_vel,
-                                                       acceleration=obs_acc)
+def calc_Gobs(time_fs, observable, dt_fs=1e-4, return_moments=False):
+    freq, obs_fft= calc_fft(time_fs, observable, dt_fs=dt_fs)
     G_obs = abs(1/((time_fs[-1]-time_fs[0])*fs_to_au) * obs_fft)**2 
-    G_obs_vel = abs(1/((time_fs[-1]-time_fs[0])*fs_to_au) * obs_vel_fft)**2 
-    G_obs_acc = abs(1/((time_fs[-1]-time_fs[0])*fs_to_au) * obs_acc_fft)**2 
     if return_moments:
+        vel, acc = calc_moments(time_fs, observable)
+        freq, obs_vel_fft= calc_fft(time_fs, vel, dt_fs=dt_fs)
+        freq, obs_acc_fft= calc_fft(time_fs, acc, dt_fs=dt_fs)
+        G_obs_vel = abs(1/((time_fs[-1]-time_fs[0])*fs_to_au) * obs_vel_fft)**2 
+        G_obs_acc = abs(1/((time_fs[-1]-time_fs[0])*fs_to_au) * obs_acc_fft)**2 
         return freq, G_obs, G_obs_vel, G_obs_acc
     else:
-        return freq, G_obs
+        return freq, G_obs, [], []
 
 def plot_hhg(freq, G_obs, G_obs_vel, G_obs_acc, axes, label, xmax=15, w0=0.056961578478002):
     n = int(freq.shape[0]/2)

@@ -8,10 +8,14 @@
 #
 """
 """
+from pickletools import optimize
 import psi4
 import numpy as np
 from opt_einsum import contract
 import os 
+from scipy.linalg import blas
+
+ALPHA = 1.0
 
 class psi4utils:
     """Helper class to get AO integrals and other abinitio data from PSI4 
@@ -106,11 +110,11 @@ class psi4utils:
             # TODO Check precision issues involved if greedy=True
             print("!!!Warning: Using greedy eri_ao2mo transform\n")
             size = Ca.shape[0]
-            mo_erints = np.dot(Ca.T, ao_erints.reshape(size, -1))
-            mo_erints = np.dot(mo_erints.reshape(-1, size), Ca)
+            mo_erints = blas.dgemm(ALPHA, Ca.T, ao_erints.reshape(size, -1).T, trans_b=True)
+            mo_erints = blas.dgemm(ALPHA, mo_erints.reshape(-1, size), Ca.T, trans_b=True)
             mo_erints = mo_erints.reshape(size, size, size, size).transpose(1, 0, 3, 2)
-            mo_erints = np.dot(Ca.T, mo_erints.reshape(size, -1))
-            mo_erints = np.dot(mo_erints.reshape(-1, size), Ca)
+            mo_erints = blas.dgemm(ALPHA, Ca.T, mo_erints.reshape(size, -1).T, trans_b=True)
+            mo_erints = blas.dgemm(ALPHA, mo_erints.reshape(-1, size), Ca.T, trans_b=True)
             mo_erints = mo_erints.reshape(size, size, size, size).transpose(1, 0, 3, 2)
         else:
             mo_erints = contract('pqrs,pI,qJ,rK,sL->IJKL', ao_erints, Ca, Ca, Ca, Ca, optimize=True)
@@ -122,16 +126,21 @@ class psi4utils:
         return mo_matrix
     
     @staticmethod
-    def eri_mo2so(mo_erints):
+    def get_mo_so_eri(mo_eps, mo_coeff, ao_erints):
+        """Returns MO spin eri tensor in chemist's notation
+        """
         # TO-DO : code mo to so transform for erints (current implementation is bad)
         print("!!!Warning: Using unstable MO to SO transform eri_mo2so(), instead use eri_mo2so_psi4()\n")
-        dim = mo_erints.shape[0]
-        mo_so_eri=np.zeros((dim*2,dim*2,dim*2,dim*2), np.float64)
-        for p in range(1, dim*2 + 1):
-            for q in range(1, dim*2 + 1):
-                for r in range(1, dim*2 + 1):
-                    for s in range(1, dim*2 + 1):
-                        mo_so_eri[p-1, q-1, r-1, s-1] = (((q/2)==(p/2))*((s/2)==(r/2))*mo_erints[p//2 - 1, q//2 - 1, r//2 - 1, s//2 - 1])
+        Ca, Cb = mo_coeff
+        eps_a, eps_b = mo_eps
+        eps = np.append(eps_a, eps_b)
+        C = np.block([[      Ca,         np.zeros(Cb.shape)],
+                      [np.zeros(Ca.shape),          Cb     ]
+                      ])
+        C = C[:, eps.argsort()]
+        # spin blocking erints 
+        ao_so_eri = np.kron(np.eye(2), np.kron(np.eye(2), ao_erints).T)
+        mo_so_eri = contract('pqrs,pI,qJ,rK,sL->IJKL', ao_so_eri, C, C, C, C, optimize=True)
         return mo_so_eri
 
     def eri_mo2so_psi4(self, Ca, Cb):
@@ -139,7 +148,7 @@ class psi4utils:
         """
         Ca_psi4_matrix = psi4.core.Matrix.from_array(Ca)
         Cb_psi4_matrix = psi4.core.Matrix.from_array(Cb)
-        mo_spin_eri_tensor = np.asarray(self.mints.mo_spin_eri(Ca_psi4_matrix, Cb_psi4_matrix), dtype=np.float64)
+        mo_spin_eri_tensor = np.array(self.mints.mo_spin_eri(Ca_psi4_matrix, Cb_psi4_matrix), dtype=np.float64)
         return mo_spin_eri_tensor
 
 

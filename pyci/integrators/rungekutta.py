@@ -22,15 +22,27 @@ def ops_expt(yi_dag, operator, yi):
     expt = np.real(temp)[0][0]
     return expt
 
+<<<<<<< HEAD
 def _calc_expectations(ops_list, yi, ti):
+=======
+def _calc_expectations(ops_list, yi, ti, y0):
+>>>>>>> 9b4d10056e66132f8e785be77c0bee28dc555066
     ops_expts = []
     yi_dag = np.conjugate(yi)
     ti_fs = ti / units.fs_to_au
     norm = np.real(np.sum(yi_dag * yi))
+<<<<<<< HEAD
     for operator in ops_list:
         expt = ops_expt(yi_dag, operator, yi)
         ops_expts.append(expt)
     return ti_fs, norm, ops_expts
+=======
+    autocorr = np.real(blas.zgemm(ALPHA, np.conjugate(yi), y0, trans_a=True)[0][0])
+    for operator in ops_list:
+        expt = ops_expt(yi_dag, operator, yi)
+        ops_expts.append(expt)
+    return ti_fs, norm, autocorr, ops_expts
+>>>>>>> 9b4d10056e66132f8e785be77c0bee28dc555066
 
 def RK4(func, y0, time_params, ncore=4, ops_list=[], ops_headers=[], 
         print_nstep= 1, outfile='tdprop.txt'):
@@ -39,10 +51,17 @@ def RK4(func, y0, time_params, ncore=4, ops_list=[], ops_headers=[],
     t0, tf, dt = time_params        
     yi, ti = y0, t0
     fobj = open(outfile, 'wb', buffering=0)
+<<<<<<< HEAD
     ncols = 2 + len(ops_list)
     fobj.write((" {:<19} "*(ncols)+"\n").format('time_fs', 'norm', *ops_headers).encode("utf-8"))
     ti_fs, norm, ops_expt = _calc_expectations(ops_list, yi, ti)
     fobj.write((" {:>16.16f} "*(ncols)+"\n").format(ti_fs, norm, *ops_expt).encode("utf-8"))
+=======
+    ncols = 3 + len(ops_list)
+    fobj.write((" {:<19} "*(ncols)+"\n").format('time_fs', 'norm', 'autocorr', *ops_headers).encode("utf-8"))
+    ti_fs, norm, autocorr, ops_expt = _calc_expectations(ops_list, yi, ti, y0)
+    fobj.write((" {:>16.16f} "*(ncols)+"\n").format(ti_fs, norm, autocorr, *ops_expt).encode("utf-8"))
+>>>>>>> 9b4d10056e66132f8e785be77c0bee28dc555066
     start = perf_counter()
     with threadpool_limits(limits=ncore, user_api='blas'):
         while ti <= tf:
@@ -63,8 +82,13 @@ def RK4(func, y0, time_params, ncore=4, ops_list=[], ops_headers=[],
                 k4 = blas.zgemm(ALPHA, Fi.T, (yi + dt*k3).T, trans_a=True)[:,0]
                 yi += ((dt/6.0) * (k1 + 2.0*k2 + 2.0*k3 + k4))
                 ti = ti + dt
+<<<<<<< HEAD
             ti_fs, norm, ops_expt = _calc_expectations(ops_list, yi, ti)
             fobj.write((" {:>16.16f} "*(ncols)+"\n").format(ti_fs, norm, *ops_expt).encode("utf-8"))
+=======
+            ti_fs, norm, autocorr, ops_expt = _calc_expectations(ops_list, yi, ti, y0)
+            fobj.write((" {:>16.16f} "*(ncols)+"\n").format(ti_fs, norm, autocorr, *ops_expt).encode("utf-8"))
+>>>>>>> 9b4d10056e66132f8e785be77c0bee28dc555066
     stop = perf_counter()
     print('Time taken %3.3f seconds' % (stop-start))    
     return 0
