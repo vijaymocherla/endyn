@@ -93,16 +93,13 @@ class CISD(object):
                                                 mol.active_space, 
                                                 self.options)
         self.ncore = ncore                
-        self.HCISD = None
     
     def gen_hcisd(self):
-        self.HCISD = self.comp_hcisd(ncore=self.ncore)
-        return 0
+        HCISD = self.comp_hcisd(ncore=self.ncore)
+        return HCISD
 
-    def energy(self, return_wfn=False):
-        if type(self.HCISD) == type(None):
-            self.gen_hcisd()
-        HCISD0 = self.HCISD - self.mol.scf_energy*np.eye(sum(self.num_csfs)) 
+    def energy(self, HCISD, return_wfn=False):
+        HCISD0 = HCISD - self.mol.scf_energy*np.eye(sum(self.num_csfs)) 
         energy, wfn = eigsh(HCISD0, k=1, which='SM')
         energy += self.mol.scf_energy
         energy = energy[0]
@@ -111,10 +108,8 @@ class CISD(object):
         else:
             return energy
     
-    def get_eigen(self):
-        if type(self.HCISD) == type(None):
-            self.gen_hcisd()
-        HCISD0 = self.HCISD - self.mol.scf_energy*np.eye(sum(self.num_csfs)) 
+    def get_eigen(self, HCISD):
+        HCISD0 = HCISD - self.mol.scf_energy*np.eye(sum(self.num_csfs)) 
         sol = dsyev(HCISD0)
         vals, vecs = sol[0], sol[1]
         vals = vals + self.mol.scf_energy
@@ -129,6 +124,27 @@ class CISD(object):
         csf_dpz  = self.comp_oeprop(mol.mo_dpz, ncore=self.ncore)
         return csf_dpx, csf_dpy, csf_dpz
     
+    def save_dpx(self):
+        mol = self.mol    
+        csf_dpx = self.comp_oeprop(mol.mo_dpx, ncore=self.ncore)
+        np.savez('dpx.npz', csf_dpx=csf_dpx)
+        del csf_dpx
+        return 0
+
+    def save_dpy(self):
+        mol = self.mol    
+        csf_dpy  = self.comp_oeprop(mol.mo_dpy, ncore=self.ncore)
+        np.savez('dpy.npz', csf_dpy=csf_dpy)
+        del csf_dpy
+        return 0
+    
+    def save_dpz(self):
+        mol = self.mol
+        csf_dpz  = self.comp_oeprop(mol.mo_dpz, ncore=self.ncore)
+        np.savez('dpz.npz', csf_dpz=csf_dpz)
+        del csf_dpz
+        return 0
+
     def get_all_quadrupoles(self):
         mol = self.mol
         if 'quadrupoles' not in self.mol.properties:
@@ -148,7 +164,10 @@ class CISD(object):
     def get_quadrupole(self, mo_quadrupole):
         csf_quadrupole = self.comp_oeprop(mo_quadrupole, ncore=self.ncore)
         return csf_quadrupole
-
+    
+    def save_csf_dipole(self, dire):
+        return 0
+    
     def comp_hrow_hf(self):
         mol = self.mol
         mo_eps = mol.mo_eps[0]

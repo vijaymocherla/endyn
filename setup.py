@@ -19,9 +19,13 @@ EXT_MODULES = [
                   Extension("pyci.lib.integrators.splitoperator", 
                         sources=["pyci/lib/integrators/splitoperator.pyx"]),
                   Extension("pyci.lib.configint.rcisd",
-                         sources=["pyci/lib/configint/rcisd.c"],
-                         language="C",
-                         extra_compile_args = ["-O3", "-funroll-loops", "-Wunused-but-set-variable", "-lm", "-std=c11"],)
+                         sources=["pyci/lib/configint/rcisd.pyx"]),
+                  Extension("pyci.lib.configint.cis_d",
+                         sources=["pyci/lib/configint/fast_cis_d.pyx"]),
+                  # Extension("pyci.lib.configint.rcisd",
+                  #        sources=["pyci/lib/configint/rcisd.pyx"],
+			#        language="C",
+                  #        extra_compile_args = ["-O3", "-funroll-loops", "-Wunused-but-set-variable", "-lm", "-std=c11"],)
 ]
 
 # Package setup commands 

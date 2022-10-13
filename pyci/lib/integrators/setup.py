@@ -9,6 +9,9 @@ EXT_MODULES=[
     Extension("splitoperator", ["splitoperator.pyx"])
 ]
 
+for e in EXT_MODULES:
+    e.cython_directives = {'language_level': "3"} #all are Python-3
+
 setup(
   name = 'intergrators',
   cmdclass = {'build_ext': build_ext},
