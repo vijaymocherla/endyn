@@ -85,12 +85,14 @@ class CISD(object):
                 'doubles_ijab_A' : True,
                 'doubles_ijab_B' : True}
     
-    def __init__(self, molecule, options={}, ncore=4):
+    def __init__(self, molecule, active_space=[], options={}, ncore=4):
         self.mol = mol = molecule
         for key in options.keys():
             self.options[key] = options[key]
+        if len(active_space) != 2:
+            active_space = mol.active_space 
         self.csfs, self.num_csfs = generate_csfs(mol.orbinfo, 
-                                                mol.active_space, 
+                                                active_space, 
                                                 self.options)
         self.ncore = ncore                
     
