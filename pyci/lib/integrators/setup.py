@@ -6,6 +6,7 @@ from Cython.Distutils import build_ext
 
 EXT_MODULES=[
     Extension("rungekutta", ["rungekutta.pyx"]),
+    Extension("splitoperator", ["splitoperator.pyx"])
 ]
 
 setup(

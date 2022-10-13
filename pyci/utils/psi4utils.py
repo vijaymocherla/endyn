@@ -307,14 +307,14 @@ class molecule(object):
         aoint.save_mo_info()
         self.mo_eps, self.mo_coeff = aoint.get_mo_info()
         Ca = self.mo_coeff[0]
-        nbf, nmo, nso, na, nb, nocc, nvirt = aoint.get_orb_info(aoint.wfn)        
+        nbf, nmo, nso, na, nb, nocc, nvirt = aoint.get_orb_info(aoint.scf_wfn)        
         self.scf_energy = aoint.scf_energy
         self.orbinfo = (nocc, nmo)
         self.active_space = (nocc,nvirt)
         if store_wfn:
-            self.wfn = aoint.wfn
+            self.wfn = aoint.scf_wfn
         ao_erints = aoint.get_ao_erints()
-        self.mo_erints = aoint.eri_ao2mo(Ca, ao_erints, greedy=True)
+        self.mo_erints = aoint.eri_ao2mo(Ca, ao_erints, greedy=False)
         del ao_erints
         self.properties = properties
         if 'dipoles' in self.properties:
