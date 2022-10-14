@@ -23,7 +23,8 @@ class psi4utils:
     """
     def __init__(self, basis, molfile,wd='./', 
             ncore=2, psi4mem='2 Gb', numpymem=2,
-            custom_basis=False, basis_dict=None):
+            custom_basis=False, basis_dict=None, 
+            psi4options={}):
         self.scratch = wd+'.scratch/'
         if not os.path.isdir(self.scratch):
             os.system('mkdir '+wd+'.scratch')
@@ -40,16 +41,19 @@ class psi4utils:
             else:
                 psi4utils.set_custombasis(basis_dict)
         self.options_dict = {'basis': basis,
+                            'puream': True, # False for cartesian basis sets
                             'reference' : 'rhf',
                             'scf_type' : 'pk',
                             'e_convergence' : 1e-12,
-                            'd_convergence' : 1e-10}            
+                            'd_convergence' : 1e-10}
+        for option in psi4options:
+            self.options_dict[option] = psi4options[option]            
         psi4.set_options(self.options_dict)               
         self.wfn = psi4.core.Wavefunction.build(self.mol, psi4.core.get_global_option('basis'))
-        if self.wfn.basisset().has_puream():
-            self.options_dict['puream'] = 'true'
-            psi4.set_options(self.options_dict)
-            self.wfn = psi4.core.Wavefunction.build(self.mol, psi4.core.get_global_option('basis'))   
+        # if self.wfn.basisset().has_puream():
+        #     self.options_dict['puream'] = 'true'
+        #     psi4.set_options(self.options_dict)
+        #     self.wfn = psi4.core.Wavefunction.build(self.mol, psi4.core.get_global_option('basis'))   
         self.mints = psi4.core.MintsHelper(self.wfn.basisset())
     
     @staticmethod
@@ -157,8 +161,9 @@ class AOint(psi4utils):
     """
     def __init__(self, basis, molfile,wd='./', 
             ncore=2, psi4mem='2 Gb', numpymem=2,
-            custom_basis=False, basis_dict=None):
-        psi4utils.__init__(self, basis, molfile, wd, ncore, psi4mem, numpymem, custom_basis, basis_dict)
+            custom_basis=False, basis_dict=None, psi4options={}):
+        psi4utils.__init__(self, basis, molfile, wd, ncore, psi4mem, numpymem, 
+                            custom_basis, basis_dict, psi4options)
         
     def save_ao_oeints(self):
         """Saves S, T and V integrals in AO basis as a .npz file.
@@ -309,9 +314,9 @@ class molecule(object):
     def __init__(self, basis, molfile, wd='./', 
                  ncore=2, psi4mem='2 Gb', numpymem=2, 
                  custom_basis=False, basis_dict=None,
-                 store_wfn=False, properties=[]):
+                 store_wfn=False, properties=[], psi4options={}):
         aoint = AOint(basis, molfile, wd, ncore, psi4mem, 
-                    numpymem, custom_basis, basis_dict)
+                    numpymem, custom_basis, basis_dict, psi4options)
         aoint.save_all_aoints()
         aoint.save_mo_info()
         self.mo_eps, self.mo_coeff = aoint.get_mo_info()

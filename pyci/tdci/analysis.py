@@ -20,12 +20,13 @@ def get_prop_data(filename):
     prop_data = np.loadtxt(filename, skiprows=1)
     time_fs = prop_data[:, 0]
     norm = prop_data[:, 1]
-    X, Y, Z = prop_data[:, 2], prop_data[:, 3], prop_data[:, 4]
-    energy = prop_data[:, 5]
+    autocorr = prop_data[:, 2]
+    X, Y, Z = prop_data[:, 3], prop_data[:, 4], prop_data[:, 5]
+    energy = prop_data[:, 6]
     # Fx, Fy, Fz = prop_data[:, 7], prop_data[:, 8], prop_data[:, 9]
     dipoles = (X,Y,Z)
     # fields = (Fx, Fy, Fz)
-    return time_fs, norm, dipoles, energy
+    return time_fs, norm, autocorr, dipoles, energy
 
 def calc_moments(time_fs, observable):
     time = time_fs * fs_to_au

@@ -1,7 +1,11 @@
 #!/usr/bin/env python
 #
-#   Author: Sai Vijay Mocherla <vijaysai.mocherla@gmail.com>
+# Author: Sai Vijay Mocherla <vijaysai.mocherla@gmail.com>
 #
+
+"""rungekutta.py
+"""
+
 import numpy as np 
 from time import perf_counter
 from scipy.linalg import blas
@@ -10,13 +14,23 @@ from threadpoolctl import threadpool_limits
 
 ALPHA = 1.0+0j
 
+# NOTE:   
+# ---
+# Check `Fi.flags` and `yi.flags` before passing arrays to 
+# methods from scipy.linalg.blas as, it can give significant speedups.
+# >>> scheme1 = blas.zgemm(ALPHA, Fi, yi)
+# >>> scheme2 = blas.zgemm(ALPHA, Fi.T, yi.T, trans_a=True) 
+# scheme2 is ~1.5x faster than scheme1 as the 2d numpy array
+# Fi can be NOT F_CONTIGUOUS but is C_CONTIGUOUS.
+# For more information see: https://scipy.github.io/old-wiki/pages/PerformanceTips
+# ---
 
 def ops_expt(yi_dag, operator, yi):
-    #NOTE:
+    # NOTE:
     # In the following case for the operation (vec.matrix.vec), 
     # the implement scheme is 10-100x faster than the version
     # where the array.flags are not check for memory form
-    # #
+    #
     temp = blas.zgemm(ALPHA, operator.T, yi.T, trans_a=True)[:,0]
     temp = blas.zgemm(ALPHA, yi_dag.T, temp, trans_a=True)
     expt = np.real(temp)[0][0]
@@ -47,15 +61,6 @@ def RK4(func, y0, time_params, ncore=4, ops_list=[], ops_headers=[],
     start = perf_counter()
     with threadpool_limits(limits=ncore, user_api='blas'):
         while ti <= tf:
-            # NOTE:   
-            # check `Fi.flags` and `yi.flags` before passing arrays to 
-            # methods from scipy.linalg.blas as, it can give significant speedups.
-            # >>> scheme1 = blas.zgemm(ALPHA, Fi, yi)
-            # >>> scheme2 = blas.zgemm(ALPHA, Fi.T, yi.T, trans_a=True) 
-            # scheme2 is ~1.5x faster than scheme1 as the 2d numpy array
-            # Fi can be NOT F_CONTIGUOUS but is C_CONTIGUOUS.
-            # For more information see: https://scipy.github.io/old-wiki/pages/PerformanceTips
-            # 
             for i in range(print_nstep):    
                 Fi = func(ti)
                 k1 = blas.zgemm(ALPHA, Fi.T, yi.T, trans_a=True)[:,0]
