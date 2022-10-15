@@ -50,11 +50,6 @@ class psi4utils:
             self.options_dict[option] = psi4options[option]            
         psi4.set_options(self.options_dict)               
         self.wfn = psi4.core.Wavefunction.build(self.mol, psi4.core.get_global_option('basis'))
-        # if self.wfn.basisset().has_puream():
-        #     self.options_dict['puream'] = 'true'
-        #     psi4.set_options(self.options_dict)
-        #     self.wfn = psi4.core.Wavefunction.build(self.mol, psi4.core.get_global_option('basis'))   
-        self.mints = psi4.core.MintsHelper(self.wfn.basisset())
     
     @staticmethod
     def set_custombasis(basis_dict):        
@@ -164,6 +159,8 @@ class AOint(psi4utils):
             custom_basis=False, basis_dict=None, psi4options={}):
         psi4utils.__init__(self, basis, molfile, wd, ncore, psi4mem, numpymem, 
                             custom_basis, basis_dict, psi4options)
+        self.mints = psi4.core.MintsHelper(self.wfn.basisset())
+
         
     def save_ao_oeints(self):
         """Saves S, T and V integrals in AO basis as a .npz file.
@@ -183,24 +180,10 @@ class AOint(psi4utils):
                 overlap_aoints=overlap_aoints,
                 kinetic_aoints=kinetic_aoints,
                 potential_aoints=potential_aoints)
+        del overlap_aoints, kinetic_aoints, potential_aoints
         return 1
 
-    def get_ao_oeints(self):
-        """ Returns S, T, V in AO basis
-        """
-        ao_oeints = np.load(self.scratch+'ao_oeints.npz')
-        ao_overlap = ao_oeints['overlap_aoints']
-        ao_kinetic = ao_oeints['kinetic_aoints']
-        ao_potential = ao_oeints['potential_aoints']
-        return ao_overlap, ao_kinetic, ao_potential
-    
-    def get_ao_erints(self):
-        """ Returns erints in AO basis
-        """
-        ao_erints = np.load(self.scratch + 'ao_erints.npz')['electron_repulsion_aoints']
-        return ao_erints
-
-    def save_ao_erints(self): 
+    def save_ao_erints(self, format='memmap'): 
         """Saves 2-electron repulsion integrals in AO basis as a .npz file.
            For example, you can load the saved integrals as follows:
            ```py
@@ -211,7 +194,19 @@ class AOint(psi4utils):
         nbf = self.wfn.basisset().nbf() 
         if psi4utils.check_mem_eri(nbf, self.numpy_memory): 
             electron_repulsion_aoints = np.asarray(self.mints.ao_eri())
-            np.savez(self.scratch+'ao_erints.npz', electron_repulsion_aoints=electron_repulsion_aoints)
+            eri_shape = electron_repulsion_aoints.shape
+            if format == 'memmap':
+                eri_memmap = np.memmap(self.scratch+'ao_erints.dat', dtype=np.float64, 
+                                mode='w+', shape=eri_shape)
+                for i in range(eri_shape[0]):
+                    eri_memmap[i] = electron_repulsion_aoints[i]
+                del eri_memmap
+            elif format == 'npz':
+                np.savez(self.scratch+'ao_erints.npz', electron_repulsion_aoints=electron_repulsion_aoints)
+            elif format == 'npy':
+                np.savez(self.scratch+'ao_erints.npy', electron_repulsion_aoints)
+            else:
+                raise Exception("Unknown format was given for saving ERI tensor. Please choose: .npy, .npz or memmap")
         return 1    
 
     def save_ao_dpints(self):
@@ -230,15 +225,6 @@ class AOint(psi4utils):
                 dpy_aoints=dpy_aoints,
                 dpz_aoints=dpz_aoints)
         return 1
-
-    def get_ao_dpints(self):
-        """ Returns dipole integrals in AO basis
-        """
-        ao_dipoles_data = np.load(self.scratch+'ao_dpints.npz')
-        ao_dpx = ao_dipoles_data['dpx_aoints']
-        ao_dpy = ao_dipoles_data['dpy_aoints']
-        ao_dpz = ao_dipoles_data['dpz_aoints']
-        return ao_dpx, ao_dpy, ao_dpz
 
     def save_ao_qdints(self):
         """Saves dipole integrals in AO basis as a .npz file.
@@ -265,7 +251,42 @@ class AOint(psi4utils):
                 qdzz_aoints=qdzz_aoints)
         return 1
 
+    def get_ao_oeints(self):
+        """ Returns S, T, V in AO basis
+        """
+        ao_oeints = np.load(self.scratch+'ao_oeints.npz')
+        ao_overlap = ao_oeints['overlap_aoints']
+        ao_kinetic = ao_oeints['kinetic_aoints']
+        ao_potential = ao_oeints['potential_aoints']
+        return ao_overlap, ao_kinetic, ao_potential
+    
+    def get_ao_erints(self, format='memmap'):
+        """ Returns erints in AO basis
+        """
+        ndim = self.wfn.nmo()
+        eri_shape = (ndim, ndim, ndim, ndim)
+        if format == 'memmap':
+            ao_erints = np.memmap(self.scratch+'ao_erints.dat', dtype=np.float64, shape=eri_shape)
+        elif format == 'npz':
+            ao_erints = np.load(self.scratch + 'ao_erints.npz')['electron_repulsion_aoints']
+        elif format == 'npz':
+            ao_erints = np.load(self.scratch + 'ao_erints.npz')['electron_repulsion_aoints']
+        else:
+            raise Exception("Unknown format was given for saving ERI tensor. Please choose: .npy, .npz or memmap")
+        return ao_erints
+
+    def get_ao_dpints(self):
+        """ Returns dipole integrals in AO basis
+        """
+        ao_dipoles_data = np.load(self.scratch+'ao_dpints.npz')
+        ao_dpx = ao_dipoles_data['dpx_aoints']
+        ao_dpy = ao_dipoles_data['dpy_aoints']
+        ao_dpz = ao_dipoles_data['dpz_aoints']
+        return ao_dpx, ao_dpy, ao_dpz
+
     def get_ao_qdints(self):
+        """ Returns dipole integrals in AO basis
+        """
         ao_dipoles_data = np.load(self.scratch+'ao_qdints.npz')
         ao_qdxx = ao_dipoles_data['qdxx_aoints']
         ao_qdxy = ao_dipoles_data['qdxy_aoints']
@@ -275,10 +296,12 @@ class AOint(psi4utils):
         ao_qdzz = ao_dipoles_data['qdzz_aoints']
         return ao_qdxx, ao_qdxy, ao_qdxz, ao_qdyy, ao_qdyz, ao_qdzz 
 
-    def save_all_aoints(self):
+    def save_all_aoints(self, quadrupole=False):
         self.save_ao_erints()
         self.save_ao_oeints()
         self.save_ao_dpints()
+        if quadrupole:
+            self.save_ao_qdints()
         return 1    
     
     
