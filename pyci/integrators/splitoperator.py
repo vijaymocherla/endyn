@@ -84,8 +84,8 @@ def SplitOperator(eigvals, eigvecs, field_func, y0, time_params,
     while ti <= tf:
         for i in range(print_nstep):
             exp_field = project_matrix_eigbasis(expm(1j*field_func(ti)*dt), eigvecs)
-            yn_eig = np.exp(-1j*eigvals*dt) * yi_eig
-            yn_eig = blas.zgemm(ALPHA, exp_field.T, yn_eig, trans_a=True)[:,0]
+            yi_eig = np.exp(-1j*eigvals*dt) * yi_eig
+            yi_eig = blas.zgemm(ALPHA, exp_field.T, yi_eig, trans_a=True)[:,0]
             ti = ti + dt
         _calc_expectations(yi_eig, ti, ops_list, eigvecs, y0_csf, fobj, ncols)
     fobj.close()
