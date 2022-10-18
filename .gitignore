@@ -130,9 +130,8 @@ dmypy.json
 
 # Pyre type checker
 .pyre/
-pyci/utils/psi4utils.py
 .gitignore
-pyci/lib/integrators/splitoperator.c
 pyci/lib/configint/rcisd.c
+pyci/lib/integrators/splitoperator.c
 pyci/lib/integrators/rungekutta.c
-.gitignore
+pyci/lib/integrators/cranknicholson.c

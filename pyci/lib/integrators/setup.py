@@ -6,8 +6,8 @@ from Cython.Distutils import build_ext
 
 EXT_MODULES=[
     Extension("rungekutta", ["rungekutta.pyx"]),
-    Extension("splitoperator", ["splitoperator.pyx"])
-]
+    Extension("splitoperator", ["splitoperator.pyx"]),
+    Extension("cranknicholson", ["cranknicholson.pyx"])]
 
 for e in EXT_MODULES:
     e.cython_directives = {'language_level': "3"} #all are Python-3

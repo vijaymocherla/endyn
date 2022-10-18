@@ -18,6 +18,8 @@ EXT_MODULES = [
                         sources=["pyci/lib/integrators/rungekutta.pyx"]),
                   Extension("pyci.lib.integrators.splitoperator", 
                         sources=["pyci/lib/integrators/splitoperator.pyx"]),
+                  Extension("pyci.lib.integrators.cranknicholson", 
+                        sources=["pyci/lib/integrators/cranknicholson.pyx"]),
                   Extension("pyci.lib.configint.rcisd",
                          sources=["pyci/lib/configint/rcisd.pyx"]),
                   Extension("pyci.lib.configint.cis_d",

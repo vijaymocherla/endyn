@@ -11,3 +11,4 @@ from pyci import configint
 from pyci import integrators
 from pyci import lib
 from pyci import utils
+from pyci import linalg

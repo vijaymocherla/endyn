@@ -15,6 +15,7 @@
 
 
 import numpy as np
+from scipy.linalg.blas import zgemv, dgemv
 from scipy.linalg.blas import zgemm, dgemm
 
 def zmul_mmm(A, B, C):
@@ -46,8 +47,8 @@ def zmul_mv(A, x):
     if not np.isfortran(A):
         A = A.T
     if not np.isfortran(x):
-        B = B.T
-    y = zgemv(1.0+0j, A, B)[:,0]
+        x = x.T
+    y = zgemv(1.0+0j, A, x)
     return y
 
 def dmul_mm(A, B):
@@ -66,8 +67,8 @@ def dmul_mv(A, x):
     if not np.isfortran(A):
         A = A.T
     if not np.isfortran(x):
-        B = B.T
-    y = dgemv(1.0, A, B)[:,0]
+        x = x.T
+    y = dgemv(1.0, A, x)
     return y
 
 def dmul_mmm(A, B, C):

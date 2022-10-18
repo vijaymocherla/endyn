@@ -6,7 +6,7 @@
 import numpy as np
 from scipy.linalg.lapack import dgetrf, dgetri, zgetrf, zgetri
 
-def zmatinv(A):
+def zmat_inv(A):
     """Computes the inverse of a matrix of complex-doubles
     """
     if not np.isfortran(A):
@@ -15,7 +15,7 @@ def zmatinv(A):
     Ainv, info = zgetri(lu,piv)
     return Ainv
 
-def dmatinv(A):
+def dmat_inv(A):
     """Computes the inverse of a matrix of doubles
     """
     if not np.isfortran(A):
