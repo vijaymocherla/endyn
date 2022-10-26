@@ -2,75 +2,54 @@
 #
 # Author: Sai Vijay Mocherla <vijaysai.mocherla@gmail.com>
 #
-
 """rungekutta.py
 """
 
-import numpy as np 
+import numpy as np
 from time import perf_counter
-from scipy.linalg import blas
 from pyci.utils import units
 from threadpoolctl import threadpool_limits
+from pyci.linalg.blas import zmul_mm, zmul_mmm
+from pyci.linalg.blas import zmul_mv, zmul_zdotc, zmul_zdotu
 
-ALPHA = 1.0+0j
 
-# NOTE:   
-# ---
-# Check `Fi.flags` and `yi.flags` before passing arrays to 
-# methods from scipy.linalg.blas as, it can give significant speedups.
-# >>> scheme1 = blas.zgemm(ALPHA, Fi, yi)
-# >>> scheme2 = blas.zgemm(ALPHA, Fi.T, yi.T, trans_a=True) 
-# scheme2 is ~1.5x faster than scheme1 as the 2d numpy array
-# Fi can be NOT F_CONTIGUOUS but is C_CONTIGUOUS.
-# For more information see: https://scipy.github.io/old-wiki/pages/PerformanceTips
-# ---
-
-def ops_expt(yi_dag, operator, yi):
-    # NOTE:
-    # In the following case for the operation (vec.matrix.vec), 
-    # the implement scheme is 10-100x faster than the version
-    # where the array.flags are not check for memory form
-    #
-    temp = blas.zgemm(ALPHA, operator.T, yi.T, trans_a=True)[:,0]
-    temp = blas.zgemm(ALPHA, yi_dag.T, temp, trans_a=True)
-    expt = np.real(temp)[0][0]
-    return expt
-
-def _calc_expectations(ops_list, yi, ti, y0):
+def _calc_expectations(ops_list, psi_i, psi_0):
     ops_expts = []
-    yi_dag = np.conjugate(yi)
-    ti_fs = ti / units.fs_to_au
-    norm = np.real(np.sum(yi_dag * yi))
-    autocorr = np.real(blas.zgemm(ALPHA, np.conjugate(yi), y0, trans_a=True)[0][0])
+    norm = zmul_zdotc(psi_i, psi_i).real
+    autocorr = np.abs(zmul_zdotu(psi_i, psi_0))
     for operator in ops_list:
-        expt = ops_expt(yi_dag, operator, yi)
+        expt = zmul_zdotc(psi_i, zmul_mv(operator, psi_i)).real
         ops_expts.append(expt)
-    return ti_fs, norm, autocorr, ops_expts
+    return ops_expts, norm, autocorr
 
-def RK4(func, y0, time_params, ncore=4, ops_list=[], ops_headers=[], 
-        print_nstep= 1, outfile='tdprop.txt'):
-    """Fixed step-size implementation of fourth order runge-kutta 
+
+def RK4(func, psi_0, time_params, ncore=4, ops_list=[], ops_headers=[],
+        print_nstep=1, outfile='tdprop.txt'):
+    """ Fixed step-size implementation of fourth order runge-kutta 
     """
-    t0, tf, dt = time_params        
-    yi, ti = y0, t0
+    t0, tf, dt = time_params
+    psi_i, ti = np.copy(psi_0), t0
     fobj = open(outfile, 'wb', buffering=0)
     ncols = 3 + len(ops_list)
-    fobj.write((" {:<19} "*(ncols)+"\n").format('time_fs', 'norm', 'autocorr', *ops_headers).encode("utf-8"))
-    ti_fs, norm, autocorr, ops_expt = _calc_expectations(ops_list, yi, ti, y0)
+    fobj.write((" {:<19} "*(ncols)+"\n").format('time_fs',
+               'norm', 'autocorr', *ops_headers).encode("utf-8"))
+    ti_fs = ti / units.fs_to_au
+    ops_expt, norm, autocorr = _calc_expectations(ops_list, psi_i, psi_0)
     fobj.write((" {:>16.16f} "*(ncols)+"\n").format(ti_fs, norm, autocorr, *ops_expt).encode("utf-8"))
     start = perf_counter()
     with threadpool_limits(limits=ncore, user_api='blas'):
         while ti <= tf:
-            for i in range(print_nstep):    
+            for i in range(print_nstep):
                 Fi = func(ti)
-                k1 = blas.zgemm(ALPHA, Fi.T, yi.T, trans_a=True)[:,0]
-                k2 = blas.zgemm(ALPHA, Fi.T, (yi + (dt/2.0)*k1).T, trans_a=True)[:,0]
-                k3 = blas.zgemm(ALPHA, Fi.T, (yi + (dt/2.0)*k2).T, trans_a=True)[:,0]
-                k4 = blas.zgemm(ALPHA, Fi.T, (yi + dt*k3).T, trans_a=True)[:,0]
-                yi += ((dt/6.0) * (k1 + 2.0*k2 + 2.0*k3 + k4))
-                ti = ti + dt
-            ti_fs, norm, autocorr, ops_expt = _calc_expectations(ops_list, yi, ti, y0)
+                k1 = zmul_mv(Fi, psi_i)
+                k2 = zmul_mv(Fi, (psi_i + (dt*0.5)*k1))
+                k3 = zmul_mv(Fi, (psi_i + (dt*0.5)*k2))
+                k4 = zmul_mv(Fi, (psi_i + (dt*1.0)*k3))
+                psi_i += ((dt/6.0) * (k1 + 2.0*k2 + 2.0*k3 + k4))
+                ti += dt
+            ti_fs = ti / units.fs_to_au
+            ops_expt, norm, autocorr  = _calc_expectations(ops_list, psi_i, psi_0)
             fobj.write((" {:>16.16f} "*(ncols)+"\n").format(ti_fs, norm, autocorr, *ops_expt).encode("utf-8"))
     stop = perf_counter()
-    print('Time taken %3.3f seconds' % (stop-start))    
+    print('Time taken %3.3f seconds' % (stop-start))
     return 0

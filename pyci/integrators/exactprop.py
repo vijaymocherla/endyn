@@ -1,3 +1,7 @@
+#!/usr/bin/env
+#
+# 
+
 import numpy as np 
 from time import perf_counter
 from scipy.linalg import blas
@@ -7,8 +11,8 @@ from threadpoolctl import threadpool_limits
 ALPHA = 1+0j
 
 class ExactProp(object):
-    """Given eigenvalues and eigen-vectors(in a certain basis), the methods of 
-    exact_prop() aids in exact time-propagation.  
+    """ Given eigenvalues and eigen-vectors(in a certain basis), the methods of 
+        exact_prop() aids in exact time-propagation.  
     """
     def __init__(self, eigen_values, eigen_vectors, y0, time_params, ncore=4):
         self.eigvals = eigen_values         # eigvals[i] => i-th eigenvalue
