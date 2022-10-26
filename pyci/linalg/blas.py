@@ -13,20 +13,18 @@
 # For more information see: https://scipy.github.io/old-wiki/pages/PerformanceTips
 # ---
 
-
 import numpy as np
 from scipy.linalg.blas import zgemv, dgemv
 from scipy.linalg.blas import zgemm, dgemm
+from scipy.linalg.blas import ddot, zdotu, zdotc
+
+def chkf90(array): 
+    return np.asfortranarray(array)
 
 def zmul_mmm(A, B, C):
     """Matrix-Matrix multiplication for complex doubles
     """
-    if not np.isfortran(A):
-        A = A.T
-    if not np.isfortran(B):
-        B = B.T
-    if not np.isfortran(C):
-        C = C.T
+    A, B, C = chkf90(A), chkf90(B), chkf90(C)
     D = zgemm(1.0+0j, A, B)
     D = zgemm(1.0+0j, D, C)  
     return D
@@ -34,52 +32,57 @@ def zmul_mmm(A, B, C):
 def zmul_mm(A, B):
     """Matrix-Matrix multiplication for complex doubles
     """
-    if not np.isfortran(A):
-        A = A.T
-    if not np.isfortran(B):
-        B = B.T
+    A, B = chkf90(A), chkf90(B)
     C = zgemm(1.0+0j, A, B)
     return C
 
 def zmul_mv(A, x):
     """Matrix-vector multiplication for complex doubles
     """
-    if not np.isfortran(A):
-        A = A.T
-    if not np.isfortran(x):
-        x = x.T
+    A, x = chkf90(A), chkf90(x)
     y = zgemv(1.0+0j, A, x)
     return y
+
+def zmul_zdotc(x, y):
+    """ Returns x^{\dagger} . y
+        Note: This returns the inner product <x|y>
+    """
+    x, y = chkf90(x), chkf90(y)
+    dot = zdotc(x, y)
+    return dot
+
+def zmul_zdotu(x, y):
+    """ Returns x^{T} . y
+    """
+    x, y = chkf90(x), chkf90(y)
+    dot = zdotu(x, y)
+    return dot
 
 def dmul_mm(A, B):
     """Matrix-vector multiplication for doubles
     """
-    if not np.isfortran(A):
-        A = A.T
-    if not np.isfortran(B):
-        B = B.T
+    A, B = chkf90(A), chkf90(B)
     C = dgemm(1.0, A, B)
     return C
 
 def dmul_mv(A, x):
     """Matrix-Matrix multiplication for doubles
     """
-    if not np.isfortran(A):
-        A = A.T
-    if not np.isfortran(x):
-        x = x.T
+    A, x = chkf90(A), chkf90(x)
     y = dgemv(1.0, A, x)
     return y
+
+def dmul_dot(x, y):
+    """Returns dot product of two vectors.
+    """
+    x, y = chkf90(x), chkf90(y)
+    dot = ddot(x, y)
+    return dot
 
 def dmul_mmm(A, B, C):
     """Matrix-Matrix multiplication for doubles
     """
-    if not np.isfortran(A):
-        A = A.T
-    if not np.isfortran(B):
-        B = B.T
-    if not np.isfortran(C):
-        C = C.T
+    A, B, C = chkf90(A), chkf90(B), chkf90(C)
     D = dgemm(1.0, A, B)
     D = dgemm(1.0, D, C)
     return D
