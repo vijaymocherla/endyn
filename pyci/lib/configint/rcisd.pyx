@@ -89,8 +89,8 @@ class CISD(object):
         self.mol = mol = molecule
         for key in options.keys():
             self.options[key] = options[key]
-        if len(active_space) != 2:
-            active_space = mol.active_space 
+        if len(active_space) == 0:
+            active_space = mol.active_space
         self.csfs, self.num_csfs = generate_csfs(mol.orbinfo, 
                                                 active_space, 
                                                 self.options)
