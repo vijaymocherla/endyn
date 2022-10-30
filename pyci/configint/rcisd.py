@@ -94,7 +94,8 @@ class CISD(object):
         self.csfs, self.num_csfs = generate_csfs(mol.orbinfo, 
                                                 active_space, 
                                                 self.options)
-        self.ncore = ncore                
+        self.ncore = ncore
+        self.mo_erints = mol.get_mo_erints()                
     
     def gen_hcisd(self):
         HCISD = self.comp_hcisd(ncore=self.ncore)
@@ -118,45 +119,45 @@ class CISD(object):
         return vals, vecs
     
     def get_all_dipoles(self):
-        mol = self.mol
+        mo_dpx, mo_dpy, mo_dpz = self.mol.get_mo_dpints()
         if 'dipoles' not in self.mol.properties:
             raise Exception("dipoles are not in the list of properties to be computed.")
-        csf_dpy  = self.comp_oeprop(mol.mo_dpy, ncore=self.ncore)
-        csf_dpx  = self.comp_oeprop(mol.mo_dpx, ncore=self.ncore)
-        csf_dpz  = self.comp_oeprop(mol.mo_dpz, ncore=self.ncore)
+        csf_dpy  = self.comp_oeprop(mo_dpy, ncore=self.ncore)
+        csf_dpx  = self.comp_oeprop(mo_dpx, ncore=self.ncore)
+        csf_dpz  = self.comp_oeprop(mo_dpz, ncore=self.ncore)
         return csf_dpx, csf_dpy, csf_dpz
     
     def save_dpx(self):
-        mol = self.mol    
-        csf_dpx = self.comp_oeprop(mol.mo_dpx, ncore=self.ncore)
+        mo_dpx = np.load(self.scratch+'mo_dpints.npz')['dpx_moints']
+        csf_dpx = self.comp_oeprop(mo_dpx, ncore=self.ncore)
         np.savez('dpx.npz', csf_dpx=csf_dpx)
         del csf_dpx
         return 0
 
     def save_dpy(self):
-        mol = self.mol    
-        csf_dpy  = self.comp_oeprop(mol.mo_dpy, ncore=self.ncore)
+        mo_dpy = np.load(self.scratch+'mo_dpints.npz')['dpy_moints']    
+        csf_dpy  = self.comp_oeprop(mo_dpy, ncore=self.ncore)
         np.savez('dpy.npz', csf_dpy=csf_dpy)
         del csf_dpy
         return 0
     
     def save_dpz(self):
-        mol = self.mol
-        csf_dpz  = self.comp_oeprop(mol.mo_dpz, ncore=self.ncore)
+        mo_dpz = np.load(self.scratch+'mo_dpints.npz')['dpz_moints']
+        csf_dpz  = self.comp_oeprop(mo_dpz, ncore=self.ncore)
         np.savez('dpz.npz', csf_dpz=csf_dpz)
         del csf_dpz
         return 0
 
     def get_all_quadrupoles(self):
-        mol = self.mol
+        mo_qdxx, mo_qdxy, mo_qdxz, mo_qdyy, mo_qdyz, mo_qdzz = self.mol.get_mo_qdints()
         if 'quadrupoles' not in self.mol.properties:
             raise Exception("quadrupoles are not in the list of properties to be computed.")
-        csf_qdxx  = self.comp_oeprop(mol.mo_qdxx, ncore=self.ncore)
-        csf_qdxy  = self.comp_oeprop(mol.mo_qdxy, ncore=self.ncore)
-        csf_qdxz  = self.comp_oeprop(mol.mo_qdxz, ncore=self.ncore)
-        csf_qdyy  = self.comp_oeprop(mol.mo_qdyy, ncore=self.ncore)
-        csf_qdyz  = self.comp_oeprop(mol.mo_qdyz, ncore=self.ncore)
-        csf_qdzz  = self.comp_oeprop(mol.mo_qdzz, ncore=self.ncore)
+        csf_qdxx  = self.comp_oeprop(mo_qdxx, ncore=self.ncore)
+        csf_qdxy  = self.comp_oeprop(mo_qdxy, ncore=self.ncore)
+        csf_qdxz  = self.comp_oeprop(mo_qdxz, ncore=self.ncore)
+        csf_qdyy  = self.comp_oeprop(mo_qdyy, ncore=self.ncore)
+        csf_qdyz  = self.comp_oeprop(mo_qdyz, ncore=self.ncore)
+        csf_qdzz  = self.comp_oeprop(mo_qdzz, ncore=self.ncore)
         return csf_qdxx, csf_qdxy, csf_qdxz, csf_qdyy, csf_qdyz, csf_qdzz
 
     def get_dipole(self, mo_dipole):
@@ -167,13 +168,10 @@ class CISD(object):
         csf_quadrupole = self.comp_oeprop(mo_quadrupole, ncore=self.ncore)
         return csf_quadrupole
     
-    def save_csf_dipole(self, dire):
-        return 0
-    
     def comp_hrow_hf(self):
         mol = self.mol
         mo_eps = mol.mo_eps[0]
-        mo_erints = mol.mo_erints
+        mo_erints = self.mo_erints
         scf_energy = mol.scf_energy 
         csfs = self.csfs 
         num_csfs = self.num_csfs 
@@ -229,7 +227,7 @@ class CISD(object):
     def comp_hrow_ia(self, P):
         mol = self.mol
         mo_eps = mol.mo_eps[0]
-        mo_erints = mol.mo_erints
+        mo_erints = self.mo_erints
         scf_energy = mol.scf_energy 
         csfs = self.csfs 
         num_csfs = self.num_csfs 
@@ -299,7 +297,7 @@ class CISD(object):
     def comp_hrow_iiaa(self, P):
         mol = self.mol
         mo_eps = mol.mo_eps[0]
-        mo_erints = mol.mo_erints
+        mo_erints = self.mo_erints
         scf_energy = mol.scf_energy 
         csfs = self.csfs 
         num_csfs = self.num_csfs 
@@ -370,7 +368,7 @@ class CISD(object):
     def comp_hrow_iiab(self, P):
         mol = self.mol
         mo_eps = mol.mo_eps[0]
-        mo_erints = mol.mo_erints
+        mo_erints = self.mo_erints
         scf_energy = mol.scf_energy 
         csfs = self.csfs 
         num_csfs = self.num_csfs 
@@ -455,7 +453,7 @@ class CISD(object):
     def comp_hrow_ijaa(self, P):
         mol = self.mol
         mo_eps = mol.mo_eps[0]
-        mo_erints = mol.mo_erints
+        mo_erints = self.mo_erints
         scf_energy = mol.scf_energy 
         csfs = self.csfs 
         num_csfs = self.num_csfs 
@@ -540,7 +538,7 @@ class CISD(object):
     def comp_hrow_ijab_A(self, P):
         mol = self.mol
         mo_eps = mol.mo_eps[0]
-        mo_erints = mol.mo_erints
+        mo_erints = self.mo_erints
         scf_energy = mol.scf_energy 
         csfs = self.csfs 
         num_csfs = self.num_csfs 
@@ -651,7 +649,7 @@ class CISD(object):
     def comp_hrow_ijab_B(self, P):
         mol = self.mol
         mo_eps = mol.mo_eps[0]
-        mo_erints = mol.mo_erints
+        mo_erints = self.mo_erints
         scf_energy = mol.scf_energy 
         csfs = self.csfs 
         num_csfs = self.num_csfs 
