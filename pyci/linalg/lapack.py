@@ -2,7 +2,6 @@
 #
 # Author : Sai Vijay Mocherla
 #
-
 import numpy as np
 from scipy.linalg.lapack import dgetrf, dgetri, zgetrf, zgetri
 from scipy.linalg.lapack import dgesv, zgesv

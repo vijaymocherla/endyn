@@ -87,6 +87,7 @@ class CISD(object):
     
     def __init__(self, molecule, active_space=[], options={}, ncore=4):
         self.mol = mol = molecule
+        self.scratch = mol.scratch
         for key in options.keys():
             self.options[key] = options[key]
         if len(active_space) == 0:
@@ -94,8 +95,7 @@ class CISD(object):
         self.csfs, self.num_csfs = generate_csfs(mol.orbinfo, 
                                                 active_space, 
                                                 self.options)
-        self.ncore = ncore
-        self.mo_erints = mol.get_mo_erints()                
+        self.ncore = ncore               
     
     def gen_hcisd(self):
         HCISD = self.comp_hcisd(ncore=self.ncore)
@@ -171,7 +171,7 @@ class CISD(object):
     def comp_hrow_hf(self):
         mol = self.mol
         mo_eps = mol.mo_eps[0]
-        mo_erints = self.mo_erints
+        mo_erints = mol.mo_erints
         scf_energy = mol.scf_energy 
         csfs = self.csfs 
         num_csfs = self.num_csfs 
@@ -227,7 +227,7 @@ class CISD(object):
     def comp_hrow_ia(self, P):
         mol = self.mol
         mo_eps = mol.mo_eps[0]
-        mo_erints = self.mo_erints
+        mo_erints = mol.mo_erints
         scf_energy = mol.scf_energy 
         csfs = self.csfs 
         num_csfs = self.num_csfs 
@@ -297,7 +297,7 @@ class CISD(object):
     def comp_hrow_iiaa(self, P):
         mol = self.mol
         mo_eps = mol.mo_eps[0]
-        mo_erints = self.mo_erints
+        mo_erints = mol.mo_erints
         scf_energy = mol.scf_energy 
         csfs = self.csfs 
         num_csfs = self.num_csfs 
@@ -368,7 +368,7 @@ class CISD(object):
     def comp_hrow_iiab(self, P):
         mol = self.mol
         mo_eps = mol.mo_eps[0]
-        mo_erints = self.mo_erints
+        mo_erints = mol.mo_erints
         scf_energy = mol.scf_energy 
         csfs = self.csfs 
         num_csfs = self.num_csfs 
@@ -453,7 +453,7 @@ class CISD(object):
     def comp_hrow_ijaa(self, P):
         mol = self.mol
         mo_eps = mol.mo_eps[0]
-        mo_erints = self.mo_erints
+        mo_erints = mol.mo_erints
         scf_energy = mol.scf_energy 
         csfs = self.csfs 
         num_csfs = self.num_csfs 
@@ -538,7 +538,7 @@ class CISD(object):
     def comp_hrow_ijab_A(self, P):
         mol = self.mol
         mo_eps = mol.mo_eps[0]
-        mo_erints = self.mo_erints
+        mo_erints = mol.mo_erints
         scf_energy = mol.scf_energy 
         csfs = self.csfs 
         num_csfs = self.num_csfs 
@@ -649,7 +649,7 @@ class CISD(object):
     def comp_hrow_ijab_B(self, P):
         mol = self.mol
         mo_eps = mol.mo_eps[0]
-        mo_erints = self.mo_erints
+        mo_erints = mol.mo_erints
         scf_energy = mol.scf_energy 
         csfs = self.csfs 
         num_csfs = self.num_csfs 
@@ -1220,4 +1220,3 @@ class CISD(object):
             raise Exception("Error: posval not equal to CSFs")
         csf_oeprop = np.array(csf_oeprop, dtype=np.float64)
         return csf_oeprop
-

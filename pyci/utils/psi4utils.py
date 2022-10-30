@@ -21,10 +21,9 @@ class psi4utils:
     """Helper class to get AO integrals and other abinitio data from PSI4 
        for time-dependent configuration interaction(TDCI) calculations.
     """
-    def __init__(self, basis, molfile,wd='./', 
+    def __init__(self, basis, molfile, wd='./', 
             ncore=2, psi4mem='2 Gb', numpymem=2,
-            custom_basis=False, basis_dict=None, 
-            psi4options={}):
+            custom_basis=False, basis_dict=None, psi4options={}):
         self.scratch = wd+'.scratch/'
         if not os.path.isdir(self.scratch):
             os.system('mkdir '+wd+'.scratch')
@@ -80,7 +79,7 @@ class psi4utils:
             raise Exception("Estimated memory utlisation (%4.2f Gb) exceeds \
                             alloted memory limit (%4.2f Gb)" % (memory_footprint, numpy_memory))
         else:
-            return 0                     
+            return 1                     
 
     @staticmethod
     def get_orb_info(wfn):    
@@ -155,13 +154,13 @@ class psi4utils:
 class AOint(psi4utils):
     """A module to get AO integrals using psi4
     """
-    def __init__(self, basis, molfile,wd='./', 
+    def __init__(self, basis, molfile, wd='./', 
             ncore=2, psi4mem='2 Gb', numpymem=2,
             custom_basis=False, basis_dict=None, psi4options={}):
-        psi4utils.__init__(self, basis, molfile, wd, ncore, psi4mem, numpymem, 
+        psi4utils.__init__(self, basis, molfile, wd, 
+                            ncore, psi4mem, numpymem, 
                             custom_basis, basis_dict, psi4options)
 
-        
     def save_ao_oeints(self):
         """Saves S, T and V integrals in AO basis as a .npz file.
            For example, you can load the saved integrals as follows:
@@ -195,6 +194,7 @@ class AOint(psi4utils):
         nbf = self.wfn.basisset().nbf() 
         mints = psi4.core.MintsHelper(self.wfn.basisset())
         if psi4utils.check_mem_eri(nbf, self.numpy_memory): 
+            # print('Saving AO Electron Repulsion Integrals as Numpy memmap object \n')
             electron_repulsion_aoints = np.asarray(mints.ao_eri())
             eri_shape = electron_repulsion_aoints.shape
             if format == 'memmap':
@@ -300,14 +300,18 @@ class AOint(psi4utils):
         ao_qdzz = ao_dipoles_data['qdzz_aoints']
         return ao_qdxx, ao_qdxy, ao_qdxz, ao_qdyy, ao_qdyz, ao_qdzz 
 
-    def save_all_aoints(self, quadrupole=False):
+    def save_all_aoints(self, dipoles=False, quadrupole=False):
+        print('COMPUTING AO ELECTRON REPULSION INTEGRALS\n')
         self.save_ao_erints()
+        print('COMPUTING AO ONE ELECTRON INTEGRALS\n')
         self.save_ao_oeints()
-        self.save_ao_dpints()
+        if dipoles:
+            print('COMPUTING AO DIPOLE INTEGRALS\n')
+            self.save_ao_dpints()
         if quadrupole:
+            print('COMPUTING AO QUADRUPOLE INTEGRALS\n')
             self.save_ao_qdints()
         return 0    
-    
     
     def save_mo_info(self):
         """Runs an SCF calculation and saves info about molecular orbitals.  
@@ -339,26 +343,31 @@ class AOint(psi4utils):
 
 class molecule(AOint):
     def __init__(self, basis, molfile, wd='./', 
-                 ncore=2, psi4mem='2 Gb', numpymem=2, 
-                 custom_basis=False, basis_dict=None,
-                 store_wfn=False, properties=[], psi4options={}):
-        AOint.__init__(basis, molfile, wd, ncore, psi4mem, 
+                 ncore=2, psi4mem='2 Gb', numpymem=2, custom_basis=False, 
+                 store_wfn=False, basis_dict=None, properties=[], psi4options={}):
+        aoint = AOint(basis, molfile, wd, ncore, psi4mem, 
                         numpymem, custom_basis, basis_dict, psi4options)
-        self.save_all_aoints()
-        self.save_mo_info()
-        self.mo_eps, self.mo_coeff = self.get_mo_info()
-        nbf, nmo, nso, na, nb, nocc, nvirt = self.get_orb_info(self.scf_wfn)        
-        self.scf_energy = self.scf_energy
+        aoint.save_all_aoints()
+        self.scratch = aoint.scratch
+        aoint.save_mo_info()
+        if store_wfn:
+            self.scf_wfn = aoint.scf_wfn
+        self.scf_energy = aoint.scf_energy
+        self.mo_eps, self.mo_coeff = aoint.get_mo_info()
+        nbf, nmo, nso, na, nb, nocc, nvirt = aoint.get_orb_info(aoint.scf_wfn)        
         self.orbinfo = (nocc, nmo)
         self.active_space = (nocc,nvirt)
-        if store_wfn:
-            self.scf_wfn = self.scf_wfn
+        self.save_mo_erints(aoint)
+        self.mo_erints = self.get_mo_erints()
         if 'dipoles' in properties:
-            self.save_mo_dipoles()
+            aoint.save_ao_dpints()
+            self.save_mo_dpints(aoint)
         if 'quadrupoles' in properties:
-            self.save_mo_quadrupoles()
-        
-    def save_mo_erints(self, format='memmap'): 
+            aoint.save_ao_qdints()
+            self.save_mo_qdints(aoint)
+
+
+    def save_mo_erints(self, aoint, format='memmap'): 
         """Saves 2-electron repulsion integrals in AO basis as a .npz file.
            For example, you can load the saved integrals as follows:
            ```py
@@ -367,8 +376,9 @@ class molecule(AOint):
            ``` 
         """   
         Ca = self.mo_coeff[0]
-        mo_erints = self.get_ao_erints()
+        mo_erints = aoint.get_ao_erints()
         mo_erints = self.eri_ao2mo(Ca, mo_erints, greedy=False)
+        eri_shape = mo_erints.shape
         if format == 'memmap':
             eri_memmap = np.memmap(self.scratch+'mo_erints.dat', dtype=np.float64, 
                                 mode='w+', shape=eri_shape)
@@ -383,18 +393,20 @@ class molecule(AOint):
             raise Exception("Unknown format was given for saving MO ERI tensor. Please choose: .npy, .npz or memmap")
         return 0  
     
-    def save_mo_dipoles(self):
-        ao_dpx, ao_dpy, ao_dpz = self.get_ao_dpints()
+    def save_mo_dpints(self, aoint):
+        Ca = self.mo_coeff[0]
+        ao_dpx, ao_dpy, ao_dpz = aoint.get_ao_dpints()
         mo_dpx = self.matrix_ao2mo(Ca, ao_dpx)
         mo_dpy = self.matrix_ao2mo(Ca, ao_dpy)
         mo_dpz = self.matrix_ao2mo(Ca, ao_dpz)
-        np.savez(self.scratch+'mo_dipoles.npz', 
-                 mo_dpx=mo_dpx, mo_dpy=mo_dpx, mo_dpz=mo_dpx)
+        np.savez(self.scratch+'mo_dpints.npz', 
+                 dpx_moints=mo_dpx, dpy_moints=mo_dpx, dpz_moints=mo_dpx)
         return 0
 
-    def save_mo_quadrupoles(self):
+    def save_mo_qdints(self, aoint):
+        Ca = self.mo_coeff[0]
         (ao_qdxx, ao_qdxy, ao_qdxz, 
-        ao_qdyy, ao_qdyz, ao_qdzz) = self.get_ao_qdints()
+        ao_qdyy, ao_qdyz, ao_qdzz) = aoint.get_ao_qdints()
         mo_qdxx = self.matrix_ao2mo(Ca, ao_qdxx)
         mo_qdxy = self.matrix_ao2mo(Ca, ao_qdxy)
         mo_qdxz = self.matrix_ao2mo(Ca, ao_qdxz)
@@ -402,15 +414,15 @@ class molecule(AOint):
         mo_qdyz = self.matrix_ao2mo(Ca, ao_qdyz)
         mo_qdzz = self.matrix_ao2mo(Ca, ao_qdzz)
         del ao_qdxx, ao_qdxy, ao_qdxz, ao_qdyy, ao_qdyz, ao_qdzz
-        np.savez(self.scratch+'mo_dipoles.npz',
-                mo_qdxx=mo_qdxx, mo_qdxy=mo_qdxy, mo_qdxz=mo_qdxz,
-                mo_qdyy=mo_qdyy, mo_qdyz=mo_qdyz, mo_qdzz=mo_qdzz)
+        np.savez(self.scratch+'mo_qdints.npz',
+                qdxx_moints=mo_qdxx, qdxy_moints=mo_qdxy, qdxz_moints=mo_qdxz,
+                qdyy_moints=mo_qdyy, qdyz_moints=mo_qdyz, qdzz_moints=mo_qdzz)
         return 0
     
     def get_mo_erints(self, format='memmap'):
         """ Returns erints in MO basis
         """
-        ndim = self.wfn.nmo()
+        ndim = self.orbinfo[1]
         eri_shape = (ndim, ndim, ndim, ndim)
         if format == 'memmap':
             mo_erints = np.memmap(self.scratch+'mo_erints.dat', dtype=np.float64, shape=eri_shape)
