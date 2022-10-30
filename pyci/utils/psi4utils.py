@@ -80,7 +80,7 @@ class psi4utils:
             raise Exception("Estimated memory utlisation (%4.2f Gb) exceeds \
                             alloted memory limit (%4.2f Gb)" % (memory_footprint, numpy_memory))
         else:
-            return 1                     
+            return 0                     
 
     @staticmethod
     def get_orb_info(wfn):    
@@ -145,9 +145,10 @@ class psi4utils:
     def eri_mo2so_psi4(self, Ca, Cb):
         """Returns MO spin eri tensor in chemist's notation
         """
+        mints = psi4.core.MintsHelper(self.wfn.basisset())
         Ca_psi4_matrix = psi4.core.Matrix.from_array(Ca)
         Cb_psi4_matrix = psi4.core.Matrix.from_array(Cb)
-        mo_spin_eri_tensor = np.array(self.mints.mo_spin_eri(Ca_psi4_matrix, Cb_psi4_matrix), dtype=np.float64)
+        mo_spin_eri_tensor = np.array(mints.mo_spin_eri(Ca_psi4_matrix, Cb_psi4_matrix), dtype=np.float64)
         return mo_spin_eri_tensor
 
 
@@ -159,7 +160,6 @@ class AOint(psi4utils):
             custom_basis=False, basis_dict=None, psi4options={}):
         psi4utils.__init__(self, basis, molfile, wd, ncore, psi4mem, numpymem, 
                             custom_basis, basis_dict, psi4options)
-        self.mints = psi4.core.MintsHelper(self.wfn.basisset())
 
         
     def save_ao_oeints(self):
@@ -172,16 +172,17 @@ class AOint(psi4utils):
            >>> V = ao_oeints_data['potential_aoints']
            ```
         """
+        mints = psi4.core.MintsHelper(self.wfn.basisset())
         # one-electron integrals 
-        overlap_aoints = np.asarray(self.mints.ao_overlap(), dtype=np.float64)
-        kinetic_aoints = np.asarray(self.mints.ao_kinetic(), dtype=np.float64)
-        potential_aoints = np.asarray(self.mints.ao_potential(), dtype=np.float64)
+        overlap_aoints = np.asarray(mints.ao_overlap(), dtype=np.float64)
+        kinetic_aoints = np.asarray(mints.ao_kinetic(), dtype=np.float64)
+        potential_aoints = np.asarray(mints.ao_potential(), dtype=np.float64)
         np.savez(self.scratch+'ao_oeints.npz', 
                 overlap_aoints=overlap_aoints,
                 kinetic_aoints=kinetic_aoints,
                 potential_aoints=potential_aoints)
         del overlap_aoints, kinetic_aoints, potential_aoints
-        return 1
+        return 0
 
     def save_ao_erints(self, format='memmap'): 
         """Saves 2-electron repulsion integrals in AO basis as a .npz file.
@@ -192,8 +193,9 @@ class AOint(psi4utils):
            ``` 
         """   
         nbf = self.wfn.basisset().nbf() 
+        mints = psi4.core.MintsHelper(self.wfn.basisset())
         if psi4utils.check_mem_eri(nbf, self.numpy_memory): 
-            electron_repulsion_aoints = np.asarray(self.mints.ao_eri())
+            electron_repulsion_aoints = np.asarray(mints.ao_eri())
             eri_shape = electron_repulsion_aoints.shape
             if format == 'memmap':
                 eri_memmap = np.memmap(self.scratch+'ao_erints.dat', dtype=np.float64, 
@@ -207,7 +209,7 @@ class AOint(psi4utils):
                 np.savez(self.scratch+'ao_erints.npy', electron_repulsion_aoints)
             else:
                 raise Exception("Unknown format was given for saving ERI tensor. Please choose: .npy, .npz or memmap")
-        return 1    
+        return 0    
 
     def save_ao_dpints(self):
         """Saves dipole integrals in AO basis as a .npz file.
@@ -219,12 +221,13 @@ class AOint(psi4utils):
            >>> ao_dpz = ao_dipoles_data['dpz_aoints']
            ```
         """
-        dpx_aoints, dpy_aoints, dpz_aoints =  np.asarray(self.mints.ao_dipole(), dtype=np.float64)
+        mints = psi4.core.MintsHelper(self.wfn.basisset())
+        dpx_aoints, dpy_aoints, dpz_aoints =  np.asarray(mints.ao_dipole(), dtype=np.float64)
         np.savez(self.scratch+'ao_dpints.npz',
                 dpx_aoints=dpx_aoints,
                 dpy_aoints=dpy_aoints,
                 dpz_aoints=dpz_aoints)
-        return 1
+        return 0
 
     def save_ao_qdints(self):
         """Saves dipole integrals in AO basis as a .npz file.
@@ -240,8 +243,9 @@ class AOint(psi4utils):
 
            ```
         """
+        mints = psi4.core.MintsHelper(self.wfn.basisset())
         (qdxx_aoints, qdxy_aoints, qdxz_aoints, 
-        qdyy_aoints, qdyz_aoints, qdzz_aoints) =  np.asarray(self.mints.ao_quadrupole(), dtype=np.float64)
+        qdyy_aoints, qdyz_aoints, qdzz_aoints) =  np.asarray(mints.ao_quadrupole(), dtype=np.float64)
         np.savez(self.scratch+'ao_qdints.npz',
                 qdxx_aoints=qdxx_aoints,
                 qdxy_aoints=qdxy_aoints,
@@ -249,7 +253,7 @@ class AOint(psi4utils):
                 qdyy_aoints=qdyy_aoints,
                 qdyz_aoints=qdyz_aoints,
                 qdzz_aoints=qdzz_aoints)
-        return 1
+        return 0
 
     def get_ao_oeints(self):
         """ Returns S, T, V in AO basis
@@ -269,8 +273,8 @@ class AOint(psi4utils):
             ao_erints = np.memmap(self.scratch+'ao_erints.dat', dtype=np.float64, shape=eri_shape)
         elif format == 'npz':
             ao_erints = np.load(self.scratch + 'ao_erints.npz')['electron_repulsion_aoints']
-        elif format == 'npz':
-            ao_erints = np.load(self.scratch + 'ao_erints.npz')['electron_repulsion_aoints']
+        elif format == 'npy':
+            ao_erints = np.load(self.scratch + 'ao_erints.np')
         else:
             raise Exception("Unknown format was given for saving ERI tensor. Please choose: .npy, .npz or memmap")
         return ao_erints
@@ -302,7 +306,7 @@ class AOint(psi4utils):
         self.save_ao_dpints()
         if quadrupole:
             self.save_ao_qdints()
-        return 1    
+        return 0    
     
     
     def save_mo_info(self):
@@ -324,7 +328,7 @@ class AOint(psi4utils):
         Cb = np.array(self.scf_wfn.Cb_subset('AO','ALL'), dtype=np.float64)
         eps_b = np.array(self.scf_wfn.epsilon_b_subset('AO', 'ALL'), dtype=np.float64)
         np.savez(self.scratch+'mo_scf_info.npz', eps_a=eps_a, Ca=Ca, eps_b=eps_b, Cb=Cb)
-        return 1
+        return 0
 
     def get_mo_info(self):
         eps_a = np.load(self.scratch+'mo_scf_info.npz')['eps_a']
@@ -333,41 +337,108 @@ class AOint(psi4utils):
         Cb = np.load(self.scratch+'mo_scf_info.npz')['Cb']
         return (eps_a, eps_b), (Ca, Cb) 
 
-class molecule(object):
+class molecule(AOint):
     def __init__(self, basis, molfile, wd='./', 
                  ncore=2, psi4mem='2 Gb', numpymem=2, 
                  custom_basis=False, basis_dict=None,
                  store_wfn=False, properties=[], psi4options={}):
-        aoint = AOint(basis, molfile, wd, ncore, psi4mem, 
-                    numpymem, custom_basis, basis_dict, psi4options)
-        aoint.save_all_aoints()
-        aoint.save_mo_info()
-        self.mo_eps, self.mo_coeff = aoint.get_mo_info()
-        Ca = self.mo_coeff[0]
-        nbf, nmo, nso, na, nb, nocc, nvirt = aoint.get_orb_info(aoint.scf_wfn)        
-        self.scf_energy = aoint.scf_energy
+        AOint.__init__(basis, molfile, wd, ncore, psi4mem, 
+                        numpymem, custom_basis, basis_dict, psi4options)
+        self.save_all_aoints()
+        self.save_mo_info()
+        self.mo_eps, self.mo_coeff = self.get_mo_info()
+        nbf, nmo, nso, na, nb, nocc, nvirt = self.get_orb_info(self.scf_wfn)        
+        self.scf_energy = self.scf_energy
         self.orbinfo = (nocc, nmo)
         self.active_space = (nocc,nvirt)
         if store_wfn:
-            self.wfn = aoint.scf_wfn
-        ao_erints = aoint.get_ao_erints()
-        self.mo_erints = aoint.eri_ao2mo(Ca, ao_erints, greedy=False)
-        del ao_erints
-        self.properties = properties
-        if 'dipoles' in self.properties:
-            ao_dpx, ao_dpy, ao_dpz = aoint.get_ao_dpints()
-            self.mo_dpx = aoint.matrix_ao2mo(Ca, ao_dpx)
-            self.mo_dpy = aoint.matrix_ao2mo(Ca, ao_dpy)
-            self.mo_dpz = aoint.matrix_ao2mo(Ca, ao_dpz)
-            del ao_dpx, ao_dpy, ao_dpz
-        if 'quadrupoles' in self.properties:
-            (ao_qdxx, ao_qdxy, ao_qdxz, 
-             ao_qdyy, ao_qdyz, ao_qdzz) = aoint.get_ao_qdints()
-            self.mo_qdxx = aoint.matrix_ao2mo(Ca, ao_qdxx)
-            self.mo_qdxy = aoint.matrix_ao2mo(Ca, ao_qdxy)
-            self.mo_qdxz = aoint.matrix_ao2mo(Ca, ao_qdxz)
-            self.mo_qdyy = aoint.matrix_ao2mo(Ca, ao_qdyy)
-            self.mo_qdyz = aoint.matrix_ao2mo(Ca, ao_qdyz)
-            self.mo_qdzz = aoint.matrix_ao2mo(Ca, ao_qdzz)
-            del ao_qdxx, ao_qdxy, ao_qdxz, ao_qdyy, ao_qdyz, ao_qdzz
+            self.scf_wfn = self.scf_wfn
+        if 'dipoles' in properties:
+            self.save_mo_dipoles()
+        if 'quadrupoles' in properties:
+            self.save_mo_quadrupoles()
         
+    def save_mo_erints(self, format='memmap'): 
+        """Saves 2-electron repulsion integrals in AO basis as a .npz file.
+           For example, you can load the saved integrals as follows:
+           ```py
+           >>> mo_erints_data = np.load(os.path.join(scratch_dir,'mo_erints.npz'))
+           >>> mo_erints = mo_erints_data['electron_repulsion_aoints']
+           ``` 
+        """   
+        Ca = self.mo_coeff[0]
+        mo_erints = self.get_ao_erints()
+        mo_erints = self.eri_ao2mo(Ca, mo_erints, greedy=False)
+        if format == 'memmap':
+            eri_memmap = np.memmap(self.scratch+'mo_erints.dat', dtype=np.float64, 
+                                mode='w+', shape=eri_shape)
+            for i in range(eri_shape[0]):
+                eri_memmap[i] = mo_erints[i]
+            del eri_memmap
+        elif format == 'npz':
+            np.savez(self.scratch+'mo_erints.npz', mo_erints=mo_erints)
+        elif format == 'npy':
+            np.savez(self.scratch+'mo_erints.npy', mo_erints)
+        else:
+            raise Exception("Unknown format was given for saving MO ERI tensor. Please choose: .npy, .npz or memmap")
+        return 0  
+    
+    def save_mo_dipoles(self):
+        ao_dpx, ao_dpy, ao_dpz = self.get_ao_dpints()
+        mo_dpx = self.matrix_ao2mo(Ca, ao_dpx)
+        mo_dpy = self.matrix_ao2mo(Ca, ao_dpy)
+        mo_dpz = self.matrix_ao2mo(Ca, ao_dpz)
+        np.savez(self.scratch+'mo_dipoles.npz', 
+                 mo_dpx=mo_dpx, mo_dpy=mo_dpx, mo_dpz=mo_dpx)
+        return 0
+
+    def save_mo_quadrupoles(self):
+        (ao_qdxx, ao_qdxy, ao_qdxz, 
+        ao_qdyy, ao_qdyz, ao_qdzz) = self.get_ao_qdints()
+        mo_qdxx = self.matrix_ao2mo(Ca, ao_qdxx)
+        mo_qdxy = self.matrix_ao2mo(Ca, ao_qdxy)
+        mo_qdxz = self.matrix_ao2mo(Ca, ao_qdxz)
+        mo_qdyy = self.matrix_ao2mo(Ca, ao_qdyy)
+        mo_qdyz = self.matrix_ao2mo(Ca, ao_qdyz)
+        mo_qdzz = self.matrix_ao2mo(Ca, ao_qdzz)
+        del ao_qdxx, ao_qdxy, ao_qdxz, ao_qdyy, ao_qdyz, ao_qdzz
+        np.savez(self.scratch+'mo_dipoles.npz',
+                mo_qdxx=mo_qdxx, mo_qdxy=mo_qdxy, mo_qdxz=mo_qdxz,
+                mo_qdyy=mo_qdyy, mo_qdyz=mo_qdyz, mo_qdzz=mo_qdzz)
+        return 0
+    
+    def get_mo_erints(self, format='memmap'):
+        """ Returns erints in MO basis
+        """
+        ndim = self.wfn.nmo()
+        eri_shape = (ndim, ndim, ndim, ndim)
+        if format == 'memmap':
+            mo_erints = np.memmap(self.scratch+'mo_erints.dat', dtype=np.float64, shape=eri_shape)
+        elif format == 'npz':
+            mo_erints = np.load(self.scratch + 'mo_erints.npz')['mo_erints']
+        elif format == 'npy':
+            mo_erints = np.load(self.scratch + 'mo_erints.npy')
+        else:
+            raise Exception("Unknown format was given for saving ERI tensor. Please choose: .npy, .npz or memmap")
+        return mo_erints
+
+    def get_mo_dpints(self):
+        """ Returns dipole integrals in MO basis
+        """
+        mo_dipoles_data = np.load(self.scratch+'mo_dpints.npz')
+        mo_dpx = mo_dipoles_data['dpx_moints']
+        mo_dpy = mo_dipoles_data['dpy_moints']
+        mo_dpz = mo_dipoles_data['dpz_moints']
+        return mo_dpx, mo_dpy, mo_dpz
+
+    def get_mo_qdints(self):
+        """ Returns dipole integrals in MO basis
+        """
+        mo_dipoles_data = np.load(self.scratch+'mo_qdints.npz')
+        mo_qdxx = mo_dipoles_data['qdxx_moints']
+        mo_qdxy = mo_dipoles_data['qdxy_moints']
+        mo_qdxz = mo_dipoles_data['qdxz_moints']
+        mo_qdyy = mo_dipoles_data['qdyy_moints']
+        mo_qdyz = mo_dipoles_data['qdyz_moints']
+        mo_qdzz = mo_dipoles_data['qdzz_moints']
+        return mo_qdxx, mo_qdxy, mo_qdxz, mo_qdyy, mo_qdyz, mo_qdzz
