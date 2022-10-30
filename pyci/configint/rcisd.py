@@ -97,9 +97,10 @@ class CISD(object):
                                                 self.options)
         self.ncore = ncore               
     
-    def gen_hcisd(self):
+    def save_hcisd(self):
         HCISD = self.comp_hcisd(ncore=self.ncore)
-        return HCISD
+        np.savez('cimat.npz', HCISD=HCISD)
+        return 0
 
     def energy(self, HCISD, return_wfn=False):
         HCISD0 = HCISD - self.mol.scf_energy*np.eye(sum(self.num_csfs)) 
