@@ -13,6 +13,8 @@ import os
 import numpy as np
 from functools import partial
 from pyci.utils.multproc import pool_jobs
+from multiprocessing import Pool, RawArray, RawValue
+from ctypes import c_double
 # import pyci.lib.configint.rcisd as lib_rcisd
 
 # input : eps, Ca, mo_oeints, mo_erints
@@ -75,6 +77,8 @@ def generate_csfs(orbinfo, active_space, options):
 from scipy.sparse.linalg import eigsh
 from scipy.linalg.lapack import dsyev
 
+shared_memory = {}
+
 class CISD(object):
     options = { 'singles' : True,
                 'full_cis' : True,
@@ -95,7 +99,7 @@ class CISD(object):
         self.csfs, self.num_csfs = generate_csfs(mol.orbinfo, 
                                                 active_space, 
                                                 self.options)
-        self.ncore = ncore               
+        self.ncore = ncore        
     
     def save_hcisd(self):
         HCISD = self.comp_hcisd(ncore=self.ncore)
@@ -169,10 +173,9 @@ class CISD(object):
         csf_quadrupole = self.comp_oeprop(mo_quadrupole, ncore=self.ncore)
         return csf_quadrupole
     
-    def comp_hrow_hf(self):
+    def comp_hrow_hf(self, mo_erints):
         mol = self.mol
         mo_eps = mol.mo_eps[0]
-        mo_erints = mol.mo_erints
         scf_energy = mol.scf_energy 
         csfs = self.csfs 
         num_csfs = self.num_csfs 
@@ -228,7 +231,7 @@ class CISD(object):
     def comp_hrow_ia(self, P):
         mol = self.mol
         mo_eps = mol.mo_eps[0]
-        mo_erints = mol.mo_erints
+        mo_erints = np.frombuffer(shared_memory['eri']).reshape(shared_memory['eri_shape'])
         scf_energy = mol.scf_energy 
         csfs = self.csfs 
         num_csfs = self.num_csfs 
@@ -298,8 +301,9 @@ class CISD(object):
     def comp_hrow_iiaa(self, P):
         mol = self.mol
         mo_eps = mol.mo_eps[0]
-        mo_erints = mol.mo_erints
-        scf_energy = mol.scf_energy 
+        mo_erints = np.frombuffer(shared_memory['eri']).reshape(
+            shared_memory['eri_shape'])
+        scf_energy = mol.scf_energy
         csfs = self.csfs 
         num_csfs = self.num_csfs 
         options = self.options
@@ -369,8 +373,9 @@ class CISD(object):
     def comp_hrow_iiab(self, P):
         mol = self.mol
         mo_eps = mol.mo_eps[0]
-        mo_erints = mol.mo_erints
-        scf_energy = mol.scf_energy 
+        mo_erints = np.frombuffer(shared_memory['eri']).reshape(
+            shared_memory['eri_shape'])
+        scf_energy = mol.scf_energy
         csfs = self.csfs 
         num_csfs = self.num_csfs 
         options = self.options
@@ -454,8 +459,9 @@ class CISD(object):
     def comp_hrow_ijaa(self, P):
         mol = self.mol
         mo_eps = mol.mo_eps[0]
-        mo_erints = mol.mo_erints
-        scf_energy = mol.scf_energy 
+        mo_erints = np.frombuffer(shared_memory['eri']).reshape(
+            shared_memory['eri_shape'])
+        scf_energy = mol.scf_energy
         csfs = self.csfs 
         num_csfs = self.num_csfs 
         options = self.options
@@ -539,8 +545,9 @@ class CISD(object):
     def comp_hrow_ijab_A(self, P):
         mol = self.mol
         mo_eps = mol.mo_eps[0]
-        mo_erints = mol.mo_erints
-        scf_energy = mol.scf_energy 
+        mo_erints = np.frombuffer(shared_memory['eri']).reshape(
+            shared_memory['eri_shape'])
+        scf_energy = mol.scf_energy
         csfs = self.csfs 
         num_csfs = self.num_csfs 
         options = self.options
@@ -650,8 +657,8 @@ class CISD(object):
     def comp_hrow_ijab_B(self, P):
         mol = self.mol
         mo_eps = mol.mo_eps[0]
-        mo_erints = mol.mo_erints
-        scf_energy = mol.scf_energy 
+        mo_erints = np.frombuffer(shared_memory['eri']).reshape(shared_memory['eri_shape'])
+        scf_energy = mol.scf_energy
         csfs = self.csfs 
         num_csfs = self.num_csfs 
         options = self.options
@@ -795,11 +802,13 @@ class CISD(object):
             raise Exception("Something went wronh while computing row %i"%(0))
         return row           
 
-    def comp_oeprop_ia(self, mo_oeprop, mo_oeprop_trace, P):
+    def comp_oeprop_ia(self, P):
         csfs = self.csfs
         num_csfs = self.num_csfs
         options = self.options
         N = sum(num_csfs)
+        mo_oeprop = np.frombuffer(shared_memory['oeprop']).reshape(shared_memory['oeprop_shape'])
+        mo_oeprop_trace = np.frombuffer(shared_memory['oeprop_trace'])
         row = np.zeros(N, dtype=np.float64)
         i,j,a,b = csfs[P]
         try:
@@ -855,11 +864,13 @@ class CISD(object):
             raise Exception("Something went wronh while computing row %i"%(P))
         return row           
 
-    def comp_oeprop_iiaa(self, mo_oeprop, mo_oeprop_trace, P):
+    def comp_oeprop_iiaa(self, P):
         csfs = self.csfs
         num_csfs = self.num_csfs
         options = self.options
         N = sum(num_csfs)
+        mo_oeprop = np.frombuffer(shared_memory['oeprop']).reshape(shared_memory['oeprop_shape'])
+        mo_oeprop_trace = np.frombuffer(shared_memory['oeprop_trace'])
         row = np.zeros(N, dtype=np.float64)
         i,j,a,b = csfs[P]
         try:
@@ -902,11 +913,13 @@ class CISD(object):
             raise Exception("Something went wronh while computing row %i"%(P))
         return row           
 
-    def comp_oeprop_iiab(self, mo_oeprop, mo_oeprop_trace, P):
+    def comp_oeprop_iiab(self, P):
         csfs = self.csfs
         num_csfs = self.num_csfs
         options = self.options
         N = sum(num_csfs)
+        mo_oeprop = np.frombuffer(shared_memory['oeprop']).reshape(shared_memory['oeprop_shape'])
+        mo_oeprop_trace = np.frombuffer(shared_memory['oeprop_trace'])
         row = np.zeros(N, dtype=np.float64)
         i,j,a,b = csfs[P]
         try:        
@@ -952,11 +965,13 @@ class CISD(object):
             raise Exception("Something went wronh while computing row %i"%(P))
         return row           
 
-    def comp_oeprop_ijaa(self, mo_oeprop, mo_oeprop_trace, P):
+    def comp_oeprop_ijaa(self, P):
         csfs = self.csfs
         num_csfs = self.num_csfs
         options = self.options
         N = sum(num_csfs)
+        mo_oeprop = np.frombuffer(shared_memory['oeprop']).reshape(shared_memory['oeprop_shape'])
+        mo_oeprop_trace = np.frombuffer(shared_memory['oeprop_trace'])
         row = np.zeros(N, dtype=np.float64)
         i,j,a,b = csfs[P]
         try:
@@ -1002,11 +1017,13 @@ class CISD(object):
             raise Exception("Something went wronh while computing row %i"%(P))
         return row           
 
-    def comp_oeprop_ijab_A(self, mo_oeprop, mo_oeprop_trace, P):
+    def comp_oeprop_ijab_A(self, P):
         csfs = self.csfs
         num_csfs = self.num_csfs
         options = self.options
         N = sum(num_csfs)
+        mo_oeprop = np.frombuffer(shared_memory['oeprop']).reshape(shared_memory['oeprop_shape'])
+        mo_oeprop_trace = np.frombuffer(shared_memory['oeprop_trace'])
         row = np.zeros(N, dtype=np.float64)
         i,j,a,b = csfs[P]
         try:  
@@ -1050,11 +1067,13 @@ class CISD(object):
             raise Exception("Something went wronh while computing row %i"%(P))
         return row           
 
-    def comp_oeprop_ijab_B(self, mo_oeprop, mo_oeprop_trace, P):
+    def comp_oeprop_ijab_B(self, P):
         csfs = self.csfs
         num_csfs = self.num_csfs
         options = self.options
         N = sum(num_csfs)
+        mo_oeprop = np.frombuffer(shared_memory['oeprop']).reshape(shared_memory['oeprop_shape'])
+        mo_oeprop_trace = np.frombuffer(shared_memory['oeprop_trace'])
         row = np.zeros(N, dtype=np.float64)
         i,j,a,b = csfs[P]
         try:  
@@ -1108,52 +1127,67 @@ class CISD(object):
             raise Exception("Something went wrong while computing row %i"%(P))
         return row           
 
+    @staticmethod
+    def init_eri(eri, eri_shape):
+        shared_memory['eri'] = eri
+        shared_memory['eri_shape'] = eri_shape
+
     def comp_hcisd(self, ncore=4):
         mol = self.mol
         options = self.options
+        nocc, nmo = mol.orbinfo
+        mo_erints_data = mol.get_mo_erints()
         print('Computing CISD Hamiltonian matrix with {ncore:d} cores \n'.format(ncore=ncore))
         num_csfs = self.num_csfs 
         N = sum(num_csfs)
         hcisd = []
         P = 0
-        row_hf = self.comp_hrow_hf()
+        row_hf = self.comp_hrow_hf(mo_erints_data)
         hcisd += [row_hf]
         P += 1
+        eri_shape = (nmo,)*4
+        eri = RawArray('d', nmo**4)
+        mo_erints = np.frombuffer(eri).reshape(eri_shape)
+        np.copyto(mo_erints, mo_erints_data)
+        del mo_erints_data
+        initializer = CISD.init_eri
+        initargs = (eri, eri_shape)
         if options['singles']:
             n_ia = num_csfs[1]
             Plist_ia = list(range(P,P+n_ia))
-            rows_ia = pool_jobs(self.comp_hrow_ia, Plist_ia, ncore)
+            rows_ia = pool_jobs(self.comp_hrow_ia, Plist_ia, ncore, initializer, initargs)
             hcisd += rows_ia
             P += n_ia
         if options['doubles']:
             if options['doubles_iiaa']:
                 n_iiaa = num_csfs[2]
                 Plist_iiaa = list(range(P,P+n_iiaa))
-                rows_iiaa = pool_jobs(self.comp_hrow_iiaa, Plist_iiaa, ncore)
+                rows_iiaa = pool_jobs(self.comp_hrow_iiaa, Plist_iiaa, ncore, initializer, initargs)
                 hcisd += rows_iiaa
                 P += n_iiaa
             if options['doubles_iiab']:        
                 n_iiab = num_csfs[3]
-                Plist_iiab = list(range(P,P+n_iiab))
-                rows_iiab = pool_jobs(self.comp_hrow_iiab, Plist_iiab, ncore)
+                Plist_iiab = list(range(P,P+n_iiab))    
+                rows_iiab = pool_jobs(self.comp_hrow_iiab, Plist_iiab, ncore, initializer, initargs)
                 hcisd += rows_iiab
                 P += n_iiab
             if options['doubles_ijaa']:
                 n_ijaa = num_csfs[4]
                 Plist_ijaa = list(range(P,P+n_ijaa))
-                rows_ijaa = pool_jobs(self.comp_hrow_ijaa, Plist_ijaa, ncore)
+                rows_ijaa = pool_jobs(
+                    self.comp_hrow_ijaa, Plist_ijaa, ncore, initializer, initargs)
                 hcisd += rows_ijaa
                 P += n_ijaa
             if options['doubles_ijab_A']:
                 n_ijab_A = num_csfs[5]
                 Plist_ijab_A = list(range(P,P+n_ijab_A))
-                rows_ijab_A = pool_jobs(self.comp_hrow_ijab_A, Plist_ijab_A, ncore)
+                rows_ijab_A = pool_jobs(self.comp_hrow_ijab_A, Plist_ijab_A, ncore, initializer, initargs)
                 hcisd += rows_ijab_A
                 P += n_ijab_A
             if options['doubles_ijab_B']:        
                 n_ijab_B = num_csfs[6]
                 Plist_ijab_B = list(range(P,P+n_ijab_B))
-                rows_ijab_B = pool_jobs(self.comp_hrow_ijab_B, Plist_ijab_B, ncore)
+                rows_ijab_B = pool_jobs(self.comp_hrow_ijab_B, Plist_ijab_B, ncore, initializer, initargs)
                 hcisd += rows_ijab_B
                 P += n_ijab_B
         if P != N:
@@ -1161,60 +1195,69 @@ class CISD(object):
         hcisd = np.array(hcisd, dtype=np.float64)
         return hcisd
 
-    def comp_oeprop(self, mo_oeprop, ncore=4):
+    @staticmethod
+    def init_oeprop(oeprop, oeprop_shape, oeprop_trace):
+        shared_memory['oeprop'] = oeprop
+        shared_memory['oeprop_shape'] = oeprop_shape
+        shared_memory['oeprop_trace'] = oeprop_trace
+
+    def comp_oeprop(self, mo_oeprop_mat, ncore=4):
         mol = self.mol
         csfs = self.csfs 
         num_csfs = self.num_csfs
         options = self.options
         nocc, nmo = mol.orbinfo
         N = sum(num_csfs)
-        mo_oeprop_trace = np.sum(np.diag(mo_oeprop)[:nocc])
+        trace = np.sum(np.diag(mo_oeprop_mat)[:nocc])
         csf_oeprop = []
         P = 0 
-        row_hf = self.comp_oeprop_hf(mo_oeprop, mo_oeprop_trace)
+        row_hf = self.comp_oeprop_hf(mo_oeprop_mat, trace)
         csf_oeprop += [row_hf]
+        oeprop_shape = (nmo, nmo)
+        oeprop = RawArray('d', nmo**2)
+        oeprop_trace = RawValue(c_double, trace)
+        mo_oeprop = np.frombuffer(oeprop).reshape(oeprop_shape)
+        np.copyto(mo_oeprop, mo_oeprop_mat)
+        mo_oeprop_trace = np.frombuffer(oeprop_trace)
+        initializer = CISD.init_oeprop
+        initargs = (oeprop, oeprop_shape, oeprop_trace)
+        del mo_oeprop_mat
         P += 1
         if options['singles']:
             n_ia = num_csfs[1]
-            comp_oeprop_ia = partial(self.comp_oeprop_ia, mo_oeprop, mo_oeprop_trace)
             Plist_ia = list(range(P, P+n_ia))
-            rows_ia = pool_jobs(comp_oeprop_ia, Plist_ia, ncore)
+            rows_ia = pool_jobs(self.comp_oeprop_ia, Plist_ia, ncore, initializer, initargs)
             csf_oeprop += rows_ia
             P += n_ia
         if options['doubles']:
             if options['doubles_iiaa']:
                 n_iiaa = num_csfs[2]
-                comp_oeprop_iiaa = partial(self.comp_oeprop_iiaa, mo_oeprop, mo_oeprop_trace)
                 Plist_iiaa = list(range(P, P+n_iiaa))
-                rows_iiaa = pool_jobs(comp_oeprop_iiaa, Plist_iiaa, ncore)
+                rows_iiaa = pool_jobs(self.comp_oeprop_iiaa, Plist_iiaa, ncore, initializer, initargs)
                 csf_oeprop += rows_iiaa
                 P += n_iiaa
             if options['doubles_iiab']:
                 n_iiab = num_csfs[3]
-                comp_oeprop_iiab = partial(self.comp_oeprop_iiab, mo_oeprop, mo_oeprop_trace)
                 Plist_iiab = list(range(P, P+n_iiab))
-                rows_iiab = pool_jobs(comp_oeprop_iiab, Plist_iiab, ncore)
+                rows_iiab = pool_jobs(self.comp_oeprop_iiab, Plist_iiab, ncore, initializer, initargs)
                 csf_oeprop += rows_iiab
                 P += n_iiab
             if options['doubles_ijaa']:
                 n_ijaa = num_csfs[4]
-                comp_oeprop_ijaa = partial(self.comp_oeprop_ijaa, mo_oeprop, mo_oeprop_trace)
                 Plist_ijaa = list(range(P, P+n_ijaa))
-                rows_ijaa = pool_jobs(comp_oeprop_ijaa, Plist_ijaa, ncore)
+                rows_ijaa = pool_jobs(self.comp_oeprop_ijaa, Plist_ijaa, ncore, initializer, initargs)
                 csf_oeprop += rows_ijaa
                 P += n_ijaa
             if options['doubles_ijab_A']:
                 n_ijab_A = num_csfs[5]
-                comp_oeprop_ijab_A = partial(self.comp_oeprop_ijab_A, mo_oeprop, mo_oeprop_trace)
                 Plist_ijab_A = list(range(P, P+n_ijab_A))
-                rows_ijab_A = pool_jobs(comp_oeprop_ijab_A, Plist_ijab_A, ncore)
+                rows_ijab_A = pool_jobs(self.comp_oeprop_ijab_A, Plist_ijab_A, ncore, initializer, initargs)
                 csf_oeprop += rows_ijab_A
                 P += n_ijab_A
             if options['doubles_ijab_B']:
                 n_ijab_B = num_csfs[6]
-                comp_oeprop_ijab_B = partial(self.comp_oeprop_ijab_B, mo_oeprop, mo_oeprop_trace)
                 Plist_ijab_B = list(range(P, P+n_ijab_B))
-                rows_ijab_B = pool_jobs(comp_oeprop_ijab_B, Plist_ijab_B, ncore)
+                rows_ijab_B = pool_jobs(self.comp_oeprop_ijab_B, Plist_ijab_B, ncore, initializer, initargs)
                 csf_oeprop += rows_ijab_B
                 P += n_ijab_B
         if P != N:

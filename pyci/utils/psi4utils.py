@@ -358,7 +358,6 @@ class molecule(AOint):
         self.orbinfo = (nocc, nmo)
         self.active_space = (nocc,nvirt)
         self.save_mo_erints(aoint)
-        self.mo_erints = self.get_mo_erints()
         if 'dipoles' in properties:
             aoint.save_ao_dpints()
             self.save_mo_dpints(aoint)
