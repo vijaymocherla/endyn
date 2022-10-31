@@ -6,6 +6,17 @@ import numpy as np
 from scipy.linalg.lapack import dgetrf, dgetri, zgetrf, zgetri
 from scipy.linalg.lapack import dgesv, zgesv
 from scipy.linalg.lapack import dgesvx, zgesvx
+from scipy.linalg.lapack import dsyev
+
+def eigsh(A):
+    """Diagonalizes a matrix of doubles 
+    """
+    if not np.isfortran(A):
+        A = A.T
+    vals, vecs, info = dsyev(A)
+    if info != 0:
+        raise Exception("Given martix not symmetric!")
+    return vals, vecs
 
 def zinv(A):
     """Computes the inverse of a matrix of complex-doubles

@@ -58,7 +58,7 @@ def ops_expt(yi_dag, operator, yi):
     return expt
 
 
-def _calc_expectations(yi_scf, ops_list, y0_csf):
+def _calc_expectations(yi_csf, ops_list, y0_csf):
     ops_expectations = []
     norm = abs(np.sum(np.conjugate(yi_csf.T, dtype=np.cdouble) * yi_csf))
     autocorr = abs(np.sum(np.conjugate(yi_csf.T, dtype=np.cdouble) * y0_csf))
@@ -80,8 +80,9 @@ def SplitOperator(eigvals, eigvecs, field_func, y0, time_params,
     yi_eig, ti = y0_eig, t0
     fobj = open(outfile, 'wb', buffering=0)
     ncols = 3 + len(ops_list)
-    fobj.write((" {:<19} "*(ncols)+"\n").format('time_fs', 'norm', 'autocorr', *ops_headers).encode("utf-8"))
-    norm, autocorr, ops_expectations =  _calc_expectations(y0_csf, ops_list, y0_csf)
+    fobj.write((" {:<19} "*(ncols)+"\n").format('time_fs',
+               'norm', 'autocorr', *ops_headers).encode("utf-8"))
+    norm, autocorr, ops_expectations = _calc_expectations(y0_csf, ops_list, y0_csf)
     ti_fs = ti / units.fs_to_au
     fobj.write((" {:>16.16f} "*(ncols)+"\n").format(ti_fs, norm,
                autocorr, *ops_expectations).encode("utf-8"))
@@ -90,14 +91,15 @@ def SplitOperator(eigvals, eigvecs, field_func, y0, time_params,
         for i in range(print_nstep):
             exp_field = project_matrix_eigbasis(
                 expm(1j*field_func(ti)*dt), eigvecs)
-            yn_eig = np.exp(-1j*eigvals*dt) * yi_eig
-            yn_eig = blas.zgemm(ALPHA, exp_field.T, yn_eig, trans_a=True)[:, 0]
+            yi_eig = np.exp(-1j*eigvals*dt) * yi_eig
+            yi_eig = blas.zgemm(ALPHA, exp_field.T, yi_eig, trans_a=True)[:, 0]
             ti = ti + dt
-        _calc_expectations(yi_eig, ti, ops_list, eigvecs, y0_csf, fobj, ncols)
-    yi_csf = project_vec_csf(yi_eig, eigvecs)
-    norm, autocorr, ops_expectations = _calc_expectations(yi_csf, ops_list, y0_csf)
-    ti_fs = ti / units.fs_to_au
-    fobj.write((" {:>16.16f} "*(ncols)+"\n").format(ti_fs, norm, autocorr, *ops_expectations).encode("utf-8"))
+        yi_csf = project_vec_csf(yi_eig, eigvecs)
+        norm, autocorr, ops_expectations = _calc_expectations(
+            yi_csf, ops_list, y0_csf)
+        ti_fs = ti / units.fs_to_au
+        fobj.write((" {:>16.16f} "*(ncols)+"\n").format(ti_fs,
+                   norm, autocorr, *ops_expectations).encode("utf-8"))
     fobj.close()
     stop = perf_counter()
     print('Time taken %3.3f seconds' % (stop-start))
