@@ -16,16 +16,16 @@ from threadpoolctl import threadpool_limits
 from time import perf_counter 
 
 # Lets intiate AOint() a subclass of psi4utils()
-molfile = '.xyz/LiCN.xyz'
+molfile = '.xyz/He.xyz'
 with threadpool_limits(limits=22, user_api='blas'):
-      mol = pyci.utils.molecule('6-31G*', molfile=molfile, wd='./', ncore=22, psi4mem='210 Gb', numpymem=210, 
+      mol = pyci.utils.molecule('d-aug-cc-pv5z', molfile=molfile, wd='./', ncore=22, psi4mem='210 Gb', numpymem=210, 
                   custom_basis=False, store_wfn=False, properties=['dipoles'], psi4options={'puream': False}) 
 
 print('Begining CISD calculation .....\n')
 start = perf_counter()
 from pyci.configint.rcisd import CISD
 with threadpool_limits(limits=22, user_api='blas'):
-      cisd = CISD(mol, options={'doubles':False}, ncore=4)
+      cisd = CISD(mol, options={'doubles':True}, ncore=22)
       ndim = sum(cisd.num_csfs)
       print(cisd.num_csfs, ndim)
       cisd.save_hcisd()
