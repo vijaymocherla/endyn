@@ -15,8 +15,8 @@ from pyci.linalg.blas import zmul_mv, zmul_zdotc, zmul_zdotu
 
 def _calc_expectations(ops_list, psi_i, psi_0):
     ops_expts = []
-    norm = zmul_zdotc(psi_i, psi_i).real
-    autocorr = np.abs(zmul_zdotu(psi_i, psi_0))
+    norm = np.abs(zmul_zdotc(psi_i, psi_i))
+    autocorr = np.abs(zmul_zdotc(psi_i, psi_0))
     for operator in ops_list:
         expt = zmul_zdotc(psi_i, zmul_mv(operator, psi_i)).real
         ops_expts.append(expt)

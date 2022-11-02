@@ -7,7 +7,6 @@ from Cython.Distutils import build_ext
 EXT_MODULES=[
     Extension("rungekutta", ["rungekutta.pyx"]),
     Extension("splitoperator", ["splitoperator.pyx"]),
-    Extension("splitoperator_fast", ["splitoperator_fast.pyx"]),
     Extension("cranknicholson", ["cranknicholson.pyx"])]
 
 for e in EXT_MODULES:

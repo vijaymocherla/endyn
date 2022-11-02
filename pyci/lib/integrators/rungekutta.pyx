@@ -2,7 +2,6 @@
 #
 # Author: Sai Vijay Mocherla <vijaysai.mocherla@gmail.com>
 #
-
 """rungekutta.py
 """
 
@@ -11,13 +10,13 @@ from time import perf_counter
 from pyci.utils import units
 from threadpoolctl import threadpool_limits
 from pyci.linalg.blas import zmul_mm, zmul_mmm
-from pyci.linalg.blas import zmul_mv, zmul_zdotc
+from pyci.linalg.blas import zmul_mv, zmul_zdotc, zmul_zdotu
 
 
 def _calc_expectations(ops_list, psi_i, psi_0):
     ops_expts = []
-    norm = zmul_zdotc(psi_i, psi_i).real
-    autocorr = zmul_zdotc(psi_i, psi_0).real
+    norm = np.abs(zmul_zdotc(psi_i, psi_i))
+    autocorr = np.abs(zmul_zdotc(psi_i, psi_0))
     for operator in ops_list:
         expt = zmul_zdotc(psi_i, zmul_mv(operator, psi_i)).real
         ops_expts.append(expt)
@@ -26,10 +25,10 @@ def _calc_expectations(ops_list, psi_i, psi_0):
 
 def RK4(func, psi_0, time_params, ncore=4, ops_list=[], ops_headers=[],
         print_nstep=1, outfile='tdprop.txt'):
-    """Fixed step-size implementation of fourth order runge-kutta 
+    """ Fixed step-size implementation of fourth order runge-kutta 
     """
     t0, tf, dt = time_params
-    psi_i, ti = psi_0, t0
+    psi_i, ti = np.copy(psi_0), t0
     fobj = open(outfile, 'wb', buffering=0)
     ncols = 3 + len(ops_list)
     fobj.write((" {:<19} "*(ncols)+"\n").format('time_fs',
