@@ -1,16 +1,20 @@
 from distutils.core import setup
 from distutils.extension import Extension
-from Cython.Build import cythonize
+from Cython.Distutils import build_ext
 
-ext_modules = [
-        Extension("rcisd",
-        sources=["rcisd.c"],
-        language="C",
-        extra_compile_args = ["-O3", "-funroll-loops", 
-                              "-Wunused-but-set-variable", "-lm", "-std=c11"])
+
+
+EXT_MODULES=[
+    Extension("rcisd", ["rcisd.pyx"]),
+    Extension("cis_d", ["fast_cis_d.pyx"]),
 ]
 
+for e in EXT_MODULES:
+    e.cython_directives = {'language_level': "3"} #all are Python-3
+
 setup(
-    name="rcisd",
-    ext_modules=cythonize(ext_modules, language_level="3")
+  name = 'configint',
+  python_requires = '>=3.7',
+  cmdclass = {'build_ext': build_ext},
+  ext_modules = EXT_MODULES,
 )

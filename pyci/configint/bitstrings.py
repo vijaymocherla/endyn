@@ -9,13 +9,18 @@ Helper modules for configuration interaction calculations
 using bitstrings operations to implement slater-condon rules.
 
 Reference: 
-- Smith, D. G., Burns, L. A., Sherrill, C. D. & et al. Psi4NumPy. 
+[1] Smith, D. G., Burns, L. A., Sherrill, C. D. & et al. Psi4NumPy. 
     JCTC, 14(7), 3504-3511 (2018). 
     (For examples on implementing bit-string operations see the Determinant()
      Configuration-Interaction/helper_CI.py)
-- Knowles, P. J., & Handy, N. C. 
+[2] Knowles, P. J., & Handy, N. C. 
     Computer physics communications, 54(1), 75-83 (1989).
 """
+# TO-DO
+#   - fix bugs in bit string operations (see Ref[1], [2])
+#   - verify the evaluation of Slater-Condon rules (see Szabo and ref[1])
+#   - test working of bitstrings.py with cisd.py
+#   - fix downstream dependencies for FCI or SHCI 
 
 import numpy as np
 

@@ -26,27 +26,34 @@ class heuristic:
     
     def gamma(self, x, d1):
         gamma = 0
-        if x != 0 and self.mo_eps[x] >= 0.0 :
+        if x!=0 and self.mo_eps[x] >= 0.0 :
             gamma = np.sqrt(2*self.mo_eps[x])/d1
         return gamma
 
     def lifetime(self, idx, d1): 
         eigvec = self.eigvecs[idx]
-        lifetime = np.sum([(eigvec[idx]**2 * self.gamma(csf[0], d1) 
-                          + eigvec[idx]**2 * self.gamma(csf[1], d1))
+        lifetime = np.sum([(eigvec[idx]**2 * self.gamma(csf[2], d1) 
+                          + eigvec[idx]**2 * self.gamma(csf[3], d1))
                             for idx, csf in enumerate(self.csfs)])    
         return lifetime
 
-    def cmplx_energies(self, params):
-        E0, w0, IP, UP = params
-        Ecut = IP + 3.17*UP
+    def cmplx_energies(self, params, use_d2=False):
+        E0, w0, IP = params
+        Ecut = IP + 3.17*(E0/(4*w0))**2
         d1, d2 = E0/w0**2, 0.1
         threshold = self.eigvals[0] + IP
         cmplx_energies = []
         for idx, Ei in enumerate(self.eigvals):
             if Ei >= threshold:   
-                cmplx_energies.append(Ei - 0.5j*self.lifetime(idx, d1))
+                if Ei > Ecut:
+                    if use_d2:
+                        cmplx_energies.append(Ei - 0.5j*self.lifetime(idx, d2))
+                    else:
+                        cmplx_energies.append(Ei - 0.5j*self.lifetime(idx, d1))
+
+                else:    
+                    cmplx_energies.append(Ei - 0.5j*self.lifetime(idx, d1))
             else:
                 cmplx_energies.append(Ei)
-        return cmplx_energies
+        return np.array(cmplx_energies, dtype=np.cdouble)
 

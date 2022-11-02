@@ -82,12 +82,12 @@ def comp_dcorr(ecis, ccis, delta, w_tensor, g_tensor, nel, k):
     # print('%3.4f \t %3.4f \t %3.4f \t %3.4f' % (Ek_d_corr, Ek_t_corr, Ek_corr, Ek+Ek_corr))
     return Ek_corr
 
-def kernel(ecis, ccis, mo_eps, mo_so_eris, orbinfo, nevals, ncore=4):
+def kernel(ecis, ccis, mo_eps, mo_so_erints, orbinfo, nevals, ncore=4):
     nocc, nmo = orbinfo
     nso = int(2*nmo)
     nel = int(nocc/2)
     delta = comp_delta(mo_eps, nel, nso)
-    g_tensor = mo_so_eris - mo_so_eris.transpose(0, 1, 3, 2)
+    g_tensor = mo_so_erints - mo_so_erints.transpose(0, 1, 3, 2)
     w_tensor = - g_tensor[nel:, nel:, :nel, :nel]/delta  # g_vvoo / delta[vvoo]
     pfunc_comp_dcorr = partial(comp_dcorr, ecis, ccis, delta, 
                                 w_tensor, g_tensor, nel)
