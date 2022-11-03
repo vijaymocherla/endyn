@@ -11,8 +11,6 @@ from scipy.linalg.lapack import dsyev
 def eigsh(A):
     """Diagonalizes a matrix of doubles 
     """
-    if not np.isfortran(A):
-        A = A.T
     vals, vecs, info = dsyev(A)
     if info != 0:
         raise Exception("Given martix not symmetric!")
@@ -21,8 +19,6 @@ def eigsh(A):
 def zinv(A):
     """Computes the inverse of a matrix of complex-doubles
     """
-    if not np.isfortran(A):
-        A = A.T
     lu, piv, info = zgetrf(A)
     Ainv, info = zgetri(lu,piv)
     if info != 0:
@@ -32,8 +28,6 @@ def zinv(A):
 def dinv(A):
     """Computes the inverse of a matrix of doubles
     """
-    if not np.isfortran(A):
-        A = A.T
     lu, piv, info = dgetrf(A)
     Ainv, info = dgetri(lu, piv)
     if info != 0:
@@ -41,10 +35,6 @@ def dinv(A):
     return Ainv
 
 def zsolve(A, b, expert=False):
-    if not np.isfortran(A):
-        A = A.T
-    if not np.isfortran(b):
-        b = b.T
     if expert:
         sol = zgesvx(A, b)
         lu, ipiv = sol[1], sol[2]
@@ -57,10 +47,6 @@ def zsolve(A, b, expert=False):
     return x
 
 def dsolve(A, b, expert=False):
-    if not np.isfortran(A):
-        A = A.T
-    if not np.isfortran(b):
-        b = b.T
     if expert:
         sol = dgesvx(A, b)
         lu, ipiv = sol[1], sol[2]
