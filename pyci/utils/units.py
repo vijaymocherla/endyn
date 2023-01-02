@@ -12,6 +12,12 @@ c = const.value('speed of light in vacuum')
 
 fs_to_au = 41.341374575751
 
+def fwhm(w0, n):
+    wavelength_nm = freq_to_wavelength(w0)
+    sigma_fs = n*(wavelength_nm)/c * 1e15 
+    sigma = sigma_fs*fs_to_au
+    return sigma
+
 def watt_per_cm2_to_au(I):
         eps0 = const.value('vacuum electric permittivity')
         c = const.value('speed of light in vacuum')
