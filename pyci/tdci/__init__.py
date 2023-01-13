@@ -1,7 +1,8 @@
 
 from pyci.tdci.excite import (
-    sin2_pulse,
-    gaussian_pulse) 
+    sinesqr_pulse,
+    gaussian_pulse,
+    trapezoidal_pulse) 
 
 from pyci.tdci.lifetime import (
     heuristic)
