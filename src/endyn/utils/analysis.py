@@ -3,13 +3,13 @@
 # Author : Sai Vijay Mocherla <vijaysai.mocherla@gmail.com>
 #
 """analysis.py
-A module with functions to analyse output from tdci.py 
+A module with functions to analyse TDCI output.  
 """
 import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib as mpl
 from numpy import fft
-from pyci.utils.units import fs_to_au
+from endyn.utils.units import fs_to_au
 # some matplolib settings to get production level plots
 mpl.rc('text', usetex=True)  # Switches 'ON' LaTex, comment out to switch 'OFF'
 mpl.rc('font', family='sans-serif', serif='Computer Modern')

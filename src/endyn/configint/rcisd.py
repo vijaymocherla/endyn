@@ -12,10 +12,9 @@ J. Chem. Phys. 156, 174106 (2022); https://doi.org/10.1063/5.0087384
 import os
 import numpy as np
 from functools import partial
-from pyci.utils.multproc import pool_jobs
+from endyn.utils.multproc import pool_jobs
 from multiprocessing import Pool, RawArray, RawValue
 from ctypes import c_double
-# import pyci.lib.configint.rcisd as lib_rcisd
 
 # input : eps, Ca, mo_oeints, mo_erints
 # methods : 

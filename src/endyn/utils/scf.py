@@ -7,8 +7,8 @@
 """
 import os
 import numpy as np
-from pyci.utils import AOint
-from pyci.linalg import blas, lapack
+from endyn.utils import AOint
+from endyn.linalg import blas, lapack
 import os
 
 

@@ -7,10 +7,10 @@
 
 import numpy as np
 from time import perf_counter
-from pyci.utils import units
-from pyci.linalg.lapack import zsolve
-from pyci.linalg.blas import zmul_mm, zmul_mmm
-from pyci.linalg.blas import zmul_mv, zmul_zdotc, zmul_zdotu
+from endyn.utils import units
+from endyn.linalg.lapack import zsolve
+from endyn.linalg.blas import zmul_mm, zmul_mmm
+from endyn.linalg.blas import zmul_mv, zmul_zdotc, zmul_zdotu
 
 
 def _calc_expectations(ops_list, psi_i, psi_0):

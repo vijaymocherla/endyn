@@ -7,7 +7,7 @@
 """
 
 import numpy as np
-from pyci.utils.units import fwhm
+from endyn.utils.units import fwhm
 
 def sinesqr_pulse(t, params):
     E0, w0, tp, n, phase = params

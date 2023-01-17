@@ -7,8 +7,8 @@
 
 import numpy as np
 from time import perf_counter
-from pyci.utils import units
-from pyci.linalg.blas import zmul_mv, zmul_mm, zmul_zdotc
+from endyn.utils import units
+from endyn.linalg.blas import zmul_mv, zmul_mm, zmul_zdotc
 
 def _calc_expectations(yi_csf, ops_list, y0_csf):
     ops_expectations = []
