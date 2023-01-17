@@ -1,36 +1,55 @@
-import numpy as np 
+#!/usr/bin/env python
+#
+# Author: Sai Vijay Mocherla <vijaysai.mocherla@gmail.com>
+#
+"""rungekutta.py
+"""
+
+import numpy as np
 from time import perf_counter
-from opt_einsum import contract
+from pyci.utils import units
+from threadpoolctl import threadpool_limits
+from pyci.linalg.blas import zmul_mm, zmul_mmm
+from pyci.linalg.blas import zmul_mv, zmul_zdotc, zmul_zdotu
 
-class RK4(object):
-    """Fixed step-size implementation of fourth order runge-kutta 
+
+def _calc_expectations(ops_list, psi_i, psi_0):
+    ops_expts = []
+    norm = np.abs(zmul_zdotc(psi_i, psi_i))
+    autocorr = np.abs(zmul_zdotc(psi_i, psi_0))
+    for operator in ops_list:
+        expt = zmul_zdotc(psi_i, zmul_mv(operator, psi_i)).real
+        ops_expts.append(expt)
+    return ops_expts, norm, autocorr
+
+
+def RK4(func, psi_0, time_params, ncore=4, ops_list=[], ops_headers=[],
+        print_nstep=1, outfile='tdprop.txt'):
+    """ Fixed step-size implementation of fourth order runge-kutta 
     """
-    def __init__(self, func, y0, time_params):
-        self.func = func
-        self.y0 = np.array(y0, dtype=np.cdouble)
-        self.t0, self.tf, self.dt = time_params
-        self.y_list: list = [self.y0]
-        self.t_list: list = [self.t0]
-
-    def _rk4_step(self, yi, ti):
-        k1 = contract('ij,i', self.func(ti), yi, optimize=True)
-        k2 = contract('ij,i', self.func(ti), yi+((self.dt/2.0) * k1), optimize=True)
-        k3 = contract('ij,i', self.func(ti), yi+((self.dt/2.0) * k2), optimize=True)
-        k4 = contract('ij,i', self.func(ti), yi+(self.dt * k3), optimize=True) 
-        yn = yi + ((self.dt/6.0) * (k1 + 2.0*k2 + 2.0*k3 + k4))
-        tn = ti + self.dt
-        return(yn, tn)
-
-    def _time_propagation(self, check_norm=False):
-        yi, ti = self.y0, self.t0
-        i = int(0)
-        start = perf_counter()
-        while ti <= self.tf:
-            yi, ti = self._rk4_step(yi, ti)
-            self.y_list.append(yi)
-            self.t_list.append(ti)
-            i += int(1)
-        stop = perf_counter()
-        print( 'Time taken %3.3f seconds' % (stop-start))    
-        return self.y_list, self.t_list   
- 
+    t0, tf, dt = time_params
+    psi_i, ti = np.copy(psi_0), t0
+    fobj = open(outfile, 'wb', buffering=0)
+    ncols = 3 + len(ops_list)
+    fobj.write((" {:<19} "*(ncols)+"\n").format('time_fs',
+               'norm', 'autocorr', *ops_headers).encode("utf-8"))
+    ti_fs = ti / units.fs_to_au
+    ops_expt, norm, autocorr = _calc_expectations(ops_list, psi_i, psi_0)
+    fobj.write((" {:>16.16f} "*(ncols)+"\n").format(ti_fs, norm, autocorr, *ops_expt).encode("utf-8"))
+    start = perf_counter()
+    with threadpool_limits(limits=ncore, user_api='blas'):
+        while ti <= tf:
+            for i in range(print_nstep):
+                Fi = func(ti)
+                k1 = zmul_mv(Fi, psi_i)
+                k2 = zmul_mv(Fi, (psi_i + (dt*0.5)*k1))
+                k3 = zmul_mv(Fi, (psi_i + (dt*0.5)*k2))
+                k4 = zmul_mv(Fi, (psi_i + (dt*1.0)*k3))
+                psi_i += ((dt/6.0) * (k1 + 2.0*k2 + 2.0*k3 + k4))
+                ti += dt
+            ti_fs = ti / units.fs_to_au
+            ops_expt, norm, autocorr  = _calc_expectations(ops_list, psi_i, psi_0)
+            fobj.write((" {:>16.16f} "*(ncols)+"\n").format(ti_fs, norm, autocorr, *ops_expt).encode("utf-8"))
+    stop = perf_counter()
+    print('Time taken %3.3f seconds' % (stop-start))
+    return 0
