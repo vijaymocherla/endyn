@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-"""pyci setup
+"""endyn setup
 """
 import os
 import sys
@@ -11,7 +11,7 @@ import numpy
 import scipy
 
 __version__ = ''
-exec(open('src/endyn/__init__.py').read())
+exec(open('endyn/__init__.py').read())
 
 EXT_MODULES = []
 
