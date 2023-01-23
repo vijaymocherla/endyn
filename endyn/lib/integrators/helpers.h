@@ -1,12 +1,18 @@
-#ifdef EIGEN_USE_MKL
+// #ifdef EIGEN_USE_MKL
+//  #include "mkl_lapacke.h"
+//  #include "mkl_lapack.h"
+//  #include "mkl.h"
+//  #define EIGEN_USE_MKL_ALL
+// #else
+//  #include "lapacke.h"
+// #endif
+//  std library headers
+// Forcing explicitly to use of MKL as the above conditional doesn't work
  #include "mkl_lapacke.h"
  #include "mkl_lapack.h"
  #include "mkl.h"
  #define EIGEN_USE_MKL_ALL
-#else
- #include "lapacke.h"
-#endif
-//  std library headers
+
 #include <vector>
 #include <complex>
 #include <string>

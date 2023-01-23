@@ -5,6 +5,8 @@
 #include <stdio.h>
 #include <iostream>
 #include <fstream>
+#define FMT_HEADER_ONLY
+#include <fmt/format.h>
 #include <fmt/core.h>
 #include <fmt/printf.h>
 //  std library headers

@@ -1,6 +1,24 @@
+/**
+ * @file helpers.cc
+ * @author Sai Vijay Mocherla (vijaysai.mocherla@gmail.com)
+ * @brief 
+ * @version 0.1
+ * @date 2023-01-23
+ * 
+ * @copyright Copyright (c) 2023
+ * 
+ * TO-DO:
+ * - Separate out all the helper functions to a separate common folder.
+ */
 #include "helpers.h"
 
+// A sample function to test wrapper function for eigen's matrix-matrix multiplication
+RowMatrixXd testmul(Eigen::Ref<RowMatrixXd> a, Eigen::Ref<RowMatrixXd> b)
+{
+    return a * b;
+};
 
+// A C-BLAS wrapper code to diagonalise a matrix
 std::tuple<Eigen::VectorXd, Eigen::MatrixXd> diagonalise(Eigen::Ref<RowMatrixXd> matrix) {
     // Lets call Eigen solver from Eigen to diagonalise matrix     
     // local variables
@@ -28,24 +46,22 @@ std::tuple<Eigen::VectorXd, Eigen::MatrixXd> diagonalise(Eigen::Ref<RowMatrixXd>
     return std::tuple<Eigen::VectorXd, Eigen::MatrixXd>(evals, evecs.transpose());
 }
 
+// A component-wise exponentiation function
 Eigen::VectorXcd cwiseExpcd(Eigen::VectorXcd array) {
     return array.unaryExpr([](std::complex<double> x) { return exp(x); });
 };
 
-
-RowMatrixXd testmul(Eigen::Ref<RowMatrixXd> a, Eigen::Ref<RowMatrixXd> b) {
-    return a*b;
-};
-
 // A function to calculate expectation value to print to output file
-Eigen::VectorXd calc_expt(Eigen::VectorXcd yi, int nops, MatrixList ops_list, Eigen::VectorXcd y0){
-    Eigen::VectorXd result(nops+2);
+Eigen::VectorXd calc_expt(Eigen::VectorXcd yi, int nops, MatrixList ops_list, Eigen::VectorXcd y0)
+{
+    Eigen::VectorXd result(nops + 2);
     result[0] = abs(yi.conjugate().dot(yi)); // norm
     result[1] = abs(yi.conjugate().dot(y0)); // autocorr
     // std::cout<< ops_list[0]<<std::endl;
-    for (int i = 0; i < nops; i++) {
+    for (int i = 0; i < nops; i++)
+    {
         // calculates expectation value of ith operator matrix and stores it at [i+2] position
-        result[i+2] = real((yi.conjugate().cwiseProduct(ops_list[i]*yi)).sum()) ;
+        result[i + 2] = real((yi.conjugate().cwiseProduct(ops_list[i] * yi)).sum());
     }
     return result;
 }

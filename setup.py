@@ -1,37 +1,103 @@
 #!/usr/bin/env python
 """endyn setup
 """
+from setuptools import find_packages
+
 import os
 import sys
+import platform
+import subprocess
 
-from setuptools import setup, Extension, find_packages
-from Cython.Build import cythonize
-from Cython.Distutils import build_ext
-import numpy 
-import scipy
+from setuptools import setup, find_packages, Extension
+from setuptools.command.build_ext import build_ext
 
-__version__ = ''
-exec(open('endyn/__init__.py').read())
 
-EXT_MODULES = []
+class CMakeExtension(Extension):
+    def __init__(self, name, sourcedir=""):
+        Extension.__init__(self, name, sources=[])
+        self.sourcedir = os.path.abspath(sourcedir)
 
-# Package setup commands 
-setup(name = 'endyn',
-      version = __version__,
-      python_requires = '>=3.7',
-      requires = ['numpy (>=1.22)',  # need to check other requirements like matplotlib, itertools
-                  'scipy (>=1.0)',
-                  'psi4 (>=1.4)', 
-                  'cython (>=0.21)',
-                  'opt_einsum (>=3.3.0)'],  
-      packages = find_packages(),
-      ext_modules = cythonize(EXT_MODULES),
-      cmdclass = {'build_ext': build_ext},
-      author = 'Sai Vijay Mocherla',
-      author_email = 'vijaysai.mocherla@gmail.com',
-      license = 'MIT',
-      description = 'A python package for Electron-Nuclear Dynamics (ENDyn)',
-      long_description  = '',
-      keywords = 'configuration-interaction, electron dynamics, electronic-structure',
-      url = 'https://github.com/vijaymocherla/endyn'
+
+class CMakeBuild(build_ext):
+    build_ext.user_options = build_ext.user_options + [
+        # Notes: the first option is the option string
+        #        the second option is an abbreviated form of an option, which we avoid with None
+        ("code-coverage", None, "enable code coverage")
+    ]
+
+    def initialize_options(self):
+        self.code_coverage = "OFF"
+        return build_ext.initialize_options(self)
+
+    def run(self):
+        try:
+            out = subprocess.check_output(["cmake", "--version"])
+            print(f"CMake version: {out}")
+        except OSError:
+            raise RuntimeError(
+                "CMake must be installed to build the following extensions: "
+                + ", ".join(e.name for e in self.extensions)
+            )
+
+        for ext in self.extensions:
+            self.build_extension(ext)
+
+    def build_extension(self, ext):
+        extdir = os.path.join(
+            os.path.dirname(self.get_ext_fullpath(ext.name)), "endyn"
+        )
+        extdir = os.path.abspath(extdir)
+
+        print(f"    CODE_COVERAGE = {str(self.code_coverage).upper()}")
+
+        cmake_args = [
+            "-DCMAKE_LIBRARY_OUTPUT_DIRECTORY=" + extdir,
+            "-DPYTHON_EXECUTABLE=" + sys.executable,
+        ]
+
+        cfg = "Debug" if self.debug else "Release"
+        build_args = ["--config", cfg]
+
+        if platform.system() == "Windows":
+            cmake_args += [
+                "-DCMAKE_LIBRARY_OUTPUT_DIRECTORY_{}={}".format(cfg.upper(), extdir)
+            ]
+            if sys.maxsize > 2 ** 32:
+                cmake_args += ["-A", "x64"]
+            build_args += ["--", "/m"]
+        else:
+            cmake_args += ["-DCMAKE_BUILD_TYPE=" + cfg]
+            build_args += ["--", "-j2"]
+
+        env = os.environ.copy()
+        env["CXXFLAGS"] = "{} -DVERSION_INFO=\\'{}\\'".format(
+            env.get("CXXFLAGS", ""), self.distribution.get_version())
+        cmake_args += [f"-DCODE_COVERAGE={str(self.code_coverage).upper()}"]
+        if not os.path.exists(self.build_temp):
+            os.makedirs(self.build_temp)
+
+        subprocess.check_call(["cmake"] + cmake_args)
+        subprocess.check_call(["cmake", "--build", ".", "-j2"] + build_args)
+
+        print()  # Add empty line for nicer output
+
+
+setup(
+    name="endyn",
+    version="0.1.0",
+    author="Sai Vijay Mocherla",
+    description="",
+    long_description="",
+    # tell setuptools to look for any packages under 'endyn'
+    packages=find_packages(exclude=['tests']),
+    # tell setuptools that all packages will be under the 'endyn' directory
+    # and nowhere else
+    package_dir={"": "."},
+    # add an extension module named 'endyn' to the package 'endyn'
+    ext_modules=[CMakeExtension("endyn")],
+    # add custom build_ext command
+    cmdclass=dict(build_ext=CMakeBuild),
+    test_suite="tests",
+    zip_safe=False,
 )
+

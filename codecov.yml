@@ -1,0 +1,2 @@
+ignore:
+  - "endyn/linalg" # ignore the linalg functions
