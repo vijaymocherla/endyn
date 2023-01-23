@@ -1,0 +1,22 @@
+name: p4env
+channels:
+  - psi4/label/dev
+  - defaults
+dependencies:
+  - python=3.9
+  - psi4
+  - libint2
+  - libecpint
+  - eigen
+  - pybind11
+  - libclang
+  - blas
+  - intel-openmp
+  - numpy
+  - scipy
+  - matplotlib
+  - pandas
+  - fmt
+  - mkl
+  - opt_einsum
+  - threadpoolctl
