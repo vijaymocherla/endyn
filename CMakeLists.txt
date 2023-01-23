@@ -6,4 +6,4 @@ set(CMAKE_CXX_STANDARD 17)
 
 option(CODE_COVERAGE "Enable coverage reporting" OFF)
 
-add_subdirectory (endyn)
+add_subdirectory(endyn/lib)

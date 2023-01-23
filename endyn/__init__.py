@@ -4,11 +4,11 @@
 #
 
 """Define version number here and read it from setup.py"""
-from . import configint  
-from . import integrators  
-from . import linalg  
-from . import utils  
-from ._endyn import lib
+from endyn import configint  
+from endyn import integrators  
+from endyn import linalg  
+from endyn import utils  
+from endyn import lib
 
 __version__ = '0.1.0.'
 __author__ = 'Sai Vijay Mocherla'
