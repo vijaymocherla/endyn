@@ -31,8 +31,10 @@ else()
     set(EIGEN_USE_MKL_ALL 0)
 endif()
 
-set(CMAKE_BINARY_DIR "${CMAKE_BINARY_DIR}; ${CMAKE_CURRENT_SOURCE_DIR}")
-set(CMAKE_MODULE_PATH "${CMAKE_MODULE_PATH};${CMAKE_CURRENT_SOURCE_DIR}/cmake")
+set(CMAKE_BINARY_DIR "${CMAKE_CURRENT_SOURCE_DIR}")
+set(CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
+set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR})
+set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR})
 # find_package(LAPACK REQUIRED)
 # find_package(LAPACKE REQUIRED)
 # find_package(BLAS REQUIRED)
@@ -53,4 +55,4 @@ endif(CODE_COVERAGE)
 
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-c++1z-extensions") # avoid warnings for C++17
 
-pybind11_add_module(_endyn ${SRC_LIST} ${module_SOURCES})
+pybind11_add_module(_endyn ${SRC_LIST})
