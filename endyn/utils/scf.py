@@ -9,7 +9,6 @@ import os
 import numpy as np
 from endyn.utils import AOint
 from endyn.linalg import blas, lapack
-import os
 
 
 def orthonormalize(S):

@@ -9,7 +9,6 @@ import numpy as np
 from time import perf_counter
 from endyn.utils import units
 from endyn.linalg.lapack import zsolve
-from endyn.linalg.blas import zmul_mm, zmul_mmm
 from endyn.linalg.blas import zmul_mv, zmul_zdotc, zmul_zdotu
 
 

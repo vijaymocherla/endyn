@@ -3,7 +3,6 @@
 # Author : Sai Vijay Mocherla <vijaysai.mocherla@gmail.com>
 #
 
-"""Define version number here and read it from setup.py"""
 from endyn import configint  
 from endyn import integrators  
 from endyn import linalg  

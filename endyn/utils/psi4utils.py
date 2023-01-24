@@ -8,7 +8,6 @@
 #
 """
 """
-from pickletools import optimize
 import psi4
 import numpy as np
 from opt_einsum import contract

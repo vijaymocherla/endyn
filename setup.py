@@ -88,10 +88,7 @@ setup(
     author="Sai Vijay Mocherla",
     description="",
     long_description="",
-    # tell setuptools to look for any packages under 'endyn'
     packages=find_packages(exclude=['tests']),
-    # tell setuptools that all packages will be under the 'endyn' directory
-    # and nowhere else
     package_dir={"": "."},
     # add an extension module named 'endyn' to the package 'endyn'
     ext_modules=[CMakeExtension("endyn")],

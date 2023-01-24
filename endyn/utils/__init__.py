@@ -10,4 +10,3 @@ from endyn.utils.excite import (
 from endyn.utils.lifetime import (
     heuristic)
 
-from endyn.utils import analysis 
