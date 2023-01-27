@@ -31,14 +31,18 @@ aux_source_directory(bindings SRC_LIST)
 # endif()
 
 
-# find_package(psi4 1.4 REQUIRED)
-find_package (Eigen3 3.3 REQUIRED)
-include_directories(SYSTEM ${EIGEN3_INCLUDE_DIRS})
 set(CMAKE_PREFIX_PATH ${CONDA_PREFIX})
 set(CMAKE_BINARY_DIR "${CMAKE_CURRENT_SOURCE_DIR}")
 set(CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
 set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR})
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR})
+set(CMAKE_CXX_FLAGS "-Wall -Wextra")
+set(CMAKE_CXX_FLAGS_DEBUG "-g")
+set(CMAKE_CXX_FLAGS_RELEASE "-O3")
+# Getting package dependencies
+# find_package(psi4 1.4 REQUIRED)
+find_package (Eigen3 3.3 REQUIRED)
+include_directories(SYSTEM ${EIGEN3_INCLUDE_DIRS})
 find_package(LAPACK REQUIRED)
 find_package(LAPACKE REQUIRED)
 find_package(BLAS REQUIRED)
@@ -47,10 +51,9 @@ find_package(Python 3.9 COMPONENTS Interpreter Development REQUIRED)
 find_package(pybind11 CONFIG REQUIRED)
 
 # Including custom cmake rules
-include(cmake/clang-cxx-dev-tools.cmake)
-include(autocmake_omp) 
+# include(cmake/clang-cxx-dev-tools.cmake)
+# include(autocmake_omp) 
 
-add_compile_options(-Wall -Wextra -pedantic) # adding some compiler flags
 if(CODE_COVERAGE)
   message("-- Code coverage enabled")
   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} --coverage")
