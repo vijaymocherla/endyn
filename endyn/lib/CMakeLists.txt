@@ -16,22 +16,23 @@ include_directories(bindings)
 aux_source_directory(integrators SRC_LIST)
 aux_source_directory(bindings SRC_LIST)
 
-# Uncomment the following lines to force cmake to build ENDyn with icpx using mkl
-# set(CMAKE_C_COMPILER icx)
-# set(CMAKE_CXX_COMPILER icpx)
-# set(CMAKE_FC_COMPILER ifort)
-# set(OpenMP_FIND_COMPONENTS "CXX")
-# find_package(MKL)
-# if(MKL_FOUND)
-#   include_directories(${MKL_INCLUDE_DIR})
-#   add_definitions(-DEIGEN_USE_MKL=1)
-#   set(EIGEN_USE_MKL_ALL 1) # This will go into config.h - it makes Eigen use MKL
-# else()
-#   set(EIGEN_USE_MKL_ALL 0)
-# endif()
-
-
 set(CMAKE_PREFIX_PATH ${CONDA_PREFIX})
+
+# Uncomment the following lines to force cmake to build ENDyn with icpx using mkl
+set(CMAKE_C_COMPILER icx)
+set(CMAKE_CXX_COMPILER icpx)
+set(CMAKE_FC_COMPILER ifort)
+set(OpenMP_FIND_COMPONENTS "CXX")
+find_package(MKL)
+if(MKL_FOUND)
+  include_directories(${MKL_INCLUDE_DIR})
+  add_definitions(-DEIGEN_USE_MKL=1)
+  set(EIGEN_USE_MKL_ALL 1) # This will go into config.h - it makes Eigen use MKL
+else()
+  set(EIGEN_USE_MKL_ALL 0)
+endif()
+
+
 set(CMAKE_BINARY_DIR "${CMAKE_CURRENT_SOURCE_DIR}")
 set(CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
 set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR})
@@ -40,7 +41,7 @@ set(CMAKE_CXX_FLAGS "-Wall -Wextra")
 set(CMAKE_CXX_FLAGS_DEBUG "-g")
 set(CMAKE_CXX_FLAGS_RELEASE "-O3")
 # Getting package dependencies
-# find_package(psi4 1.4 REQUIRED)
+find_package(psi4 1.4 REQUIRED)
 find_package (Eigen3 3.3 REQUIRED)
 include_directories(SYSTEM ${EIGEN3_INCLUDE_DIRS})
 find_package(LAPACK REQUIRED)
