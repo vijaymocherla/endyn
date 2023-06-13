@@ -28,7 +28,8 @@ If you plan to use the conda package manager all the above dependencies can be i
 - Setup `ENDyn` using the following recipe.
 ```sh
 cd endyn
-conda env update -n endyn_env --file environment.yml
-python setup.py develop
+conda env create -f environment.yml
+conda activate endyn
+pip install -e .
 ```
  
