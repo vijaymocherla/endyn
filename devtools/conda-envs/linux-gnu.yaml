@@ -1,0 +1,31 @@
+name: endyn_gnu
+channels:
+# - psi4/label/dev
+  - conda-forge
+dependencies:
+  - python
+  - cmake  
+  - pybind11
+  - openblas
+  - opt_einsum
+  - threadpoolctl
+  - fmt 
+  - c-compiler
+  - cxx-compiler
+  - fortran-compiler
+  - openmp
+  - eigen
+  - boost
+  - psi4
+  - basis_set_exchange
+  - numpy
+# docs
+  - sphinx
+  - sphinx-rtd-theme
+# optional
+#  - scipy
+#  - matplotlib
+#  - jupyter
+#  - notebook
+#  - ipython
+#  - pandas
