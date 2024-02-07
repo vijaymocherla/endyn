@@ -4,6 +4,8 @@
 
 References to the source code and research papers are provided where needed.  
 
+> Note: The package is still not complete and may contain experimental code blocks. Also, I am not actively developing this package for the moment.
+
 ## Installation 
 To install `ENDyn`, clone this repository and compile it using the `setup.py` file. Make sure to get the dependencies mentioned here. It is recommended that you use the conda recipe provided here.
 
